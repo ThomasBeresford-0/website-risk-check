@@ -1,4 +1,5 @@
-// server.js
+// server/server.js
+
 import express from "express";
 import Stripe from "stripe";
 import cors from "cors";
@@ -17,19 +18,67 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// ✅ Render will set PORT automatically
+const PORT = process.env.PORT || 3000;
+
+// ✅ BASE_URL should be your canonical domain in production
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
 // ------------------------------------
-// Stripe checkout
+// FREE PREVIEW SCAN (NO PDF, NO STRIPE)
+// ------------------------------------
+app.post("/preview-scan", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "URL required" });
+
+    const scan = await scanWebsite(url);
+
+    const preview = {
+      url: scan.url,
+      scannedAt: scan.scannedAt,
+      riskLevel: scan.riskLevel,
+      findings: [
+        scan.hasPrivacyPolicy
+          ? "Privacy policy page detected"
+          : "No privacy policy page detected",
+
+        scan.hasCookieBanner
+          ? "Cookie consent banner detected"
+          : "No cookie consent banner detected",
+
+        scan.trackingScriptsDetected.length
+          ? `Tracking scripts detected (${scan.trackingScriptsDetected.join(", ")})`
+          : "No tracking scripts detected",
+
+        scan.formsDetected > 0
+          ? `Forms detected (${scan.formsDetected})`
+          : "No forms detected",
+
+        scan.imagesMissingAlt > 0
+          ? `Images missing alt text (${scan.imagesMissingAlt})`
+          : "No obvious image alt text issues detected",
+      ],
+    };
+
+    res.json(preview);
+  } catch (err) {
+    console.error("❌ Preview scan error:", err);
+    res.status(500).json({ error: "Preview scan failed" });
+  }
+});
+
+// ------------------------------------
+// STRIPE CHECKOUT (URL LOCKED IN METADATA)
 // ------------------------------------
 app.post("/create-checkout", async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) {
-      return res.status(400).json({ error: "URL required" });
-    }
+    if (!url) return res.status(400).json({ error: "URL required" });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -46,10 +95,11 @@ app.post("/create-checkout", async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `http://localhost:3000/success.html?url=${encodeURIComponent(
-        url
-      )}`,
-      cancel_url: "http://localhost:3000",
+
+      metadata: { url },
+
+      success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/`,
     });
 
     res.json({ url: session.url });
@@ -60,21 +110,21 @@ app.post("/create-checkout", async (req, res) => {
 });
 
 // ------------------------------------
-// Success page
-// ------------------------------------
-app.get("/success.html", (req, res) => {
-  res.sendFile(path.join(__dirname, "../public/success.html"));
-});
-
-// ------------------------------------
-// Generate + download report (SAFE)
+// PAID REPORT DOWNLOAD (STRIPE VERIFIED)
 // ------------------------------------
 app.get("/download-report", async (req, res) => {
   try {
-    const { url } = req.query;
-    if (!url) {
-      return res.status(400).send("Missing URL");
+    const { session_id } = req.query;
+    if (!session_id) return res.status(400).send("Missing session_id");
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (!session || session.payment_status !== "paid") {
+      return res.status(403).send("Payment not verified");
     }
+
+    const url = session.metadata?.url;
+    if (!url) return res.status(400).send("Missing URL in session");
 
     const scanData = await scanWebsite(url);
     const filePath = await generateReport(scanData);
@@ -87,6 +137,9 @@ app.get("/download-report", async (req, res) => {
 });
 
 // ------------------------------------
-app.listen(3000, () => {
-  console.log("✅ Server running on http://localhost:3000");
+// ✅ IMPORTANT: listen on PORT for Render
+// ------------------------------------
+app.listen(PORT, () => {
+  console.log(`✅ Server listening on port ${PORT}`);
+  console.log(`✅ BASE_URL: ${BASE_URL}`);
 });

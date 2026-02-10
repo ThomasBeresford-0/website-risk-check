@@ -2,21 +2,284 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Website Risk Check</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Website Risk Check — Instant Compliance Snapshot</title>
+
+  <meta
+    name="description"
+    content="Get a one-time snapshot of detectable compliance and risk signals on your website. No subscriptions. No accounts. Just clarity."
+  />
+
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --card: #ffffff;
+      --text: #111;
+      --muted: #666;
+      --border: #e5e7eb;
+      --accent: #111;
+      --low: #1a7f37;
+      --medium: #b54708;
+      --high: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    header h1 {
+      font-size: 40px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    header p {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    }
+
+    form {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 16px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    button {
+      padding: 16px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+    }
+
+    button.secondary {
+      background: #444;
+    }
+
+    .note {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .preview {
+      display: none;
+      margin-top: 28px;
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+    }
+
+    .risk {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .risk.low { color: var(--low); }
+    .risk.medium { color: var(--medium); }
+    .risk.high { color: var(--high); }
+
+    ul {
+      margin: 12px 0 24px 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    section {
+      margin-top: 90px;
+    }
+
+    h2 {
+      font-size: 30px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 22px;
+    }
+
+    .pill {
+      background: #f2f2f3;
+      padding: 20px;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    .trust {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .trust-item {
+      background: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    }
+
+    .trust-item h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .trust-item p {
+      font-size: 15px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    footer {
+      margin-top: 100px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
 </head>
+
 <body>
+  <div class="wrap">
+    <header>
+      <h1>Instant Website Risk Check</h1>
+      <p>
+        A one-time snapshot of detectable compliance and risk signals on your website.
+        Used by founders, freelancers, and agencies to get clarity — fast.
+      </p>
+    </header>
 
-  <h1>Website Risk Check</h1>
+    <div class="card">
+      <form id="check-form">
+        <input
+          id="url-input"
+          type="url"
+          placeholder="https://yourwebsite.com"
+          required
+        />
+        <button type="submit">Run free scan</button>
+      </form>
 
-  <form id="check-form">
-    <input
-      id="url-input"
-      type="url"
-      placeholder="https://example.com"
-      required
-    />
-    <button type="submit">Check my website</button>
-  </form>
+      <div class="note">
+        Free preview • Full report £79 • No subscription • Takes ~10 seconds
+      </div>
+
+      <div id="preview" class="preview">
+        <div id="risk" class="risk"></div>
+        <ul id="findings"></ul>
+
+        <button id="pay-button" class="secondary">
+          Get the full PDF report
+        </button>
+
+        <p class="note">
+          Includes a timestamped, shareable PDF suitable for clients or internal records.
+        </p>
+      </div>
+    </div>
+
+    <!-- TRUST SECTION -->
+    <section>
+      <h2>Why people trust this</h2>
+      <div class="trust">
+        <div class="trust-item">
+          <h3>No scare tactics</h3>
+          <p>
+            We don’t sell fear. This tool reports only what is detectable and lets you decide what to do next.
+          </p>
+        </div>
+
+        <div class="trust-item">
+          <h3>Used by agencies</h3>
+          <p>
+            Agencies use these reports as neutral, timestamped evidence when reviewing client websites.
+          </p>
+        </div>
+
+        <div class="trust-item">
+          <h3>No lock-in</h3>
+          <p>
+            One payment. One report. No accounts, dashboards, or follow-up emails.
+          </p>
+        </div>
+
+        <div class="trust-item">
+          <h3>Point-in-time snapshot</h3>
+          <p>
+            This is a factual record of your site at a specific moment — nothing more, nothing less.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT YOU GET -->
+    <section>
+      <h2>What this gives you</h2>
+      <div class="grid">
+        <div class="pill">✔ Clear snapshot of what’s present and missing</div>
+        <div class="pill">✔ Plain-English explanations</div>
+        <div class="pill">✔ Shareable, timestamped PDF</div>
+        <div class="pill">✔ Confidence to move forward or fix issues</div>
+      </div>
+    </section>
+
+    <!-- WHAT IT IS NOT -->
+    <section>
+      <h2>What this is not</h2>
+      <div class="grid">
+        <div class="pill">✖ Not legal advice</div>
+        <div class="pill">✖ Not ongoing monitoring</div>
+        <div class="pill">✖ Not a subscription</div>
+        <div class="pill">✖ Not a policy generator</div>
+      </div>
+    </section>
+
+    <footer>
+      Website Risk Check provides a point-in-time diagnostic snapshot only.
+      No compliance guarantees. No monitoring performed.
+    </footer>
+  </div>
 
   <script src="app.js"></script>
 </body>

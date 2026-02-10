@@ -2,28 +2,125 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Your report is ready</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background: #f7f7f8;
+      color: #111;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #111;
+      color: #fff;
+    }
+
+    .secondary {
+      background: #444;
+    }
+
+    .box {
+      margin-top: 20px;
+      padding: 14px;
+      background: #f2f2f3;
+      border-radius: 8px;
+      font-size: 14px;
+      word-break: break-all;
+    }
+
+    .muted {
+      margin-top: 18px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <h1>Your Website Risk Check is ready</h1>
 
-  <h1>Your Website Risk Check is ready</h1>
-  <p>This is a snapshot of your site at the time of scan.</p>
+    <p>
+      This is a point-in-time snapshot of your website showing detectable
+      compliance and risk signals.
+    </p>
 
-  <button id="download">Download your PDF report</button>
+    <button id="download">Download your PDF report</button>
 
-  <p style="margin-top:20px; font-size:14px;">
-    This report identifies detectable website features and potential risk indicators.
-    It does not provide legal advice or certify compliance.
-  </p>
+    <div class="box" id="share-box" style="display:none;"></div>
+
+    <button id="copy" class="secondary" style="display:none;">
+      Copy share link
+    </button>
+
+    <p class="muted">
+      You can share this link with clients, colleagues, or internal teams.
+      No login is required.
+    </p>
+  </div>
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const url = params.get("url");
+    const sessionId = params.get("session_id");
 
-    document.getElementById("download").addEventListener("click", () => {
-      window.location.href = `/download-report?url=${encodeURIComponent(url)}`;
-    });
+    const shareUrl =
+      `https://websiteriskcheck.com/share.html?session_id=${encodeURIComponent(sessionId)}`;
+
+    function download() {
+      if (!sessionId) return;
+      window.location.href =
+        `/download-report?session_id=${encodeURIComponent(sessionId)}`;
+    }
+
+    function showShare() {
+      const box = document.getElementById("share-box");
+      const copyBtn = document.getElementById("copy");
+
+      box.textContent = shareUrl;
+      box.style.display = "block";
+      copyBtn.style.display = "inline-block";
+
+      copyBtn.onclick = async () => {
+        await navigator.clipboard.writeText(shareUrl);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => (copyBtn.textContent = "Copy share link"), 1500);
+      };
+    }
+
+    setTimeout(download, 600);
+    setTimeout(showShare, 1200);
+
+    document.getElementById("download").addEventListener("click", download);
   </script>
-
 </body>
 </html>

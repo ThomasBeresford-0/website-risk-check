@@ -1,0 +1,11 @@
+# dependencies
+node_modules/
+
+# env
+.env
+
+# OS
+.DS_Store
+
+# PDFs
+public/*.pdf

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your report is ready</title>
+</head>
+<body>
+
+  <h1>Your Website Risk Check is ready</h1>
+  <p>This is a snapshot of your site at the time of scan.</p>
+
+  <button id="download">Download your PDF report</button>
+
+  <p style="margin-top:20px; font-size:14px;">
+    This report identifies detectable website features and potential risk indicators.
+    It does not provide legal advice or certify compliance.
+  </p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url");
+
+    document.getElementById("download").addEventListener("click", () => {
+      window.location.href = `/download-report?url=${encodeURIComponent(url)}`;
+    });
+  </script>
+
+</body>
+</html>

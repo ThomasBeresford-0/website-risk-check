@@ -1,10 +1,11 @@
 // server/report.js
-// FULL RAMBO — hardened, scope-locked, evidence-grade PDF
+// FULL RAMBO — evidence-grade, agency-safe PDF
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import QRCode from "qrcode";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,8 +45,28 @@ function addWatermark(doc, text) {
   doc.opacity(1).fillColor("#000").restore();
 }
 
-export function generateReport(data) {
-  return new Promise((resolve, reject) => {
+function drawBox(doc, title, lines) {
+  const startY = doc.y;
+  const boxHeight = 18 + lines.length * 16;
+
+  doc
+    .roundedRect(50, startY, doc.page.width - 100, boxHeight, 6)
+    .stroke("#ddd");
+
+  doc.fontSize(12).text(title, 60, startY + 6);
+
+  let y = startY + 22;
+  doc.fontSize(11);
+  lines.forEach((l) => {
+    doc.text(`• ${l}`, 60, y);
+    y += 16;
+  });
+
+  doc.moveDown(2);
+}
+
+export async function generateReport(data) {
+  return new Promise(async (resolve, reject) => {
     const filePath = path.join(__dirname, "../public/report.pdf");
 
     const doc = new PDFDocument({
@@ -56,54 +77,63 @@ export function generateReport(data) {
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
+    const shareUrl = `${process.env.BASE_URL}/download-report?session_id=${data.sessionId || ""}`;
+
     /* ======================================================
        COVER PAGE
     ====================================================== */
 
     addWatermark(doc, "WEBSITE RISK CHECK");
 
-    doc
-      .fontSize(32)
-      .text("Website Risk Check", { align: "center" })
-      .moveDown(0.4);
+    doc.fontSize(30).text("Website Risk Check", { align: "center" });
+    doc.moveDown(0.4);
 
     doc
       .fontSize(14)
-      .text("Instant website risk & compliance snapshot", {
-        align: "center",
-      })
-      .moveDown(2);
+      .text("Website compliance & risk snapshot", { align: "center" });
+
+    doc.moveDown(2);
 
     doc
       .fontSize(22)
-      .text(`Overall risk level: ${data.riskLevel}`, {
-        align: "center",
-      })
-      .moveDown(2);
+      .text(`Overall risk level: ${data.riskLevel}`, { align: "center" });
 
-    doc
-      .fontSize(12)
-      .text(`Website scanned:\n${data.url}`, {
-        align: "center",
-      })
-      .moveDown(1.5);
+    doc.moveDown(2);
 
-    doc
-      .fontSize(11)
-      .text(
-        `Scan date: ${new Date(data.scannedAt).toLocaleString()}\nScan ID: ${
-          data.scanId
-        }`,
-        { align: "center" }
-      );
+    doc.fontSize(12).text(
+      `Prepared for:\n${data.hostname || data.url}`,
+      { align: "center" }
+    );
 
-    doc
-      .moveDown(3)
-      .fontSize(10)
-      .text(
-        "This report is a factual, point-in-time snapshot of what was detectable on the scanned website at the time shown.\nIt does not provide legal advice, certify compliance, or guarantee regulatory status.",
-        { align: "center" }
-      );
+    doc.moveDown(1);
+
+    doc.fontSize(11).text(
+      `Website scanned:\n${data.url}`,
+      { align: "center" }
+    );
+
+    doc.moveDown(1);
+
+    doc.fontSize(11).text(
+      `Scan date: ${new Date(data.scannedAt).toLocaleString()}\nScan ID: ${
+        data.scanId
+      }`,
+      { align: "center" }
+    );
+
+    doc.moveDown(2);
+
+    doc.fontSize(10).text(
+      "Purpose: internal review, agency audit, or client-facing documentation.",
+      { align: "center" }
+    );
+
+    doc.moveDown(3);
+
+    doc.fontSize(10).text(
+      "This report is a factual, point-in-time snapshot of detectable signals only.\nIt does not provide legal advice or certify compliance.",
+      { align: "center" }
+    );
 
     addFooter(doc, data);
     doc.addPage();
@@ -114,13 +144,14 @@ export function generateReport(data) {
 
     addWatermark(doc, "POINT-IN-TIME");
 
-    doc.fontSize(18).text("Executive summary").moveDown(0.8);
+    doc.fontSize(18).text("Executive summary");
+    doc.moveDown(1);
 
     doc.fontSize(12).text(
-      "This document records the observable state of the website at a specific moment in time. It is intended to answer a simple question:"
+      "This report captures what was objectively detectable on the website at the time of scanning. It is designed to answer a single question:"
     );
 
-    doc.moveDown(0.6);
+    doc.moveDown(0.5);
 
     doc
       .fontSize(12)
@@ -128,31 +159,23 @@ export function generateReport(data) {
         italics: true,
       });
 
-    doc.moveDown();
+    doc.moveDown(1);
 
     doc.fontSize(12).text(
-      "The scan checks for common, high-signal indicators related to privacy transparency, cookie usage, tracking technologies, form data collection, accessibility basics, and business contact visibility."
+      "The scan focuses on high-signal indicators related to privacy transparency, cookies and tracking, form data collection, accessibility basics, and contact visibility."
     );
 
-    doc.moveDown();
+    drawBox(doc, "Scan coverage", [
+      "Homepage only",
+      "Limited set of common policy page paths",
+      "No full crawl performed",
+      "No authenticated or gated content",
+    ]);
 
-    doc.text(
-      "No assumptions are made about intent, legality, or regulatory interpretation. The output reflects only what was detectable without authentication or special access."
-    );
-
-    doc.moveDown();
-
-    if (data.riskReasons && data.riskReasons.length) {
-      doc
-        .fontSize(13)
-        .text("Key factors influencing the assigned risk level:")
-        .moveDown(0.5);
-
-      doc.fontSize(12).list(data.riskReasons, { bulletRadius: 2 });
-    } else {
-      doc.fontSize(12).text(
-        "The assigned risk level reflects the overall presence or absence of common high-signal indicators."
-      );
+    if (data.riskReasons?.length) {
+      doc.fontSize(13).text("Key risk indicators detected:");
+      doc.moveDown(0.5);
+      doc.fontSize(11).list(data.riskReasons, { bulletRadius: 2 });
     }
 
     addFooter(doc, data);
@@ -164,14 +187,15 @@ export function generateReport(data) {
 
     addWatermark(doc, "DETECTABLE SIGNALS");
 
-    doc.fontSize(18).text("Detectable findings").moveDown(1);
+    doc.fontSize(18).text("Detectable findings");
+    doc.moveDown(1);
 
     const rows = [
       ["HTTPS enabled", yesNo(data.https)],
       ["Privacy policy detected", yesNo(data.hasPrivacyPolicy)],
-      ["Terms & conditions detected", yesNo(data.hasTerms)],
+      ["Terms page detected", yesNo(data.hasTerms)],
       ["Cookie banner detected", yesNo(data.hasCookieBanner)],
-      ["Cookie policy page detected", yesNo(data.hasCookiePolicy)],
+      ["Cookie policy detected", yesNo(data.hasCookiePolicy)],
       [
         "Tracking scripts detected",
         data.trackingScriptsDetected.length
@@ -193,23 +217,20 @@ export function generateReport(data) {
         "Images missing alt text",
         `${data.imagesMissingAlt} of ${data.totalImages}`,
       ],
-      ["Contact / business info present", yesNo(data.contactInfoPresent)],
+      ["Contact or business info present", yesNo(data.contactInfoPresent)],
     ];
 
     let y = doc.y + 10;
-
     rows.forEach(([label, value]) => {
-      doc
-        .fontSize(11)
-        .text(label, 50, y, { width: 260 })
-        .text(value, 330, y, { width: 210 });
+      doc.fontSize(11).text(label, 50, y, { width: 260 });
+      doc.fontSize(11).text(value, 330, y, { width: 210 });
       y += 22;
     });
 
-    doc.moveDown(2);
-
-    if (data.accessibilityNotes && data.accessibilityNotes.length) {
-      doc.fontSize(14).text("Accessibility notes").moveDown(0.5);
+    if (data.accessibilityNotes?.length) {
+      doc.moveDown(2);
+      doc.fontSize(14).text("Accessibility notes");
+      doc.moveDown(0.5);
       doc.fontSize(11).list(data.accessibilityNotes, { bulletRadius: 2 });
     }
 
@@ -217,47 +238,43 @@ export function generateReport(data) {
     doc.addPage();
 
     /* ======================================================
-       INTERPRETATION
+       WHAT THIS MEANS
     ====================================================== */
 
     addWatermark(doc, "INTERPRETATION");
 
-    doc.fontSize(18).text("What this means").moveDown(0.8);
+    doc.fontSize(18).text("What this means");
+    doc.moveDown(1);
 
     doc.fontSize(12).text(
-      "The findings above represent observable signals at the time of scanning. Missing elements do not automatically indicate non-compliance, but they may increase uncertainty or exposure."
+      "Missing elements do not automatically imply non-compliance. However, their absence can increase uncertainty or exposure depending on how the website is used."
     );
 
     doc.moveDown();
 
     doc.text(
-      "Common elevated-risk patterns include the use of analytics or tracking technologies without a visible consent mechanism, or the collection of personal data without an easily accessible privacy notice."
-    );
-
-    doc.moveDown();
-
-    doc.text(
-      "This report is designed to support internal review, agency discussions, or record-keeping. It does not allege wrongdoing and should not be treated as a legal assessment."
+      "This document is intended to support decision-making, internal reviews, and third-party discussions. It does not allege wrongdoing."
     );
 
     addFooter(doc, data);
     doc.addPage();
 
     /* ======================================================
-       COMMON NEXT STEPS
+       NEXT STEPS
     ====================================================== */
 
     addWatermark(doc, "NEXT STEPS");
 
-    doc.fontSize(18).text("Common next steps").moveDown(0.8);
+    doc.fontSize(18).text("Common next steps");
+    doc.moveDown(1);
 
     doc.fontSize(12).list(
       [
-        "Review whether a clear, accessible privacy policy is appropriate for this website.",
-        "If tracking tools are used, consider whether a consent mechanism is required.",
+        "Review whether a clear privacy policy is appropriate for this website.",
+        "Confirm whether cookie consent is required if tracking tools are in use.",
         "Ensure forms clearly explain how submitted data is handled.",
-        "Address basic accessibility issues such as missing alt text or heading structure.",
-        "Seek professional advice if regulatory compliance is business-critical.",
+        "Address basic accessibility issues where relevant.",
+        "Seek professional advice if compliance is business-critical.",
       ],
       { bulletRadius: 2 }
     );
@@ -266,32 +283,33 @@ export function generateReport(data) {
     doc.addPage();
 
     /* ======================================================
-       SCOPE & LIMITATIONS
+       SHARE / VERIFICATION
     ====================================================== */
 
-    addWatermark(doc, "LIMITATIONS");
+    addWatermark(doc, "VERIFICATION");
 
-    doc.fontSize(18).text("Scope & limitations").moveDown(0.8);
+    doc.fontSize(18).text("Report verification");
+    doc.moveDown(1);
 
-    doc.fontSize(12).list(
-      [
-        "The scan checks the homepage and a limited set of common policy-related paths only.",
-        "It does not perform a full crawl of all pages.",
-        "Content behind logins, paywalls, or dynamic rendering may not be detected.",
-        "The scan does not interpret laws, regulations, or jurisdiction-specific obligations.",
-        "Results apply only to the specific date and time shown in this report.",
-      ],
-      { bulletRadius: 2 }
+    doc.fontSize(12).text(
+      "This report can be re-downloaded or shared using the link below."
     );
 
-    doc.moveDown(2);
+    doc.moveDown(1);
 
-    doc
-      .fontSize(10)
-      .text(
-        "Website Risk Check • Confidential diagnostic snapshot • No monitoring performed",
-        { align: "center" }
-      );
+    const qrDataUrl = await QRCode.toDataURL(shareUrl);
+    doc.image(qrDataUrl, 50, doc.y, { width: 120 });
+
+    doc.fontSize(10).text(shareUrl, 180, doc.y + 40, {
+      width: doc.page.width - 230,
+    });
+
+    doc.moveDown(4);
+
+    doc.fontSize(10).text(
+      "Anyone with this link can access the report. No login required.",
+      { align: "center" }
+    );
 
     addFooter(doc, data);
 

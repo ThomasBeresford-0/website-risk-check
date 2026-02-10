@@ -10,23 +10,41 @@ import { fileURLToPath } from "url";
 import { scanWebsite } from "./scan.js";
 import { generateReport } from "./report.js";
 
-dotenv.config();
+// ✅ Only load .env locally (Render provides env vars via dashboard)
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ✅ Render will set PORT automatically
-const PORT = process.env.PORT || 3000;
+// ✅ Render sets PORT automatically
+const PORT = Number(process.env.PORT) || 3000;
 
-// ✅ BASE_URL should be your canonical domain in production
+// ✅ Canonical base URL (set in Render env: https://www.websiteriskcheck.com)
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+// ✅ Fail fast if Stripe key missing in production (prevents 502 mystery loops)
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+if (!STRIPE_SECRET_KEY) {
+  console.error("❌ Missing STRIPE_SECRET_KEY environment variable.");
+  if (process.env.NODE_ENV === "production") process.exit(1);
+}
+
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
+
+// ------------------------------------
+// Health check (Render / uptime)
+// ------------------------------------
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, status: "healthy" });
+});
 
 // ------------------------------------
 // FREE PREVIEW SCAN (NO PDF, NO STRIPE)
@@ -77,6 +95,10 @@ app.post("/preview-scan", async (req, res) => {
 // ------------------------------------
 app.post("/create-checkout", async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe is not configured" });
+    }
+
     const { url } = req.body;
     if (!url) return res.status(400).json({ error: "URL required" });
 
@@ -95,9 +117,7 @@ app.post("/create-checkout", async (req, res) => {
           quantity: 1,
         },
       ],
-
       metadata: { url },
-
       success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/`,
     });
@@ -114,6 +134,10 @@ app.post("/create-checkout", async (req, res) => {
 // ------------------------------------
 app.get("/download-report", async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(500).send("Stripe is not configured");
+    }
+
     const { session_id } = req.query;
     if (!session_id) return res.status(400).send("Missing session_id");
 
@@ -142,4 +166,7 @@ app.get("/download-report", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Server listening on port ${PORT}`);
   console.log(`✅ BASE_URL: ${BASE_URL}`);
+  console.log(
+    `✅ Stripe: ${STRIPE_SECRET_KEY ? "configured" : "NOT configured"}`
+  );
 });

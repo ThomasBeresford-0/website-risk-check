@@ -1,16 +1,21 @@
 // server/server.js
+// FULL RAMBO — hardened payments, abuse resistance, zero ambiguity
 
 import express from "express";
 import Stripe from "stripe";
 import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 
 import { scanWebsite } from "./scan.js";
 import { generateReport } from "./report.js";
 
-// ✅ Only load .env locally (Render provides env vars via dashboard)
+/* =========================
+   ENV + BOOT
+========================= */
+
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
@@ -19,40 +24,67 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-// ✅ Render sets PORT automatically
 const PORT = Number(process.env.PORT) || 3000;
-
-// ✅ Canonical base URL (set in Render env: https://www.websiteriskcheck.com)
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
-// ✅ Fail fast if Stripe key missing in production (prevents 502 mystery loops)
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-if (!STRIPE_SECRET_KEY) {
-  console.error("❌ Missing STRIPE_SECRET_KEY environment variable.");
-  if (process.env.NODE_ENV === "production") process.exit(1);
+if (!STRIPE_SECRET_KEY && process.env.NODE_ENV === "production") {
+  console.error("❌ STRIPE_SECRET_KEY missing");
+  process.exit(1);
 }
 
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
+/* =========================
+   MIDDLEWARE
+========================= */
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 app.use(express.static(path.join(__dirname, "../public")));
 
-// ------------------------------------
-// Health check (Render / uptime)
-// ------------------------------------
+/* =========================
+   SIMPLE IN-MEMORY RATE LIMIT
+   (Enough to stop abuse, no Redis)
+========================= */
+
+const RATE_LIMIT_WINDOW = 60_000; // 1 min
+const RATE_LIMIT_MAX = 15;
+const hits = new Map();
+
+function rateLimit(req, res, next) {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const now = Date.now();
+  const record = hits.get(ip) || [];
+  const recent = record.filter((t) => now - t < RATE_LIMIT_WINDOW);
+
+  if (recent.length >= RATE_LIMIT_MAX) {
+    return res.status(429).json({ error: "Too many requests" });
+  }
+
+  recent.push(now);
+  hits.set(ip, recent);
+  next();
+}
+
+/* =========================
+   HEALTH
+========================= */
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, status: "healthy" });
 });
 
-// ------------------------------------
-// FREE PREVIEW SCAN (NO PDF, NO STRIPE)
-// ------------------------------------
-app.post("/preview-scan", async (req, res) => {
+/* =========================
+   FREE PREVIEW SCAN
+========================= */
+
+app.post("/preview-scan", rateLimit, async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ error: "URL required" });
+    if (!url || typeof url !== "string") {
+      return res.status(400).json({ error: "URL required" });
+    }
 
     const scan = await scanWebsite(url);
 
@@ -62,8 +94,8 @@ app.post("/preview-scan", async (req, res) => {
       riskLevel: scan.riskLevel,
       findings: [
         scan.hasPrivacyPolicy
-          ? "Privacy policy page detected"
-          : "No privacy policy page detected",
+          ? "Privacy policy detected"
+          : "No privacy policy detected",
 
         scan.hasCookieBanner
           ? "Cookie consent banner detected"
@@ -79,7 +111,7 @@ app.post("/preview-scan", async (req, res) => {
 
         scan.imagesMissingAlt > 0
           ? `Images missing alt text (${scan.imagesMissingAlt})`
-          : "No obvious image alt text issues detected",
+          : "No obvious alt text issues detected",
       ],
     };
 
@@ -90,13 +122,62 @@ app.post("/preview-scan", async (req, res) => {
   }
 });
 
-// ------------------------------------
-// STRIPE CHECKOUT (URL LOCKED IN METADATA)
-// ------------------------------------
-app.post("/create-checkout", async (req, res) => {
+/* =========================
+   STRIPE CHECKOUT
+   URL CRYPTO-LOCKED
+========================= */
+
+app.post("/create-checkout", rateLimit, async (req, res) => {
   try {
     if (!stripe) {
-      return res.status(500).json({ error: "Stripe is not configured" });
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    const { url } = req.body;
+    if (!url || typeof url !== "string") {
+      return res.status(400).json({ error: "URL required" });
+    }
+
+    const urlHash = crypto
+      .createHash("sha256")
+      .update(url)
+      .digest("hex");
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "gbp",
+            unit_amount: 7900,
+            product_data: {
+              name: "Website Risk Check — Compliance Snapshot",
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        url,
+        url_hash: urlHash,
+        product: "website-risk-check",
+      },
+      success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/`,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("❌ Checkout error:", err);
+    res.status(500).json({ error: "Checkout failed" });
+  }
+});
+
+app.post("/create-upsell-checkout", async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe not configured" });
     }
 
     const { url } = req.body;
@@ -109,37 +190,44 @@ app.post("/create-checkout", async (req, res) => {
         {
           price_data: {
             currency: "gbp",
-            unit_amount: 7900,
+            unit_amount: 3900,
             product_data: {
-              name: "Website Risk Check – Compliance Snapshot",
+              name: "Additional Website Risk Check",
             },
           },
           quantity: 1,
         },
       ],
-      metadata: { url },
+      metadata: {
+        url,
+        product: "website-risk-check-upsell",
+      },
       success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/`,
     });
 
     res.json({ url: session.url });
   } catch (err) {
-    console.error("❌ Stripe checkout error:", err);
-    res.status(500).json({ error: "Stripe checkout failed" });
+    console.error("❌ Upsell checkout error:", err);
+    res.status(500).json({ error: "Upsell checkout failed" });
   }
 });
 
-// ------------------------------------
-// PAID REPORT DOWNLOAD (STRIPE VERIFIED)
-// ------------------------------------
+
+/* =========================
+   PAID REPORT DOWNLOAD
+========================= */
+
 app.get("/download-report", async (req, res) => {
   try {
     if (!stripe) {
-      return res.status(500).send("Stripe is not configured");
+      return res.status(500).send("Stripe not configured");
     }
 
     const { session_id } = req.query;
-    if (!session_id) return res.status(400).send("Missing session_id");
+    if (!session_id) {
+      return res.status(400).send("Missing session_id");
+    }
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
@@ -148,23 +236,37 @@ app.get("/download-report", async (req, res) => {
     }
 
     const url = session.metadata?.url;
-    if (!url) return res.status(400).send("Missing URL in session");
+    const urlHash = session.metadata?.url_hash;
+
+    if (!url || !urlHash) {
+      return res.status(400).send("Invalid session metadata");
+    }
+
+    const verifyHash = crypto
+      .createHash("sha256")
+      .update(url)
+      .digest("hex");
+
+    if (verifyHash !== urlHash) {
+      return res.status(403).send("URL verification failed");
+    }
 
     const scanData = await scanWebsite(url);
     const filePath = await generateReport(scanData);
 
     res.download(filePath, "website-risk-check-report.pdf");
   } catch (err) {
-    console.error("❌ Report generation error:", err);
+    console.error("❌ Report error:", err);
     res.status(500).send("Failed to generate report");
   }
 });
 
-// ------------------------------------
-// ✅ IMPORTANT: listen on PORT for Render
-// ------------------------------------
+/* =========================
+   START
+========================= */
+
 app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
+  console.log(`✅ Server live on port ${PORT}`);
   console.log(`✅ BASE_URL: ${BASE_URL}`);
   console.log(
     `✅ Stripe: ${STRIPE_SECRET_KEY ? "configured" : "NOT configured"}`

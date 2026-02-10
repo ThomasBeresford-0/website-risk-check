@@ -3,43 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your report is ready</title>
+  <title>Your report is ready — Website Risk Check</title>
 
   <style>
     body {
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       margin: 0;
-      padding: 40px 20px;
+      padding: 48px 20px;
       background: #f7f7f8;
       color: #111;
     }
 
     .container {
-      max-width: 720px;
+      max-width: 760px;
       margin: 0 auto;
       background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      padding: 36px;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
     }
 
     h1 {
-      font-size: 28px;
-      margin-bottom: 12px;
+      font-size: 30px;
+      margin-bottom: 10px;
     }
 
     p {
       font-size: 16px;
-      line-height: 1.5;
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      margin-top: 10px;
     }
 
     button {
-      margin-top: 20px;
-      padding: 14px 18px;
+      margin-top: 14px;
+      padding: 14px 20px;
       font-size: 16px;
       font-weight: 600;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       background: #111;
       color: #fff;
@@ -50,7 +60,7 @@
     }
 
     .box {
-      margin-top: 20px;
+      margin-top: 16px;
       padding: 14px;
       background: #f2f2f3;
       border-radius: 8px;
@@ -58,10 +68,16 @@
       word-break: break-all;
     }
 
+    .divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 28px 0;
+    }
+
     .muted {
-      margin-top: 18px;
       font-size: 14px;
       color: #666;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -71,56 +87,43 @@
     <h1>Your Website Risk Check is ready</h1>
 
     <p>
-      This is a point-in-time snapshot of your website showing detectable
-      compliance and risk signals.
+      Your PDF report is downloading now. This is a point-in-time snapshot you can
+      keep or share.
     </p>
 
-    <button id="download">Download your PDF report</button>
+    <button id="download">Download PDF again</button>
 
-    <div class="box" id="share-box" style="display:none;"></div>
+    <div id="share-box" class="box" style="display:none;"></div>
 
-    <button id="copy" class="secondary" style="display:none;">
-      Copy share link
-    </button>
+    <div class="divider"></div>
+
+    <h2>Add a second website snapshot</h2>
+
+    <p>
+      Need another site checked?  
+      Add an additional snapshot for <strong>£39</strong> (one-time).
+    </p>
+
+    <input
+      id="upsell-url"
+      type="url"
+      placeholder="https://second-website.com"
+    />
+
+    <button id="upsell">Run second scan (£39)</button>
 
     <p class="muted">
-      You can share this link with clients, colleagues, or internal teams.
-      No login is required.
+      Same report. Same format. No subscription.
+    </p>
+
+    <div class="divider"></div>
+
+    <p class="muted">
+      This report does not provide legal advice or guarantee compliance.
+      It reflects detectable signals at the time of scanning.
     </p>
   </div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-
-    const shareUrl =
-      `https://websiteriskcheck.com/share.html?session_id=${encodeURIComponent(sessionId)}`;
-
-    function download() {
-      if (!sessionId) return;
-      window.location.href =
-        `/download-report?session_id=${encodeURIComponent(sessionId)}`;
-    }
-
-    function showShare() {
-      const box = document.getElementById("share-box");
-      const copyBtn = document.getElementById("copy");
-
-      box.textContent = shareUrl;
-      box.style.display = "block";
-      copyBtn.style.display = "inline-block";
-
-      copyBtn.onclick = async () => {
-        await navigator.clipboard.writeText(shareUrl);
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => (copyBtn.textContent = "Copy share link"), 1500);
-      };
-    }
-
-    setTimeout(download, 600);
-    setTimeout(showShare, 1200);
-
-    document.getElementById("download").addEventListener("click", download);
-  </script>
+  <script src="success.js"></script>
 </body>
 </html>

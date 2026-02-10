@@ -1,4 +1,5 @@
 // server/report.js
+// FULL RAMBO — hardened, scope-locked, evidence-grade PDF
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
@@ -62,20 +63,20 @@ export function generateReport(data) {
     addWatermark(doc, "WEBSITE RISK CHECK");
 
     doc
-      .fontSize(30)
+      .fontSize(32)
       .text("Website Risk Check", { align: "center" })
-      .moveDown(0.5);
+      .moveDown(0.4);
 
     doc
       .fontSize(14)
-      .text("One-time website compliance snapshot", {
+      .text("Instant website risk & compliance snapshot", {
         align: "center",
       })
       .moveDown(2);
 
     doc
       .fontSize(22)
-      .text(`Risk level: ${data.riskLevel}`, {
+      .text(`Overall risk level: ${data.riskLevel}`, {
         align: "center",
       })
       .moveDown(2);
@@ -100,7 +101,7 @@ export function generateReport(data) {
       .moveDown(3)
       .fontSize(10)
       .text(
-        "This document is a factual, point-in-time snapshot based on detectable signals only.\nIt does not provide legal advice, certify compliance, or guarantee regulatory status.",
+        "This report is a factual, point-in-time snapshot of what was detectable on the scanned website at the time shown.\nIt does not provide legal advice, certify compliance, or guarantee regulatory status.",
         { align: "center" }
       );
 
@@ -111,18 +112,32 @@ export function generateReport(data) {
        EXECUTIVE SUMMARY
     ====================================================== */
 
-    addWatermark(doc, "CONFIDENTIAL SNAPSHOT");
+    addWatermark(doc, "POINT-IN-TIME");
 
     doc.fontSize(18).text("Executive summary").moveDown(0.8);
 
     doc.fontSize(12).text(
-      "This report provides a surface-level assessment of detectable compliance and risk-related signals present on the website listed above. It is designed to give clarity on the current observable state of the site."
+      "This document records the observable state of the website at a specific moment in time. It is intended to answer a simple question:"
+    );
+
+    doc.moveDown(0.6);
+
+    doc
+      .fontSize(12)
+      .text("“What does this website visibly expose right now?”", {
+        italics: true,
+      });
+
+    doc.moveDown();
+
+    doc.fontSize(12).text(
+      "The scan checks for common, high-signal indicators related to privacy transparency, cookie usage, tracking technologies, form data collection, accessibility basics, and business contact visibility."
     );
 
     doc.moveDown();
 
     doc.text(
-      "The scan focuses on high-signal indicators such as privacy disclosures, cookie consent mechanisms, tracking technologies, accessibility basics, and transparency signals commonly expected on modern websites."
+      "No assumptions are made about intent, legality, or regulatory interpretation. The output reflects only what was detectable without authentication or special access."
     );
 
     doc.moveDown();
@@ -130,7 +145,7 @@ export function generateReport(data) {
     if (data.riskReasons && data.riskReasons.length) {
       doc
         .fontSize(13)
-        .text("Key factors influencing the risk level:")
+        .text("Key factors influencing the assigned risk level:")
         .moveDown(0.5);
 
       doc.fontSize(12).list(data.riskReasons, { bulletRadius: 2 });
@@ -149,7 +164,7 @@ export function generateReport(data) {
 
     addWatermark(doc, "DETECTABLE SIGNALS");
 
-    doc.fontSize(18).text("Findings").moveDown(1);
+    doc.fontSize(18).text("Detectable findings").moveDown(1);
 
     const rows = [
       ["HTTPS enabled", yesNo(data.https)],
@@ -164,7 +179,7 @@ export function generateReport(data) {
           : "None detected",
       ],
       [
-        "Cookie vendor detected",
+        "Cookie vendors detected",
         data.cookieVendorsDetected.length
           ? data.cookieVendorsDetected.join(", ")
           : "None detected",
@@ -202,7 +217,7 @@ export function generateReport(data) {
     doc.addPage();
 
     /* ======================================================
-       WHAT THIS MEANS
+       INTERPRETATION
     ====================================================== */
 
     addWatermark(doc, "INTERPRETATION");
@@ -210,19 +225,19 @@ export function generateReport(data) {
     doc.fontSize(18).text("What this means").moveDown(0.8);
 
     doc.fontSize(12).text(
-      "The findings above represent detectable signals at the time of scanning. Missing elements may indicate incomplete implementation, outdated practices, or areas that warrant further review."
+      "The findings above represent observable signals at the time of scanning. Missing elements do not automatically indicate non-compliance, but they may increase uncertainty or exposure."
     );
 
     doc.moveDown();
 
     doc.text(
-      "The presence of analytics or tracking technologies without a visible consent mechanism, or the collection of personal data without a clearly accessible privacy policy, are common indicators of elevated risk."
+      "Common elevated-risk patterns include the use of analytics or tracking technologies without a visible consent mechanism, or the collection of personal data without an easily accessible privacy notice."
     );
 
     doc.moveDown();
 
     doc.text(
-      "This report does not imply wrongdoing. It is intended to support informed decision-making and provide a factual record that can be shared internally or with third parties."
+      "This report is designed to support internal review, agency discussions, or record-keeping. It does not allege wrongdoing and should not be treated as a legal assessment."
     );
 
     addFooter(doc, data);
@@ -238,10 +253,10 @@ export function generateReport(data) {
 
     doc.fontSize(12).list(
       [
-        "Ensure an accessible and up-to-date privacy policy is linked from the website.",
-        "If tracking tools are used, confirm cookie consent is implemented appropriately.",
-        "Review forms to ensure users are informed how personal data is handled.",
-        "Address basic accessibility issues such as missing alt text or page language.",
+        "Review whether a clear, accessible privacy policy is appropriate for this website.",
+        "If tracking tools are used, consider whether a consent mechanism is required.",
+        "Ensure forms clearly explain how submitted data is handled.",
+        "Address basic accessibility issues such as missing alt text or heading structure.",
         "Seek professional advice if regulatory compliance is business-critical.",
       ],
       { bulletRadius: 2 }
@@ -260,11 +275,11 @@ export function generateReport(data) {
 
     doc.fontSize(12).list(
       [
-        "The scan checks the homepage and a limited set of common policy page paths.",
-        "It does not perform a full crawl of the website.",
-        "Dynamic content or pages behind logins may not be detected.",
-        "This report does not provide legal advice or compliance certification.",
-        "Results reflect the website only at the specific time shown.",
+        "The scan checks the homepage and a limited set of common policy-related paths only.",
+        "It does not perform a full crawl of all pages.",
+        "Content behind logins, paywalls, or dynamic rendering may not be detected.",
+        "The scan does not interpret laws, regulations, or jurisdiction-specific obligations.",
+        "Results apply only to the specific date and time shown in this report.",
       ],
       { bulletRadius: 2 }
     );

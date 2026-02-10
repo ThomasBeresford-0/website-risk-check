@@ -1,5 +1,5 @@
 // server/report.js
-// FULL RAMBO — evidence-grade, agency-safe PDF
+// FULL RAMBO — evidence-grade, agency-safe, IMMUTABLE PDF
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
@@ -65,19 +65,22 @@ function drawBox(doc, title, lines) {
   doc.moveDown(2);
 }
 
-export async function generateReport(data) {
+/**
+ * generateReport
+ * @param {object} data - scan data + metadata
+ * @param {string} outputPath - absolute path to write PDF
+ */
+export async function generateReport(data, outputPath) {
   return new Promise(async (resolve, reject) => {
-    const filePath = path.join(__dirname, "../public/report.pdf");
-
     const doc = new PDFDocument({
       margin: 50,
       size: "A4",
     });
 
-    const stream = fs.createWriteStream(filePath);
+    const stream = fs.createWriteStream(outputPath);
     doc.pipe(stream);
 
-    const shareUrl = `${process.env.BASE_URL}/download-report?session_id=${data.sessionId || ""}`;
+    const shareUrl = `${process.env.BASE_URL}/r/${data.shareToken}`;
 
     /* ======================================================
        COVER PAGE
@@ -238,28 +241,6 @@ export async function generateReport(data) {
     doc.addPage();
 
     /* ======================================================
-       WHAT THIS MEANS
-    ====================================================== */
-
-    addWatermark(doc, "INTERPRETATION");
-
-    doc.fontSize(18).text("What this means");
-    doc.moveDown(1);
-
-    doc.fontSize(12).text(
-      "Missing elements do not automatically imply non-compliance. However, their absence can increase uncertainty or exposure depending on how the website is used."
-    );
-
-    doc.moveDown();
-
-    doc.text(
-      "This document is intended to support decision-making, internal reviews, and third-party discussions. It does not allege wrongdoing."
-    );
-
-    addFooter(doc, data);
-    doc.addPage();
-
-    /* ======================================================
        NEXT STEPS
     ====================================================== */
 
@@ -292,7 +273,7 @@ export async function generateReport(data) {
     doc.moveDown(1);
 
     doc.fontSize(12).text(
-      "This report can be re-downloaded or shared using the link below."
+      "This report can be re-downloaded or shared using the permanent link below."
     );
 
     doc.moveDown(1);
@@ -315,7 +296,7 @@ export async function generateReport(data) {
 
     doc.end();
 
-    stream.on("finish", () => resolve(filePath));
+    stream.on("finish", () => resolve(outputPath));
     stream.on("error", reject);
   });
 }

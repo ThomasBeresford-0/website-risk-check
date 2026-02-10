@@ -1,5 +1,26 @@
 // public/app.js
-// FULL RAMBO — zero hesitation, locked flow, conversion-biased
+// FULL RAMBO — conversion analytics + locked flow
+
+function getSid() {
+  const key = "wrc_sid";
+  let sid = localStorage.getItem(key);
+  if (!sid) {
+    sid = (crypto?.randomUUID?.() || String(Math.random()).slice(2)) + "-" + Date.now();
+    localStorage.setItem(key, sid);
+  }
+  return sid;
+}
+
+async function track(name, props = {}) {
+  try {
+    await fetch("/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({ name, props, sid: getSid() }),
+    });
+  } catch {}
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("check-form");
@@ -14,11 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let isScanning = false;
   let isPaying = false;
 
-  if (!form || !input || !payButton) return;
+  // fire landing view once
+  track("landing_view", { path: location.pathname });
 
-  /* =========================
-     FREE PREVIEW SCAN
-  ========================= */
+  if (!form || !input || !payButton) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -29,6 +49,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     isScanning = true;
     scannedUrl = url;
+
+    track("preview_started", { url });
 
     preview.style.display = "none";
     findingsEl.innerHTML = "";
@@ -47,13 +69,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      // Risk
-      const level = data.riskLevel.toLowerCase();
+      const level = (data.riskLevel || "LOW").toLowerCase();
       riskEl.textContent = `Risk level: ${data.riskLevel}`;
       riskEl.className = `risk ${level}`;
 
-      // Findings
-      data.findings.forEach((text) => {
+      (data.findings || []).forEach((text) => {
         const li = document.createElement("li");
         li.textContent = text;
         findingsEl.appendChild(li);
@@ -61,18 +81,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       preview.style.display = "block";
       payButton.disabled = false;
+
+      track("preview_completed", { riskLevel: data.riskLevel });
     } catch (err) {
       console.error(err);
       riskEl.textContent = "Scan failed. Please try again.";
       riskEl.className = "risk high";
+      track("preview_failed", {});
     } finally {
       isScanning = false;
     }
   });
-
-  /* =========================
-     STRIPE CHECKOUT
-  ========================= */
 
   payButton.addEventListener("click", async () => {
     if (!scannedUrl || isPaying) return;
@@ -80,6 +99,8 @@ document.addEventListener("DOMContentLoaded", () => {
     isPaying = true;
     payButton.disabled = true;
     payButton.textContent = "Redirecting to secure checkout…";
+
+    track("checkout_started", {});
 
     try {
       const res = await fetch("/create-checkout", {
@@ -93,13 +114,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!data.url) throw new Error("No checkout URL");
 
+      track("checkout_redirected", {});
       window.location.href = data.url;
     } catch (err) {
       console.error(err);
       alert("Checkout failed. Please try again.");
       payButton.disabled = false;
-      payButton.textContent = "Download full PDF report";
+      payButton.textContent = "Download full PDF report (£79)";
       isPaying = false;
+      track("checkout_failed", {});
     }
   });
 });

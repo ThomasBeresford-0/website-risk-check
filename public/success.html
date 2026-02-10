@@ -5,109 +5,276 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Your report is ready — Website Risk Check</title>
 
+  <meta
+    name="description"
+    content="Your Website Risk Check report is ready. Download your timestamped PDF and copy a permanent share link."
+  />
+
   <style>
-    body {
+    :root{
+      --bg:#f7f7f8;
+      --card:#fff;
+      --text:#111;
+      --muted:#666;
+      --border:#e5e7eb;
+      --accent:#111;
+      --soft:#f2f2f3;
+      --ok:#1a7f37;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 0;
-      padding: 48px 20px;
-      background: #f7f7f8;
-      color: #111;
+      margin:0;
+      padding:48px 20px;
+      background:var(--bg);
+      color:var(--text);
     }
 
-    .container {
-      max-width: 760px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 36px;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    .container{
+      max-width:780px;
+      margin:0 auto;
+      background:var(--card);
+      padding:38px;
+      border-radius:18px;
+      box-shadow:0 20px 40px rgba(0,0,0,0.08);
+      border:1px solid rgba(0,0,0,0.04);
     }
 
-    h1 {
-      font-size: 30px;
-      margin-bottom: 10px;
+    .topRow{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
     }
 
-    p {
-      font-size: 16px;
-      line-height: 1.55;
-      margin-bottom: 16px;
+    h1{
+      font-size:30px;
+      margin:0;
+      letter-spacing:-0.02em;
     }
 
-    input {
-      width: 100%;
-      padding: 14px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      margin-top: 10px;
+    .statusPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background:var(--soft);
+      border:1px solid rgba(0,0,0,0.06);
+      font-size:13px;
+      color:#333;
+      white-space:nowrap;
     }
 
-    button {
-      margin-top: 14px;
-      padding: 14px 20px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      background: #111;
-      color: #fff;
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:var(--ok);
+      display:inline-block;
     }
 
-    .secondary {
-      background: #444;
+    p{
+      font-size:16px;
+      line-height:1.55;
+      margin:12px 0 16px;
+      color:#333;
     }
 
-    .box {
-      margin-top: 16px;
-      padding: 14px;
-      background: #f2f2f3;
-      border-radius: 8px;
-      font-size: 14px;
-      word-break: break-all;
+    .actions{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:6px;
+      align-items:center;
     }
 
-    .divider {
-      height: 1px;
-      background: #e5e7eb;
-      margin: 28px 0;
+    button{
+      padding:14px 18px;
+      font-size:15px;
+      font-weight:700;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      background:var(--accent);
+      color:#fff;
     }
 
-    .muted {
-      font-size: 14px;
-      color: #666;
-      line-height: 1.5;
+    button.secondary{
+      background:#2a2a2a;
     }
+
+    button:disabled{
+      opacity:0.65;
+      cursor:not-allowed;
+    }
+
+    .box{
+      margin-top:14px;
+      padding:14px;
+      background:var(--soft);
+      border-radius:12px;
+      font-size:14px;
+      word-break:break-all;
+      border:1px solid rgba(0,0,0,0.06);
+      display:none;
+    }
+
+    .divider{
+      height:1px;
+      background:var(--border);
+      margin:28px 0;
+    }
+
+    h2{
+      margin:0 0 8px;
+      font-size:20px;
+      letter-spacing:-0.01em;
+    }
+
+    .muted{
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.5;
+      margin:10px 0 0;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+      margin-top:14px;
+    }
+
+    @media (max-width: 760px){
+      .grid{ grid-template-columns:1fr; }
+    }
+
+    .miniCard{
+      background:#f7f7f8;
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:16px;
+      padding:16px;
+    }
+
+    .miniCard h3{
+      margin:0 0 8px;
+      font-size:14px;
+      letter-spacing:-0.01em;
+    }
+
+    .miniCard p{
+      margin:0;
+      font-size:13px;
+      color:#444;
+      line-height:1.45;
+    }
+
+    input{
+      width:100%;
+      padding:14px;
+      font-size:15px;
+      border-radius:12px;
+      border:1px solid #ddd;
+      margin-top:10px;
+      outline:none;
+      background:#fff;
+    }
+
+    input:focus{
+      border-color:#cbd5e1;
+      box-shadow:0 0 0 4px rgba(0,0,0,0.06);
+    }
+
+    .tinyLinkRow{
+      margin-top:12px;
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    a.inlineLink{
+      color:#111;
+      text-decoration:none;
+      border-bottom:1px solid rgba(0,0,0,0.25);
+      font-size:13px;
+    }
+    a.inlineLink:hover{ border-bottom-color: rgba(0,0,0,0.6); }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#111;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease;
+    }
+    .toast.show{ opacity:1; }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Your Website Risk Check is ready</h1>
+    <div class="topRow">
+      <h1>Your report is ready</h1>
+      <div class="statusPill"><span class="dot"></span> Payment verified • Generating secure link</div>
+    </div>
 
     <p>
-      Your PDF report is downloading now. This is a point-in-time snapshot you can
-      keep or share.
+      Your PDF report is downloading now. This is a <strong>point-in-time snapshot</strong> you can
+      keep, forward, or file.
     </p>
 
-    <button id="download">Download PDF again</button>
+    <div class="actions">
+      <button id="download">Download PDF again</button>
+      <button id="copy" class="secondary" style="display:none;">Copy permanent share link</button>
+    </div>
 
-    <div id="share-box" class="box" style="display:none;"></div>
+    <div id="share-box" class="box"></div>
+
+    <div class="grid">
+      <div class="miniCard">
+        <h3>What you can do with this</h3>
+        <p>
+          Attach it to a client handover, keep it in internal records, or forward it to a colleague.
+          The report includes a timestamp and scan ID.
+        </p>
+      </div>
+      <div class="miniCard">
+        <h3>Agencies</h3>
+        <p>
+          Agencies commonly use this before launches and as neutral documentation during handovers.
+          The share link is permanent and requires no login.
+        </p>
+      </div>
+    </div>
 
     <div class="divider"></div>
 
-    <h2>Add a second website snapshot</h2>
+    <h2>Add a second website snapshot (£39)</h2>
 
     <p>
-      Need another site checked?  
-      Add an additional snapshot for <strong>£39</strong> (one-time).
+      Need another site checked while you’re here?  
+      Run an additional snapshot for <strong>£39</strong> (one-time).
     </p>
 
     <input
       id="upsell-url"
       type="url"
       placeholder="https://second-website.com"
+      autocomplete="url"
+      inputmode="url"
     />
 
     <button id="upsell">Run second scan (£39)</button>
@@ -115,6 +282,11 @@
     <p class="muted">
       Same report. Same format. No subscription.
     </p>
+
+    <div class="tinyLinkRow">
+      <a class="inlineLink" href="/agency.html">Agency workflow →</a>
+      <a class="inlineLink" href="/">Run another scan →</a>
+    </div>
 
     <div class="divider"></div>
 
@@ -124,6 +296,18 @@
     </p>
   </div>
 
+  <div id="toast" class="toast">Copied</div>
+
   <script src="success.js"></script>
+
+  <script>
+    // Tiny toast helper for success.js to call (optional)
+    window.__toast = (msg) => {
+      const el = document.getElementById("toast");
+      el.textContent = msg || "Done";
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 1300);
+    };
+  </script>
 </body>
 </html>

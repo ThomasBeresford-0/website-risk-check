@@ -17,20 +17,22 @@ import { generateReport } from "./report.js";
    ENV
 ========================= */
 
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
-}
-
+// ES modules __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ✅ Load env explicitly from /server/.env (works regardless of where you run node from)
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-if (!STRIPE_SECRET_KEY && process.env.NODE_ENV === "production") {
-  console.error("❌ STRIPE_SECRET_KEY missing");
+
+// ✅ Fail fast in ALL environments (prevents Stripe(undefined) crash)
+if (!STRIPE_SECRET_KEY) {
+  console.error("❌ STRIPE_SECRET_KEY missing (check server/.env or host env vars)");
   process.exit(1);
 }
 
@@ -183,10 +185,7 @@ app.get("/download-report", async (req, res) => {
 
   const scanData = await scanWebsite(url);
 
-  await generateReport(
-    { ...scanData, shareToken: token },
-    pdfPath
-  );
+  await generateReport({ ...scanData, shareToken: token }, pdfPath);
 
   fs.writeFileSync(
     jsonPath,
@@ -202,10 +201,7 @@ app.get("/download-report", async (req, res) => {
     )
   );
 
-  fs.writeFileSync(
-    sessionFile,
-    JSON.stringify({ token, createdAt: Date.now() })
-  );
+  fs.writeFileSync(sessionFile, JSON.stringify({ token, createdAt: Date.now() }));
 
   res.redirect(`/r/${token}`);
 });

@@ -7,7 +7,7 @@
 
   <meta
     name="description"
-    content="Generate a point-in-time, verifiable website risk snapshot. Free structured preview in seconds. Pay once for an immutable timestamped PDF with a permanent share link and public verification."
+    content="Generate a point-in-time, verifiable website risk snapshot. Free structured preview in seconds. Pay once to download a timestamped PDF with a permanent share link and public verification."
   />
 
   <meta name="theme-color" content="#0b1220" />
@@ -28,16 +28,18 @@
         <div class="navLinks">
           <a class="navLink" href="#what">Coverage</a>
           <a class="navLink" href="#how">Method</a>
+          <a class="navLink" href="#sample">Sample</a>
           <a class="navLink" href="#faq">FAQ</a>
         </div>
 
         <div class="navCtas">
-          <a class="navPill" href="#scan">Generate snapshot</a>
+          <a class="navPill" href="#scan">Run a scan</a>
         </div>
       </div>
     </nav>
 
     <main class="wrap">
+      <!-- HERO -->
       <header class="hero heroV2">
         <div class="heroTop">
           <div class="badges">
@@ -49,17 +51,19 @@
         </div>
 
         <div class="heroGrid heroGridV2">
+          <!-- LEFT: authority -->
           <div class="heroLeft heroLeftV2">
-            <h1 class="heroTitleV2">Generate a verifiable website risk snapshot.</h1>
+            <h1 class="heroTitleV2">A verifiable website risk snapshot — built to be filed and proven later.</h1>
 
             <p class="heroLead heroLeadV2">
-              Website Risk Check creates a <strong>timestamped</strong>, <strong>scope-locked</strong> record of objectively detectable signals —
-              packaged into a PDF designed to be <strong>shared</strong>, <strong>filed</strong>, and <strong>verified independently later</strong>.
+              Generate a <strong>timestamped</strong> record of objectively detectable signals (policies, consent indicators,
+              tracking scripts, forms/data capture heuristics, accessibility red flags, and contact/identity cues).
+              The paid report is a single <strong>evidentiary artifact</strong>: PDF + permanent link + public verification.
             </p>
 
             <div class="heroActions">
-              <a class="btnPrimary btnLink btnBig" href="#scan">Generate snapshot</a>
-              <a class="btnSecondary btnLink btnBig" href="#sample">View sample report</a>
+              <a class="btnPrimary btnLink btnBig" href="#scan">Run free scan</a>
+              <a class="btnSecondary btnLink btnBig" href="#sample">View sample verified report</a>
             </div>
 
             <div class="heroMeta heroMetaV2">
@@ -69,116 +73,114 @@
               </div>
               <div class="metaItem">
                 <div class="metaTitle">Evidence output</div>
-                <div class="metaDesc">PDF + permanent /r link + verify page</div>
+                <div class="metaDesc">Timestamped PDF + /r link + /verify page</div>
               </div>
               <div class="metaItem">
-                <div class="metaTitle">No SaaS baggage</div>
-                <div class="metaDesc">No dashboards, no monitoring, no subscription</div>
+                <div class="metaTitle">No monitoring</div>
+                <div class="metaDesc">No dashboard. No subscription. No ongoing scan</div>
               </div>
             </div>
 
             <div class="heroDisclaimer">
               <span class="tiny">
-                Not legal advice. Not certification. Not monitoring. This is a point-in-time record of observable signals.
+                Not legal advice. Not certification. Not monitoring. A point-in-time record of observable signals only.
               </span>
             </div>
 
-            <section class="artifactBand">
+            <!-- Artifact framing (makes £99 feel tangible) -->
+            <section class="artifactBand" aria-label="What you receive">
               <div class="artifactCard">
                 <div class="artifactTop">
-                  <div class="artifactTitle">What you’re buying is an evidentiary artifact — not access.</div>
+                  <div class="artifactKicker">What you receive</div>
+                  <div class="artifactTitle">A single immutable artifact — not “access to a tool”.</div>
                   <div class="artifactSub">
-                    One immutable report, with stable links and independent verification. Designed to be shared with stakeholders.
+                    Designed for stakeholders: download it, share it, and verify it independently later.
                   </div>
                 </div>
 
                 <div class="artifactGrid">
                   <div class="artifactMini">
                     <div class="artifactMiniLabel">Timestamped PDF</div>
-                    <div class="artifactMiniText">Audit-grade structure</div>
+                    <div class="artifactMiniText">Audit-style structure + limitations</div>
                   </div>
                   <div class="artifactMini">
-                    <div class="artifactMiniLabel">Permanent link</div>
+                    <div class="artifactMiniLabel">Permanent share link</div>
                     <div class="artifactMiniText mono">/r/:token</div>
                   </div>
                   <div class="artifactMini">
-                    <div class="artifactMiniLabel">Public verify page</div>
+                    <div class="artifactMiniLabel">Public verification</div>
                     <div class="artifactMiniText mono">/verify/:hash</div>
                   </div>
                   <div class="artifactMini">
                     <div class="artifactMiniLabel">Scope-locked</div>
-                    <div class="artifactMiniText">Deterministic coverage</div>
+                    <div class="artifactMiniText">Deterministic coverage rules</div>
                   </div>
                 </div>
 
                 <div class="artifactFine">
                   <span class="tiny">
-                    Verification uses an integrity hash derived from objective audit fields. If the report is modified, verification fails.
+                    Integrity is backed by a hash derived from objective audit fields. If a report is modified, verification fails.
                   </span>
                 </div>
               </div>
             </section>
           </div>
 
+          <!-- RIGHT: scan (JS hooks preserved) -->
           <div class="heroRight heroRightV2" id="scan">
             <div class="scanCard scanCardV2">
               <div class="scanHead scanHeadV2">
                 <div>
-                  <div class="scanTitle scanTitleV2">Generate a free preview</div>
-                  <div class="scanSub scanSubV2">Paste a URL. Get structured top findings before payment.</div>
+                  <div class="scanTitle scanTitleV2">Run a free scan</div>
+                  <div class="scanSub scanSubV2">Enter a URL to generate a structured preview.</div>
                 </div>
                 <div class="scanPrice scanPriceV2">
-                  <div class="scanPriceTop">Full snapshot</div>
+                  <div class="scanPriceTop">Full report</div>
                   <div class="scanPriceValue">£99</div>
                 </div>
               </div>
 
-              <!-- KEEP THESE IDs EXACTLY -->
+              <!-- REQUIRED BY app.js -->
               <form id="check-form" class="scanForm scanFormV2">
                 <label class="srOnly" for="url-input">Website URL</label>
-                <input
-                  id="url-input"
-                  type="url"
-                  placeholder="https://yourwebsite.com"
-                  required
-                  autocomplete="url"
-                />
-                <button id="scanBtn" type="submit" class="btnPrimary">
-                  Run free preview
-                </button>
+                <input id="url-input" type="url" placeholder="https://yourwebsite.com" required autocomplete="url" />
+                <button id="scanBtn" type="submit" class="btnPrimary">Run free scan</button>
               </form>
 
               <div class="scanNotes scanNotesV2">
                 <div class="noteRow">
                   <span class="dot dotGreen" aria-hidden="true"></span>
-                  <span><strong>Preview</strong> shows top signals only</span>
+                  <span><strong>Free preview</strong> shows top findings only</span>
                 </div>
                 <div class="noteRow">
                   <span class="dot dotBlue" aria-hidden="true"></span>
-                  <span>Paid snapshot includes <strong>timestamped PDF</strong> + <strong>permanent /r link</strong></span>
+                  <span>Paid report includes <strong>timestamped PDF</strong> + <strong>permanent share link</strong></span>
                 </div>
                 <div class="noteRow">
                   <span class="dot dotAmber" aria-hidden="true"></span>
-                  <span>Secure checkout via Stripe • One-time payment</span>
+                  <span>Secure checkout via Stripe • No subscription</span>
                 </div>
               </div>
 
-              <!-- KEEP preview/findings/pay buttons IDs EXACTLY -->
+              <!-- REQUIRED BY app.js -->
               <div id="preview" class="preview previewV2">
                 <div class="previewHead previewHeadV2">
                   <div class="previewTitle">Preview findings</div>
-                  <div class="previewHint">Pay once to lock the snapshot and download the PDF</div>
+                  <div class="previewHint">Upgrade to download the full PDF</div>
                 </div>
 
+                <!-- REQUIRED BY app.js -->
                 <ul id="findings" class="findings"></ul>
 
                 <div class="ctaRow ctaRowV2">
+                  <!-- REQUIRED BY app.js -->
                   <button id="pay-button" class="btnSecondary" type="button">
-                    Download full PDF snapshot (£99)
+                    Download full PDF report (£99)
                   </button>
 
+                  <!-- REQUIRED BY app.js -->
                   <button id="threepack-button" class="btnSecondary btnBest" type="button">
-                    Multi-site pack: 3 snapshots (£199)
+                    Best value: 3 reports (£199)
                   </button>
 
                   <span class="fineprint">Secure checkout via Stripe</span>
@@ -186,16 +188,16 @@
 
                 <div class="split splitV2">
                   <div class="miniCard miniCardV2">
-                    <h3>What you receive</h3>
+                    <h3>What’s in the paid report</h3>
                     <p>
-                      Timestamp, scan coverage, detected signals, plain-English notes, limitations,
-                      permanent share link, and public verification backed by an integrity hash.
+                      Scan timestamp, scan ID, coverage, detected signals, plain-English explanations,
+                      limitations, and a permanent verification link.
                     </p>
                   </div>
                   <div class="miniCard miniCardV2">
                     <h3>What this is not</h3>
                     <p>
-                      Not legal advice. Not certification. Not monitoring. Observable signals only.
+                      Not legal advice. Not certification. Not monitoring. It records observable signals only.
                     </p>
                   </div>
                 </div>
@@ -219,23 +221,25 @@
               </div>
               <div class="trustItem">
                 <div class="trustTop">Public verification</div>
-                <div class="trustBottom">Integrity checks later</div>
+                <div class="trustBottom">Integrity check later</div>
               </div>
             </div>
           </div>
         </div>
       </header>
 
+      <!-- SAMPLE -->
       <section class="section sectionAlt" id="sample">
         <h2>Sample verified report</h2>
         <p class="sectionLead">
-          Let people see the artifact structure and verify it independently. Replace these links with your real published sample.
+          The fastest way to trust this product is to see a real artifact and verify it independently.
+          Replace these links with your published sample token/hash.
         </p>
 
         <div class="ctaBand ctaBandV2">
           <div>
             <div class="ctaBandTitle">Open a public sample</div>
-            <div class="ctaBandText">The strongest trust signal is a real verifiable example.</div>
+            <div class="ctaBandText">Report link + verification page (no login).</div>
           </div>
 
           <div class="ctaBandBtns">
@@ -245,6 +249,7 @@
         </div>
       </section>
 
+      <!-- COVERAGE -->
       <section class="section" id="what">
         <h2>Coverage</h2>
         <p class="sectionLead">
@@ -279,6 +284,7 @@
         </div>
       </section>
 
+      <!-- METHOD -->
       <section class="section" id="how">
         <h2>Method</h2>
 
@@ -293,15 +299,15 @@
           <div class="step">
             <div class="stepNum">2</div>
             <div class="stepBody">
-              <div class="stepTitle">Lock the snapshot</div>
-              <div class="stepText">Pay once via Stripe to generate the immutable report artifact.</div>
+              <div class="stepTitle">Pay once</div>
+              <div class="stepText">Stripe checkout. No accounts, no subscription, no monitoring.</div>
             </div>
           </div>
           <div class="step">
             <div class="stepNum">3</div>
             <div class="stepBody">
               <div class="stepTitle">Download + share + verify</div>
-              <div class="stepText">PDF + permanent link + public verification page for independent integrity checks.</div>
+              <div class="stepText">Timestamped PDF + permanent link + public verification page.</div>
             </div>
           </div>
         </div>
@@ -311,18 +317,18 @@
             <div class="ctaBandTitle">Ready to scan?</div>
             <div class="ctaBandText">Paste a URL above to generate your free preview.</div>
           </div>
-          <a class="btnPrimary btnLink" href="#scan">Generate snapshot</a>
+          <a class="btnPrimary btnLink" href="#scan">Run a scan</a>
         </div>
       </section>
 
+      <!-- FAQ -->
       <section class="section" id="faq">
         <h2>FAQ</h2>
-
         <div class="faq">
           <details class="qa">
-            <summary>Is this legal advice or a compliance certificate?</summary>
+            <summary>Is this a legal compliance certificate?</summary>
             <div class="qaBody">
-              No. It’s a point-in-time snapshot of observable signals. It does not provide legal advice, certification, or guarantee compliance.
+              No. It’s a point-in-time snapshot of observable signals. It does not provide legal advice or guarantee compliance.
             </div>
           </details>
 
@@ -334,16 +340,16 @@
           </details>
 
           <details class="qa">
-            <summary>Does this monitor my site continuously?</summary>
+            <summary>Can I use this for multiple sites?</summary>
             <div class="qaBody">
-              No. This is deliberately not monitoring and not a dashboard subscription — it generates a single artifact.
+              Yes — use the <strong>3 reports pack</strong> if you’re checking clients or multiple domains.
             </div>
           </details>
 
           <details class="qa">
-            <summary>Can I use this for multiple sites?</summary>
+            <summary>Does this monitor my site continuously?</summary>
             <div class="qaBody">
-              Yes — use the <strong>3 snapshots pack</strong> if you’re checking clients or multiple domains.
+              No. It’s a one-time snapshot only. No subscriptions, no monitoring.
             </div>
           </details>
         </div>
@@ -362,8 +368,9 @@
           <div class="footerCols">
             <div class="footerCol">
               <div class="footerColTitle">Product</div>
-              <a class="footerLink" href="#scan">Generate snapshot</a>
+              <a class="footerLink" href="#scan">Run scan</a>
               <a class="footerLink" href="#what">Coverage</a>
+              <a class="footerLink" href="#sample">Sample</a>
               <a class="footerLink" href="#faq">FAQ</a>
             </div>
 

@@ -1,8 +1,3 @@
-/* =========================================
-   Website Risk Check — Authority Theme v7 (Pro)
-   Editorial • Enterprise • Evidence-grade • Clean layout rhythm
-========================================= */
-
 :root{
   --bg:#f6f7f9;
   --panel:#ffffff;
@@ -17,11 +12,11 @@
   --green:#16a34a;
   --amber:#d97706;
 
-  --shadow-soft:0 10px 30px rgba(15,23,42,.06);
+  --shadow-soft:0 10px 26px rgba(15,23,42,.06);
   --shadow-strong:0 22px 60px rgba(15,23,42,.12);
 
-  --radius-lg:18px;
-  --radius-md:12px;
+  --r-lg:18px;
+  --r-md:12px;
 
   --ring:0 0 0 4px rgba(15,23,42,.12);
 }
@@ -39,6 +34,7 @@ html,body{
 }
 
 a{ text-decoration:none; color:inherit; }
+button{ font-family:inherit; }
 
 .wrap{
   max-width:1120px;
@@ -47,10 +43,6 @@ a{ text-decoration:none; color:inherit; }
 }
 
 .page{ position:relative; min-height:100vh; }
-
-/* =========================================
-   BACKGROUND FX (subtle)
-========================================= */
 
 .bgFX{
   position:fixed;
@@ -64,10 +56,7 @@ a{ text-decoration:none; color:inherit; }
   filter:saturate(105%);
 }
 
-/* =========================================
-   NAV
-========================================= */
-
+/* NAV */
 .nav{
   position:sticky;
   top:0;
@@ -136,20 +125,13 @@ a{ text-decoration:none; color:inherit; }
   box-shadow:0 14px 30px rgba(15,23,42,.14);
 }
 
-button{ font-family:inherit; }
-
-/* =========================================
-   HERO
-========================================= */
-
-.hero{
-  padding:64px 0 54px;
-}
+/* HERO */
+.hero{ padding:64px 0 54px; }
 
 .heroGrid{
   display:grid;
-  grid-template-columns:1.08fr .92fr;
-  gap:42px;
+  grid-template-columns:1.05fr .95fr;
+  gap:40px;
   align-items:start;
 }
 
@@ -177,57 +159,31 @@ button{ font-family:inherit; }
   color:var(--muted);
 }
 
-.heroActions{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-top:20px;
+.heroBullets{
+  margin:18px 0 0;
+  padding-left:18px;
+  color:#0f172a;
 }
 
-.proofRow{
-  margin-top:22px;
-  display:grid;
-  grid-template-columns:repeat(3, minmax(0,1fr));
-  gap:10px;
+.heroBullets li{
+  margin:10px 0;
+  font-size:14px;
+  line-height:1.45;
 }
 
-.proofItem{
-  background:rgba(255,255,255,.82);
-  border:1px solid rgba(15,23,42,.10);
-  border-radius:14px;
-  padding:12px 12px;
-  box-shadow:var(--shadow-soft);
-}
-
-.proofKey{
-  font-weight:900;
-  font-size:13px;
-  letter-spacing:-.1px;
-}
-
-.proofVal{
-  margin-top:5px;
-  font-size:12.5px;
-  color:var(--muted);
-  line-height:1.35;
-}
-
-.fineDisclaimer{
+.heroFine{
   margin-top:14px;
   font-size:12px;
   color:var(--muted);
   line-height:1.45;
 }
 
-/* =========================================
-   BUTTONS
-========================================= */
-
+/* Buttons */
 .btnPrimary{
   background:var(--primary);
   color:#fff;
   border:none;
-  border-radius:var(--radius-md);
+  border-radius:var(--r-md);
   padding:13px 16px;
   font-weight:900;
   cursor:pointer;
@@ -241,33 +197,20 @@ button{ font-family:inherit; }
   transform:translateY(-1px);
 }
 
-.btnPrimary:disabled{
-  opacity:.65;
-  cursor:not-allowed;
-  transform:none;
-  box-shadow:none;
-}
+.btnPrimary:disabled{ opacity:.65; cursor:not-allowed; transform:none; box-shadow:none; }
 
 .btnSecondary{
   background:#f1f5f9;
   border:1px solid rgba(15,23,42,.12);
-  border-radius:var(--radius-md);
+  border-radius:var(--r-md);
   padding:12px 14px;
   font-weight:900;
   cursor:pointer;
-  transition:transform .12s ease, box-shadow .12s ease, background .12s ease, opacity .12s ease;
+  transition:transform .12s ease, background .12s ease, opacity .12s ease;
 }
 
-.btnSecondary:hover{
-  background:#eaf0f7;
-  transform:translateY(-1px);
-}
-
-.btnSecondary:disabled{
-  opacity:.65;
-  cursor:not-allowed;
-  transform:none;
-}
+.btnSecondary:hover{ background:#eaf0f7; transform:translateY(-1px); }
+.btnSecondary:disabled{ opacity:.65; cursor:not-allowed; transform:none; }
 
 .btnBest{
   border-color:rgba(37,99,235,.35);
@@ -277,36 +220,16 @@ button{ font-family:inherit; }
 
 .btnBest:hover{ background:rgba(37,99,235,.10); }
 
-.btnGhost{
-  background:transparent;
-  border:1px solid rgba(15,23,42,.14);
-  border-radius:var(--radius-md);
-  padding:13px 16px;
-  font-weight:900;
-  color:var(--text);
-  cursor:pointer;
-  transition:transform .12s ease, background .12s ease, border-color .12s ease;
-}
-
-.btnGhost:hover{
-  background:rgba(15,23,42,.04);
-  transform:translateY(-1px);
-  border-color:rgba(15,23,42,.18);
-}
-
 .btnLink{
   display:inline-flex;
   align-items:center;
   justify-content:center;
 }
 
-/* =========================================
-   SCAN CARD
-========================================= */
-
+/* Scan Card */
 .scanCard{
   background:var(--panel);
-  border-radius:var(--radius-lg);
+  border-radius:var(--r-lg);
   padding:22px;
   box-shadow:var(--shadow-strong);
   border:1px solid rgba(15,23,42,.12);
@@ -320,17 +243,8 @@ button{ font-family:inherit; }
   margin-bottom:16px;
 }
 
-.scanTitle{
-  font-size:16px;
-  font-weight:900;
-  letter-spacing:-.2px;
-}
-
-.scanSub{
-  font-size:13.5px;
-  color:var(--muted);
-  margin-top:4px;
-}
+.scanTitle{ font-size:16px; font-weight:900; letter-spacing:-.2px; }
+.scanSub{ font-size:13.5px; color:var(--muted); margin-top:4px; }
 
 .scanPrice{ text-align:right; min-width:110px; }
 .scanPriceTop{ font-size:12px; color:var(--muted); font-weight:900; }
@@ -345,7 +259,7 @@ button{ font-family:inherit; }
 .scanForm input{
   flex:1;
   padding:13px 14px;
-  border-radius:var(--radius-md);
+  border-radius:var(--r-md);
   border:1px solid rgba(15,23,42,.14);
   background:#fff;
   font-size:15px;
@@ -389,22 +303,6 @@ button{ font-family:inherit; }
 .noteDotInfo{ background:rgba(37,99,235,.95); }
 .noteDotWarn{ background:rgba(217,119,6,.95); }
 
-.scanFoot{
-  margin-top:16px;
-  padding-top:14px;
-  border-top:1px solid rgba(15,23,42,.10);
-}
-
-.tiny{
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.45;
-}
-
-/* =========================================
-   PREVIEW
-========================================= */
-
 .preview{
   margin-top:16px;
   padding-top:16px;
@@ -418,16 +316,8 @@ button{ font-family:inherit; }
   gap:14px;
 }
 
-.previewTitle{
-  font-weight:900;
-  font-size:15px;
-  letter-spacing:-.2px;
-}
-
-.previewHint{
-  font-size:12.5px;
-  color:var(--muted);
-}
+.previewTitle{ font-weight:900; font-size:15px; letter-spacing:-.2px; }
+.previewHint{ font-size:12.5px; color:var(--muted); }
 
 .findings{
   margin:14px 0 12px;
@@ -449,11 +339,7 @@ button{ font-family:inherit; }
   margin-top:10px;
 }
 
-.fineprint{
-  font-size:12px;
-  color:var(--muted);
-  margin-left:2px;
-}
+.fineprint{ font-size:12px; color:var(--muted); margin-left:2px; }
 
 .split{
   display:grid;
@@ -469,23 +355,18 @@ button{ font-family:inherit; }
   border:1px solid rgba(15,23,42,.10);
 }
 
-.miniCard h3{
-  font-size:13px;
-  margin:0 0 8px;
-  letter-spacing:-.1px;
+.miniCard h3{ font-size:13px; margin:0 0 8px; letter-spacing:-.1px; }
+.miniCard p{ font-size:12.8px; color:var(--muted); line-height:1.55; margin:0; }
+
+.scanFoot{
+  margin-top:16px;
+  padding-top:14px;
+  border-top:1px solid rgba(15,23,42,.10);
 }
 
-.miniCard p{
-  font-size:12.8px;
-  color:var(--muted);
-  line-height:1.55;
-  margin:0;
-}
+.tiny{ font-size:12px; color:var(--muted); line-height:1.45; }
 
-/* =========================================
-   TRUST ROW
-========================================= */
-
+/* Trust */
 .trustRow{
   margin-top:12px;
   display:grid;
@@ -504,10 +385,7 @@ button{ font-family:inherit; }
 .trustTop{ font-weight:900; font-size:13px; letter-spacing:-.1px; }
 .trustBottom{ margin-top:4px; font-size:12.5px; color:var(--muted); }
 
-/* =========================================
-   SECTIONS
-========================================= */
-
+/* Sections */
 .section{ padding:76px 0; }
 
 .section h2{
@@ -524,11 +402,30 @@ button{ font-family:inherit; }
   line-height:1.65;
 }
 
-.sectionAlt{
-  background:rgba(255,255,255,.55);
-  border:1px solid rgba(15,23,42,.06);
-  border-left:0;
-  border-right:0;
+.receiveGrid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:14px;
+}
+
+.receiveCard{
+  background:var(--panel);
+  border-radius:14px;
+  padding:16px;
+  border:1px solid rgba(15,23,42,.10);
+  box-shadow:var(--shadow-soft);
+}
+
+.receiveTitle{
+  font-weight:900;
+  letter-spacing:-.1px;
+}
+
+.receiveText{
+  margin-top:8px;
+  font-size:13.5px;
+  color:var(--muted);
+  line-height:1.55;
 }
 
 .grid{
@@ -548,75 +445,7 @@ button{ font-family:inherit; }
 .pillTitle{ font-weight:900; margin-bottom:6px; letter-spacing:-.1px; }
 .pillText{ font-size:14px; color:var(--muted); line-height:1.55; }
 
-/* =========================================
-   STEPS
-========================================= */
-
-.steps{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  max-width:820px;
-}
-
-.step{
-  display:flex;
-  gap:14px;
-  align-items:flex-start;
-  padding:14px;
-  border-radius:14px;
-  border:1px solid rgba(15,23,42,.10);
-  background:rgba(255,255,255,.82);
-  box-shadow:var(--shadow-soft);
-}
-
-.stepNum{
-  background:var(--primary);
-  color:#fff;
-  width:34px;
-  height:34px;
-  border-radius:999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:900;
-  flex:0 0 auto;
-}
-
-.stepTitle{ font-weight:900; letter-spacing:-.1px; }
-.stepText{ font-size:13.5px; color:var(--muted); margin-top:4px; line-height:1.55; }
-
-/* =========================================
-   CTA BAND
-========================================= */
-
-.ctaBand{
-  margin-top:26px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:16px;
-  border-radius:14px;
-  border:1px solid rgba(15,23,42,.10);
-  background:rgba(255,255,255,.82);
-  box-shadow:var(--shadow-soft);
-}
-
-.ctaBandTitle{ font-weight:900; letter-spacing:-.2px; }
-.ctaBandText{ font-size:13.5px; color:var(--muted); margin-top:4px; }
-
-.ctaBandBtns{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  align-items:center;
-}
-
-/* =========================================
-   FAQ
-========================================= */
-
+/* FAQ */
 .faq{
   max-width:920px;
   display:flex;
@@ -629,7 +458,6 @@ button{ font-family:inherit; }
   border-radius:14px;
   background:rgba(255,255,255,.86);
   box-shadow:var(--shadow-soft);
-  padding:0;
   overflow:hidden;
 }
 
@@ -638,7 +466,6 @@ button{ font-family:inherit; }
   cursor:pointer;
   padding:14px 14px;
   font-weight:900;
-  color:#0f172a;
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -646,13 +473,7 @@ button{ font-family:inherit; }
 }
 
 .qa summary::-webkit-details-marker{ display:none; }
-
-.qa summary::after{
-  content:"+";
-  font-weight:900;
-  color:rgba(15,23,42,.55);
-}
-
+.qa summary::after{ content:"+"; font-weight:900; color:rgba(15,23,42,.55); }
 .qa[open] summary::after{ content:"–"; }
 
 .qaBody{
@@ -662,10 +483,7 @@ button{ font-family:inherit; }
   line-height:1.65;
 }
 
-/* =========================================
-   FOOTER
-========================================= */
-
+/* Footer */
 .footer{
   border-top:1px solid rgba(15,23,42,.10);
   padding:52px 0;
@@ -698,36 +516,14 @@ button{ font-family:inherit; }
 }
 
 .footerName{ font-weight:900; letter-spacing:-.1px; }
-
-.footerTag{
-  font-size:13px;
-  color:var(--muted);
-  margin-top:4px;
-  line-height:1.45;
-}
-
+.footerTag{ font-size:13px; color:var(--muted); margin-top:4px; line-height:1.45; }
 .footerCols{ display:flex; gap:42px; flex-wrap:wrap; }
 .footerColTitle{ font-weight:900; margin-bottom:10px; letter-spacing:-.1px; }
-
-.footerLink{
-  display:block;
-  font-size:14px;
-  color:var(--muted);
-  margin-bottom:8px;
-}
+.footerLink{ display:block; font-size:14px; color:var(--muted); margin-bottom:8px; }
 .footerLink:hover{ color:var(--primary); }
+.footerFine{ font-size:13px; color:var(--muted); max-width:380px; line-height:1.55; }
 
-.footerFine{
-  font-size:13px;
-  color:var(--muted);
-  max-width:380px;
-  line-height:1.55;
-}
-
-/* =========================================
-   ACCESSIBILITY / UTIL
-========================================= */
-
+/* Util */
 .mono{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
@@ -748,11 +544,7 @@ button{ font-family:inherit; }
   border-radius:12px;
 }
 
-/* =========================================
-   INJECTED ELITE PREVIEW SHELL (app.js)
-   Keep these so your injected UI matches.
-========================================= */
-
+/* Injected preview shell (app.js) */
 #wrcNotice,
 #wrcSuccessNotice,
 #wrcThreepackNotice{
@@ -814,34 +606,19 @@ button{ font-family:inherit; }
   #wrcGrid{ grid-template-columns:1fr; }
 }
 
-/* =========================================
-   RESPONSIVE
-========================================= */
-
+/* Responsive */
 @media (max-width: 980px){
   .navLinks{ display:none; }
 
-  .heroGrid{
-    grid-template-columns:1fr;
-    gap:18px;
-  }
-
+  .heroGrid{ grid-template-columns:1fr; gap:18px; }
   .heroTitle{ font-size:42px; }
 
   .scanForm{ flex-direction:column; }
   .trustRow{ grid-template-columns:1fr; }
   .split{ grid-template-columns:1fr; }
-  .proofRow{ grid-template-columns:1fr; }
+  .receiveGrid{ grid-template-columns:1fr; }
 
   .footerInner{ flex-direction:column; }
-
-  .ctaBand{
-    flex-direction:column;
-    align-items:flex-start;
-  }
-
-  .ctaBandBtns{ width:100%; }
-  .ctaBandBtns .btnSecondary{ width:100%; }
 }
 
 @media (max-width: 460px){

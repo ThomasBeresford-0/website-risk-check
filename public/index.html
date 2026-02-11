@@ -7,11 +7,11 @@
 
   <meta
     name="description"
-    content="Generate a point-in-time, verifiable snapshot of objectively detectable website signals. Free preview in seconds. Pay once for a timestamped PDF with a permanent share link and verification."
+    content="Generate a point-in-time, verifiable snapshot of objectively detectable website signals. Free preview in seconds. Pay once for a timestamped PDF with a permanent share link and public verification."
   />
 
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 
 <body>
@@ -26,8 +26,8 @@
         </a>
 
         <div class="navLinks">
-          <a class="navLink" href="#what">What it checks</a>
-          <a class="navLink" href="#how">How it works</a>
+          <a class="navLink" href="#what">Coverage</a>
+          <a class="navLink" href="#how">Method</a>
           <a class="navLink" href="#faq">FAQ</a>
         </div>
 
@@ -38,131 +38,102 @@
     </nav>
 
     <main class="wrap">
-      <header class="hero heroHuman">
-        <div class="heroGrid heroGridHuman">
-          <div class="heroLeft heroLeftHuman">
-            <div class="kickerRow">
-              <span class="kicker">Point-in-time snapshot</span>
-              <span class="kickerSep" aria-hidden="true">•</span>
-              <span class="kicker">Public verification</span>
-              <span class="kickerSep" aria-hidden="true">•</span>
-              <span class="kicker">Pay once</span>
-            </div>
+      <header class="hero" id="top">
+        <div class="heroGrid">
+          <!-- LEFT -->
+          <div class="heroLeft">
+            <div class="eyebrow">Point-in-time • Verifiable • Pay once</div>
 
-            <h1 class="heroTitleHuman">
-              A website snapshot you can <span class="underline">prove</span> later.
+            <h1 class="heroTitle">
+              A website snapshot built for evidence — not dashboards.
             </h1>
 
-            <p class="heroLead heroLeadHuman">
-              This isn’t monitoring and it isn’t a compliance certificate.
-              It’s a <strong>single evidentiary artifact</strong>: a timestamped PDF capturing objectively detectable signals
-              (policies, consent indicators, tracking scripts, form/data-capture heuristics, accessibility red flags and identity/contact cues).
+            <p class="heroLead">
+              Run a scan to capture objectively detectable signals (policies, consent indicators, tracking scripts,
+              forms/data-capture heuristics, accessibility red flags, and contact/identity cues).
+              Pay once to generate a <strong>timestamped PDF artifact</strong> with a <strong>permanent share link</strong>
+              and <strong>public verification</strong>.
             </p>
 
-            <div class="heroButtons">
-              <a class="btnPrimary btnLink btnBig" href="#scan">Run free scan</a>
-              <a class="btnSecondary btnLink btnBig" href="#sample">View sample report</a>
+            <div class="heroActions">
+              <a class="btnPrimary btnLink" href="#scan">Run free scan</a>
+              <a class="btnGhost btnLink" href="#sample">View sample</a>
             </div>
 
-            <div class="microTruth">
-              <div class="microTruthLeft">What you get after payment:</div>
-              <div class="microTruthRight">
-                PDF snapshot + permanent share link + public verification page
+            <div class="proofRow" aria-label="Key outputs">
+              <div class="proofItem">
+                <div class="proofKey">PDF snapshot</div>
+                <div class="proofVal">Timestamped + immutable</div>
+              </div>
+              <div class="proofItem">
+                <div class="proofKey mono">/r/:token</div>
+                <div class="proofVal">Permanent share link</div>
+              </div>
+              <div class="proofItem">
+                <div class="proofKey mono">/verify/:hash</div>
+                <div class="proofVal">Public verification</div>
               </div>
             </div>
 
-            <section class="artifactWrap" aria-label="Artifact features">
-              <div class="artifactCard artifactCardHuman">
-                <div class="artifactHeader">
-                  <div class="artifactTag">Artifact</div>
-                  <div class="artifactName">Immutable snapshot report</div>
-                </div>
-
-                <div class="artifactGrid artifactGridHuman">
-                  <div class="artifactMini">
-                    <div class="artifactMiniLabel">Timestamp</div>
-                    <div class="artifactMiniText">Recorded in the report</div>
-                  </div>
-                  <div class="artifactMini">
-                    <div class="artifactMiniLabel">Share link</div>
-                    <div class="artifactMiniText mono">/r/:token</div>
-                  </div>
-                  <div class="artifactMini">
-                    <div class="artifactMiniLabel">Verification</div>
-                    <div class="artifactMiniText mono">/verify/:hash</div>
-                  </div>
-                  <div class="artifactMini">
-                    <div class="artifactMiniLabel">Coverage</div>
-                    <div class="artifactMiniText">Checked + failed pages listed</div>
-                  </div>
-                </div>
-
-                <div class="artifactFine">
-                  <span class="tiny">
-                    Verification is derived from an integrity hash based on objective audit fields.
-                    If the artifact changes, verification fails.
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            <div class="legalNote tiny">
-              Not legal advice. Not certification. Not monitoring. Records observable signals only.
+            <div class="fineDisclaimer">
+              Not legal advice. Not certification. Not monitoring. Observable signals only.
             </div>
           </div>
 
-          <div class="heroRight heroRightHuman" id="scan">
-            <div class="scanCard scanCardHuman">
+          <!-- RIGHT -->
+          <div class="heroRight" id="scan">
+            <div class="scanCard">
               <div class="scanHead">
                 <div>
                   <div class="scanTitle">Run a free scan</div>
-                  <div class="scanSub">Structured preview first. No account.</div>
+                  <div class="scanSub">Structured preview first. No account required.</div>
                 </div>
+
                 <div class="scanPrice">
                   <div class="scanPriceTop">Full report</div>
                   <div class="scanPriceValue">£99</div>
                 </div>
               </div>
 
-              <!-- Required by app.js -->
+              <!-- REQUIRED BY app.js -->
               <form id="check-form" class="scanForm">
                 <label class="srOnly" for="url-input">Website URL</label>
                 <input id="url-input" type="url" placeholder="https://yourwebsite.com" required autocomplete="url" />
                 <button id="scanBtn" type="submit" class="btnPrimary">Run free scan</button>
               </form>
 
-              <div class="scanNotes scanNotesHuman">
+              <div class="scanNotes">
                 <div class="noteRow">
-                  <span class="dot dotGreen" aria-hidden="true"></span>
-                  <span><strong>Free preview</strong> shows top findings only</span>
+                  <span class="noteDot noteDotOk" aria-hidden="true"></span>
+                  <span><strong>Preview</strong> shows top findings only</span>
                 </div>
                 <div class="noteRow">
-                  <span class="dot dotBlue" aria-hidden="true"></span>
+                  <span class="noteDot noteDotInfo" aria-hidden="true"></span>
                   <span>Paid report includes <strong>timestamped PDF</strong> + <strong>permanent share link</strong></span>
                 </div>
                 <div class="noteRow">
-                  <span class="dot dotAmber" aria-hidden="true"></span>
-                  <span>Secure checkout via Stripe • One-time payment</span>
+                  <span class="noteDot noteDotWarn" aria-hidden="true"></span>
+                  <span>Stripe checkout • One-time payment • No subscription</span>
                 </div>
               </div>
 
-              <!-- Required by app.js -->
-              <div id="preview" class="preview previewHuman">
+              <!-- REQUIRED BY app.js -->
+              <div id="preview" class="preview">
                 <div class="previewHead">
                   <div class="previewTitle">Preview findings</div>
                   <div class="previewHint">Upgrade to download the full PDF</div>
                 </div>
 
-                <!-- Required by app.js -->
+                <!-- REQUIRED BY app.js -->
                 <ul id="findings" class="findings"></ul>
 
-                <div class="ctaRow ctaRowHuman">
-                  <!-- Required by app.js -->
+                <div class="ctaRow">
+                  <!-- REQUIRED BY app.js -->
                   <button id="pay-button" class="btnSecondary" type="button">
                     Download full PDF report (£99)
                   </button>
 
-                  <!-- Required by app.js -->
+                  <!-- REQUIRED BY app.js -->
                   <button id="threepack-button" class="btnSecondary btnBest" type="button">
                     Best value: 3 reports (£199)
                   </button>
@@ -170,7 +141,7 @@
                   <span class="fineprint">Secure checkout via Stripe</span>
                 </div>
 
-                <div class="split splitHuman">
+                <div class="split">
                   <div class="miniCard">
                     <h3>Included</h3>
                     <p>
@@ -194,7 +165,7 @@
               </div>
             </div>
 
-            <div class="trustRow trustRowHuman" aria-label="Trust indicators">
+            <div class="trustRow" aria-label="Trust indicators">
               <div class="trustItem">
                 <div class="trustTop">One-time payment</div>
                 <div class="trustBottom">No ongoing fees</div>
@@ -215,8 +186,7 @@
       <section class="section sectionAlt" id="sample">
         <h2>Sample verified report</h2>
         <p class="sectionLead">
-          Replace these links with your real published sample token/hash.
-          A real sample does more for trust than another paragraph ever will.
+          Replace these links with your real published sample token/hash. A real sample is the strongest trust signal.
         </p>
 
         <div class="ctaBand">
@@ -233,7 +203,7 @@
       </section>
 
       <section class="section" id="what">
-        <h2>What it checks</h2>
+        <h2>Coverage</h2>
         <p class="sectionLead">
           A signal-based snapshot. It records what’s detectable at scan-time — nothing more, nothing less.
         </p>
@@ -267,7 +237,7 @@
       </section>
 
       <section class="section" id="how">
-        <h2>How it works</h2>
+        <h2>Method</h2>
 
         <div class="steps">
           <div class="step">
@@ -349,7 +319,7 @@
             <div class="footerCol">
               <div class="footerColTitle">Product</div>
               <a class="footerLink" href="#scan">Run scan</a>
-              <a class="footerLink" href="#what">What it checks</a>
+              <a class="footerLink" href="#what">Coverage</a>
               <a class="footerLink" href="#faq">FAQ</a>
             </div>
 

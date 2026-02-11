@@ -7,149 +7,138 @@
 
   <meta
     name="description"
-    content="Your Website Risk Check report has been issued. Download, verify, and share an immutable point-in-time snapshot."
+    content="Your report has been issued. Download, share, and verify a sealed point-in-time snapshot."
   />
 
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
-  <div class="bgFX" aria-hidden="true"></div>
+  <div class="bg" aria-hidden="true"></div>
 
-  <div class="page">
-    <nav class="nav">
-      <div class="navInner">
-        <a class="brand" href="/" aria-label="Website Risk Check">
-          <span class="brandMark" aria-hidden="true"></span>
-          <span class="brandText">Website Risk Check</span>
-        </a>
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
-        <div class="navCtas">
-          <a class="navPill" href="/#scan">Run a scan</a>
-        </div>
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
       </div>
-    </nav>
+    </div>
+  </nav>
 
-    <main class="wrap" style="padding: 34px 0 84px;">
-      <div id="success-card" class="scanCard" style="max-width: 920px; margin: 0 auto;">
-        <div class="scanHead" style="margin-bottom: 10px;">
+  <main class="page">
+    <section class="container">
+      <div class="successShell">
+
+        <header class="successHead">
           <div>
-            <div class="scanTitle" style="font-size:18px;">Report issued</div>
-            <div class="scanSub">
-              Payment verified. Your snapshot is sealed as a point-in-time record.
+            <div class="successKicker">Report issued</div>
+            <h1 class="successTitle">Snapshot sealed as a point-in-time record.</h1>
+            <p class="successSub">
+              Payment verified. This report reflects what was publicly detectable at scan-time.
+              Once issued, it is immutable — any modification invalidates verification.
+            </p>
+          </div>
+
+          <div class="seal">
+            <span class="sealDot" aria-hidden="true"></span>
+            <span class="sealText">Sealed</span>
+          </div>
+        </header>
+
+        <div id="success-card" class="issueCard">
+          <div class="issueTop">
+            <div>
+              <div class="issueTitle">Your report</div>
+              <div class="issueHint">Download · Permanent link · Verification</div>
             </div>
           </div>
 
-          <div class="statusPill" style="
-              display:inline-flex;align-items:center;gap:10px;
-              padding:10px 14px;border-radius:999px;
-              background:rgba(248,250,252,.92);
-              border:1px solid rgba(15,23,42,.10);
-              font-size:13px;font-weight:800;color:#0f172a;
-            ">
-            <span aria-hidden="true" style="
-                width:10px;height:10px;border-radius:999px;
-                background:rgba(22,163,74,.95);
-                box-shadow:0 0 0 6px rgba(22,163,74,.12);
-              "></span>
-            Snapshot sealed
-          </div>
-        </div>
-
-        <p class="heroLead" style="font-size:15.5px; margin: 0; max-width: 780px;">
-          This report reflects what was publicly detectable at the moment of scanning.
-          Once issued, reports cannot be altered. Any modification invalidates verification.
-        </p>
-
-        <div class="preview" style="margin-top:16px; padding-top:16px;">
-          <div class="previewHead">
-            <div class="previewTitle">Your report</div>
-            <div class="previewHint">Download + permanent link + verification</div>
-          </div>
-
-          <div class="ctaRow" style="margin-top:12px;">
+          <div class="issueActions">
             <button id="download" class="btnPrimary" type="button">Download PDF</button>
-            <button id="copy" class="btnSecondary" type="button" style="display:none;">Copy share link</button>
-            <button id="open" class="btnSecondary" type="button" style="display:none;">Open report</button>
-            <button id="verify" class="btnSecondary" type="button" style="display:none;">Verify integrity</button>
-            <span class="fineprint">No account required</span>
-          </div>
 
-          <div id="share-box" class="box" style="
-              display:none;
-              margin-top:12px;
-              padding:14px;
-              background:rgba(248,250,252,.92);
-              border-radius:16px;
-              font-size:13.5px;
-              word-break:break-all;
-              border:1px solid rgba(15,23,42,.10);
-            "></div>
-
-          <p class="tiny" style="margin-top:12px;">
-            Verification allows any third party to independently confirm this report using its cryptographic fingerprint — no login required.
-          </p>
-
-          <p class="tiny" style="margin-top:10px;">
-            This document is not legal advice and does not certify compliance. It is a factual snapshot of observable signals at a specific time.
-          </p>
-        </div>
-
-        <div class="divider" style="height:1px;background:rgba(15,23,42,.10);margin:22px 0;"></div>
-
-        <div class="previewHead">
-          <div class="previewTitle">Additional snapshots (optional)</div>
-          <div class="previewHint">Same format. Same verification. No subscription.</div>
-        </div>
-
-        <div class="split" style="margin-top:12px;">
-          <div class="miniCard" style="background:rgba(255,255,255,.86);">
-            <h3>Single additional snapshot — £39</h3>
-            <p>
-              Generate an additional sealed snapshot for another domain. Useful for multi-site operators.
-            </p>
-
-            <label class="srOnly" for="upsell-url">Additional website URL</label>
-            <input id="upsell-url" type="url" placeholder="https://another-site.com" style="
-                width:100%;
-                padding:14px 14px;
-                font-size:15px;
-                border-radius:14px;
-                border:1px solid rgba(15,23,42,.14);
-                margin-top:10px;
-                background:#fff;
-              " />
-
-            <div class="ctaRow" style="margin-top:12px;">
-              <button id="upsell" class="btnSecondary" type="button">Run additional scan (£39)</button>
+            <div class="issueRow">
+              <button id="copy" class="btnGhost" type="button" style="display:none;">Copy share link</button>
+              <button id="open" class="btnGhost" type="button" style="display:none;">Open report</button>
+              <button id="verify" class="btnGhost" type="button" style="display:none;">Verify integrity</button>
             </div>
+
+            <div class="issueFine">No account required</div>
           </div>
 
-          <div class="miniCard" style="
-              border-color:rgba(37,99,235,.35);
-              background:linear-gradient(180deg, rgba(37,99,235,.10), rgba(37,99,235,.03));
-            ">
-            <h3>3 snapshots bundle — £99</h3>
+          <div id="share-box" class="shareBox" style="display:none;"></div>
+
+          <div class="issueNotes">
             <p>
-              Redeem at your convenience. Commonly used by agencies and multi-site operators.
+              Verification allows any third party to confirm authenticity using the report’s cryptographic fingerprint — without logging in.
             </p>
-
-            <div class="ctaRow" style="margin-top:12px;">
-              <button id="threepack" class="btnSecondary btnBest" type="button">Get 3 snapshots (£99)</button>
-              <span class="fineprint">Best value</span>
-            </div>
+            <p>
+              Not legal advice. Not certification. Snapshot of observable signals at a specific time.
+            </p>
           </div>
         </div>
 
-        <div class="scanFoot">
-          <span class="tiny">
-            If your download doesn’t start automatically, click “Download PDF”. Your permanent link will appear once the report is ready.
-          </span>
-        </div>
+        <div class="dividerLine"></div>
+
+        <section class="upsell">
+          <header class="upsellHead">
+            <div>
+              <div class="upsellKicker">Optional</div>
+              <h2 class="upsellTitle">Additional snapshots</h2>
+              <p class="upsellSub">Same format. Same verification. No subscription.</p>
+            </div>
+          </header>
+
+          <div class="upsellGrid">
+            <article class="upsellCard">
+              <div class="upsellCardTop">
+                <div class="upsellCardTitle">Single additional snapshot</div>
+                <div class="upsellPrice">£39</div>
+              </div>
+              <p class="upsellCardBody">
+                Generate an additional sealed snapshot for another domain. Useful for multi-site operators.
+              </p>
+
+              <label class="srOnly" for="upsell-url">Additional website URL</label>
+              <input id="upsell-url" type="url" placeholder="https://another-site.com" />
+
+              <div class="upsellActions">
+                <button id="upsell" class="btnGhost btnWide" type="button">Run additional scan (£39)</button>
+              </div>
+
+              <div class="upsellFoot">One-time purchase. Report issued on payment verification.</div>
+            </article>
+
+            <article class="upsellCard upsellCardBest">
+              <div class="upsellCardTop">
+                <div class="upsellCardTitle">3 snapshots bundle</div>
+                <div class="upsellPrice">£99</div>
+              </div>
+              <p class="upsellCardBody">
+                Redeem at your convenience. Commonly used by agencies and multi-site operators.
+              </p>
+
+              <div class="upsellActions">
+                <button id="threepack" class="btnPrimary btnWide" type="button">Get 3 snapshots (£99)</button>
+              </div>
+
+              <div class="upsellFoot"><strong>Best value:</strong> multi-client and multi-site workflows.</div>
+            </article>
+          </div>
+
+          <div class="helperNote">
+            If your download doesn’t start automatically, click “Download PDF”.
+            Your permanent link will appear once the report is ready.
+          </div>
+        </section>
+
       </div>
-    </main>
-  </div>
+    </section>
+  </main>
 
   <script src="success.js?v=3" defer></script>
 </body>

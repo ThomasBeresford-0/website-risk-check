@@ -4,155 +4,185 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>Website Compliance Check — Instant Risk Snapshot</title>
+  <title>Website Compliance Check | Client-ready Risk Snapshot</title>
 
   <meta
     name="description"
-    content="Run an instant website compliance check. Get a one-time, timestamped snapshot showing detectable GDPR, cookie, privacy, and accessibility risk signals."
+    content="Website compliance check for detectable GDPR, cookie, privacy and accessibility signals. Free preview. One-time payment for a timestamped PDF report with share link and public verification."
   />
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 0;
-      padding: 48px 20px;
-      background: #f7f7f8;
-      color: #111;
-    }
-
-    .wrap {
-      max-width: 860px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 40px;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-    }
-
-    h1 {
-      font-size: 36px;
-      margin-bottom: 14px;
-      letter-spacing: -0.02em;
-    }
-
-    h2 {
-      margin-top: 42px;
-      font-size: 24px;
-    }
-
-    p {
-      font-size: 16px;
-      line-height: 1.6;
-      color: #333;
-    }
-
-    ul {
-      margin-left: 20px;
-      margin-top: 12px;
-    }
-
-    li {
-      margin-bottom: 8px;
-    }
-
-    .cta {
-      margin-top: 32px;
-      padding: 18px 22px;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      background: #111;
-      color: #fff;
-    }
-
-    .box {
-      background: #f2f2f3;
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 26px;
-      font-size: 15px;
-    }
-
-    .muted {
-      font-size: 14px;
-      color: #666;
-      margin-top: 18px;
-    }
-  </style>
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>Website compliance check</h1>
+  <div class="bg" aria-hidden="true"></div>
 
-    <p>
-      This tool provides a fast, neutral way to check your website for
-      <strong>detectable compliance and risk signals</strong>.
-    </p>
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
-    <p>
-      It does not promise compliance. It does not monitor anything.
-      It simply shows what is visibly present on your website
-      at a specific moment in time.
-    </p>
+      <div class="navLinks">
+        <a href="#checks">What it checks</a>
+        <a href="#deliver">What you get</a>
+        <a href="#faq">FAQ</a>
+      </div>
 
-    <button class="cta" onclick="window.location.href='/'">
-      Run a free website compliance scan
-    </button>
-
-    <h2>What this website compliance check looks for</h2>
-
-    <ul>
-      <li>Privacy policy and terms page presence</li>
-      <li>Cookie usage and consent banner detection</li>
-      <li>Tracking and analytics scripts</li>
-      <li>Forms collecting personal data</li>
-      <li>Basic accessibility red flags</li>
-      <li>Contact and business information visibility</li>
-    </ul>
-
-    <h2>What you get</h2>
-
-    <ul>
-      <li>A clear risk level (Low / Medium / High)</li>
-      <li>A checklist of detectable findings</li>
-      <li>Plain-English explanations</li>
-      <li>A timestamped, downloadable PDF report</li>
-    </ul>
-
-    <div class="box">
-      <strong>This is a one-time snapshot.</strong><br />
-      There are no accounts, subscriptions, dashboards, or follow-up emails.
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
+      </div>
     </div>
+  </nav>
 
-    <h2>Who this is for</h2>
+  <main class="page">
+    <section class="container">
+      <div class="seoShell">
 
-    <ul>
-      <li>Small business owners</li>
-      <li>Founders with live websites</li>
-      <li>Agencies reviewing client sites</li>
-      <li>Freelancers and consultants</li>
-    </ul>
+        <header class="seoHero">
+          <div class="seoKicker">Website compliance check</div>
+          <h1 class="seoTitle">Instant website compliance check — a point-in-time risk snapshot.</h1>
+          <p class="seoSub">
+            Check a website for <strong>detectable compliance and risk signals</strong> (GDPR/cookies, privacy pages, tracking scripts,
+            forms and basic accessibility notes). Generate a timestamped PDF deliverable you can file or share.
+          </p>
 
-    <h2>What this is not</h2>
+          <div class="seoCtas">
+            <a class="navBtn seoBtn" href="/#scan">Run a free preview</a>
+            <a class="btnGhost seoBtn" href="/#scan">Go to scan panel</a>
+          </div>
 
-    <ul>
-      <li>Not legal advice</li>
-      <li>Not a GDPR certification</li>
-      <li>Not ongoing compliance monitoring</li>
-      <li>Not a cookie banner or policy generator</li>
-    </ul>
+          <div class="heroFine">
+            Snapshot of observable signals at scan-time. Not legal advice. Not certification. No monitoring.
+          </div>
+        </header>
 
-    <button class="cta" onclick="window.location.href='/'">
-      Check your website now
-    </button>
+        <section class="seoSection sectionAltEdge" id="checks">
+          <div class="sectionHead">
+            <h2>What this website compliance check looks for</h2>
+            <p>
+              Website Risk Check scans a small, scope-limited set of pages and records what is objectively detectable at that moment.
+              It’s designed for fast documentation — not deep legal interpretation.
+            </p>
+          </div>
 
-    <p class="muted">
-      Website Risk Check provides a factual, point-in-time diagnostic snapshot
-      based on detectable signals only.
-    </p>
-  </div>
+          <div class="seoGrid">
+            <div class="seoItem">
+              <div class="seoItemTitle">Policies & disclosures</div>
+              <div class="seoItemText">Presence of privacy policy, terms, cookies pages and related disclosures.</div>
+            </div>
+            <div class="seoItem">
+              <div class="seoItemTitle">Cookies & tracking signals</div>
+              <div class="seoItemText">Common trackers, third-party scripts and analytics indicators (heuristic).</div>
+            </div>
+            <div class="seoItem">
+              <div class="seoItemTitle">Consent indicators</div>
+              <div class="seoItemText">Signals suggesting cookie/consent banner behaviour (heuristic).</div>
+            </div>
+            <div class="seoItem">
+              <div class="seoItemTitle">Forms & data capture</div>
+              <div class="seoItemText">Obvious form fields that may collect personal data (heuristic).</div>
+            </div>
+            <div class="seoItem">
+              <div class="seoItemTitle">Accessibility notes</div>
+              <div class="seoItemText">Basic red flags (e.g., missing alt text signals) where detectable.</div>
+            </div>
+            <div class="seoItem">
+              <div class="seoItemTitle">Contact & identity cues</div>
+              <div class="seoItemText">Visible contact details and business information signals on scanned pages.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="seoSection" id="deliver">
+          <div class="sectionHead">
+            <h2>What you get</h2>
+            <p>
+              A structured, client-ready document you can attach to proposals, audits, launches and handovers.
+            </p>
+          </div>
+
+          <div class="reportGrid">
+            <div class="reportCard">
+              <div class="rcTop">Risk level summary</div>
+              <div class="rcBody">Low / Medium / High signal-based summary with plain-English rationale.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">Checklist of findings</div>
+              <div class="rcBody">Detected signals grouped by category, designed to be read quickly.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">Timestamped PDF deliverable</div>
+              <div class="rcBody">Report is sealed at issuance — suitable for documentation trails.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">Share link + verification</div>
+              <div class="rcBody">Permanent link plus public integrity verification for tamper checks.</div>
+            </div>
+          </div>
+
+          <div class="seoCallout">
+            <strong>This is a one-time snapshot.</strong>
+            No accounts, subscriptions, dashboards, or follow-up emails. Run a preview for free and upgrade only if you want the issued report.
+          </div>
+
+          <div class="finalCta" style="margin-top:18px;">
+            <div>
+              <div class="finalTitle">Run a website compliance check now</div>
+              <div class="finalSub">Free structured preview. One-time payment for the issued PDF deliverable.</div>
+            </div>
+            <a class="finalBtn" href="/#scan">Run a scan</a>
+          </div>
+        </section>
+
+        <section class="seoSection sectionAltEdge" id="faq">
+          <div class="sectionHead">
+            <h2>FAQ</h2>
+            <p>Clear answers that set correct expectations.</p>
+          </div>
+
+          <div class="faq">
+            <details class="qa">
+              <summary>Does this guarantee compliance?</summary>
+              <div class="qaBody">
+                No. This is a documentation snapshot of observable signals at scan-time. It does not certify compliance.
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Is this legal advice?</summary>
+              <div class="qaBody">
+                No. The report is not legal advice. It documents detectable signals and highlights potential risk indicators.
+              </div>
+            </details>
+
+            <details class="qa">
+              <summary>Who is this for?</summary>
+              <div class="qaBody">
+                Agencies, consultants, founders and business owners who need a fast, client-ready record of website conditions.
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <footer class="footer" style="margin-top:30px;">
+          <div class="container footerInner" style="padding:0;">
+            <div class="footerLeft">
+              <div class="footerBrand">Website Risk Check</div>
+              <div class="footerTag">Client-ready website compliance & risk documentation.</div>
+            </div>
+            <div class="footerRight">
+              <div class="footerFine">
+                Point-in-time snapshot only. Not legal advice, certification, compliance guarantees, or monitoring.
+              </div>
+            </div>
+          </div>
+        </footer>
+
+      </div>
+    </section>
+  </main>
 </body>
 </html>

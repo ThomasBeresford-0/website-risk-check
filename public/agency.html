@@ -4,179 +4,191 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>Website Risk Check for Agencies</title>
+  <title>For Agencies — Website Risk Check</title>
 
   <meta
     name="description"
-    content="A neutral, one-time website compliance snapshot agencies use before launches, audits, and client handovers."
+    content="Client-ready website compliance & risk reports agencies use for audits, launches, and handovers. One-time snapshots. Timestamped PDFs with share links and public verification."
   />
 
-  <style>
-    :root {
-      --bg: #f7f7f8;
-      --card: #ffffff;
-      --text: #111;
-      --muted: #666;
-      --border: #e5e7eb;
-      --accent: #111;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      padding: 48px 20px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .wrap {
-      max-width: 900px;
-      margin: 0 auto;
-      background: var(--card);
-      padding: 48px;
-      border-radius: 18px;
-      box-shadow: 0 24px 48px rgba(0,0,0,0.08);
-    }
-
-    h1 {
-      font-size: 38px;
-      margin-bottom: 14px;
-      letter-spacing: -0.02em;
-    }
-
-    h2 {
-      font-size: 26px;
-      margin-top: 48px;
-    }
-
-    p {
-      font-size: 16px;
-      line-height: 1.6;
-      color: #333;
-    }
-
-    ul {
-      margin: 16px 0 0 22px;
-    }
-
-    li {
-      margin-bottom: 10px;
-    }
-
-    .callout {
-      margin-top: 32px;
-      padding: 22px;
-      background: #f2f2f3;
-      border-radius: 14px;
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    .cta {
-      margin-top: 36px;
-      padding: 18px 26px;
-      font-size: 18px;
-      font-weight: 600;
-      border: none;
-      border-radius: 14px;
-      cursor: pointer;
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .muted {
-      margin-top: 20px;
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 48px 0;
-    }
-  </style>
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
-  <div class="wrap">
-    <h1>Website Risk Check for Agencies</h1>
+  <div class="bg" aria-hidden="true"></div>
 
-    <p>
-      This is a <strong>neutral, one-time website compliance snapshot</strong>
-      agencies use before launches, audits, and client handovers.
-    </p>
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
-    <p>
-      It does not promise compliance. It does not monitor anything.
-      It simply produces a clear, timestamped record of what was detectable
-      on a client website at a specific moment in time.
-    </p>
+      <div class="navLinks">
+        <a href="#why">Why agencies use this</a>
+        <a href="#use">Use cases</a>
+        <a href="#receive">What you deliver</a>
+      </div>
 
-    <button class="cta" onclick="window.location.href='/'">
-      Run a free agency scan
-    </button>
-
-    <div class="divider"></div>
-
-    <h2>Why agencies use this</h2>
-
-    <ul>
-      <li>Creates neutral evidence before or after launches</li>
-      <li>Reduces subjective compliance discussions with clients</li>
-      <li>Provides a timestamped record for internal files</li>
-      <li>Can be shared without explanations or logins</li>
-      <li>Feels professional, boring, and defensible</li>
-    </ul>
-
-    <h2>Common agency use cases</h2>
-
-    <ul>
-      <li>Pre-launch website checks</li>
-      <li>Client onboarding audits</li>
-      <li>End-of-project handovers</li>
-      <li>Risk documentation for retained clients</li>
-      <li>Internal QA sign-off</li>
-    </ul>
-
-    <div class="callout">
-      <strong>This is not a SaaS platform.</strong><br />
-      There are no accounts, subscriptions, dashboards, or ongoing monitoring.
-      Each scan is a one-off snapshot you can attach to client records or emails.
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
+      </div>
     </div>
+  </nav>
 
-    <h2>What agencies receive</h2>
+  <main class="page">
+    <section class="container">
+      <div class="agencyShell">
 
-    <ul>
-      <li>Low / Medium / High risk summary</li>
-      <li>Clear checklist of detectable signals</li>
-      <li>Plain-English explanations</li>
-      <li>Timestamped, shareable PDF report</li>
-      <li>Permanent link suitable for client delivery</li>
-    </ul>
+        <header class="agencyHero">
+          <div class="agencyKicker">Agency deliverable</div>
+          <h1 class="agencyTitle">Client-ready compliance & risk reports — without the SaaS baggage.</h1>
+          <p class="agencySub">
+            Website Risk Check produces a neutral, point-in-time snapshot of what’s detectable on a client website.
+            It’s designed to be attached to audits, proposals, launches and handovers — as evidence, not opinion.
+          </p>
 
-    <div class="divider"></div>
+          <div class="agencyHeroGrid">
+            <div class="agencyStat">
+              <div class="agencyStatTop">One-time</div>
+              <div class="agencyStatBottom">No subscription</div>
+            </div>
+            <div class="agencyStat">
+              <div class="agencyStatTop">Deliverable</div>
+              <div class="agencyStatBottom">Timestamped PDF</div>
+            </div>
+            <div class="agencyStat">
+              <div class="agencyStatTop">Client delivery</div>
+              <div class="agencyStatBottom">Permanent share link</div>
+            </div>
+            <div class="agencyStat">
+              <div class="agencyStatTop">Integrity</div>
+              <div class="agencyStatBottom">Public verification</div>
+            </div>
+          </div>
 
-    <h2>What this is not</h2>
+          <div class="agencyCtas">
+            <a class="navBtn agencyBtn" href="/#scan">Run a free preview</a>
+            <a class="btnGhost agencyBtn" href="/#scan">Go to scan panel</a>
+          </div>
 
-    <ul>
-      <li>Not legal advice</li>
-      <li>Not a GDPR certification</li>
-      <li>Not ongoing compliance monitoring</li>
-      <li>Not a cookie banner or policy generator</li>
-    </ul>
+          <div class="heroFine">
+            Not legal advice. Not certification. No monitoring. Observable signals only.
+          </div>
+        </header>
 
-    <button class="cta" onclick="window.location.href='/'">
-      Check a client website
-    </button>
+        <section class="agencySection" id="why">
+          <div class="sectionHead">
+            <h2>Why agencies use this</h2>
+            <p>
+              It reduces subjective “compliance conversations” by producing a factual snapshot that’s easy to file and easy to share.
+            </p>
+          </div>
 
-    <p class="muted">
-      Website Risk Check provides a factual, point-in-time diagnostic snapshot
-      based on detectable signals only. No compliance guarantees are made.
-    </p>
-  </div>
+          <div class="cards3">
+            <article class="card">
+              <h3>Neutral evidence</h3>
+              <p>Creates documentation before/after launches — useful for QA sign-off and client records.</p>
+              <div class="cardMeta">Tone: factual, defensible</div>
+            </article>
+
+            <article class="card">
+              <h3>Client-ready delivery</h3>
+              <p>Share a link or send the PDF without creating accounts, explaining dashboards, or granting access.</p>
+              <div class="cardMeta">No login required</div>
+            </article>
+
+            <article class="card">
+              <h3>Professional output</h3>
+              <p>Structured report format with coverage notes and limitations — reads like a proper deliverable.</p>
+              <div class="cardMeta">Designed for handover</div>
+            </article>
+          </div>
+
+          <div class="roiCallout">
+            <div class="roiTitle">Agency economics</div>
+            <div class="roiText">
+              Agencies commonly bill <strong>£500–£2,000</strong> for structured audits.
+              Generate the report deliverable for <strong>£99</strong> (or <strong>£199</strong> for 3).
+            </div>
+          </div>
+        </section>
+
+        <section class="agencySection sectionAltEdge" id="use">
+          <div class="sectionHead">
+            <h2>Common agency use cases</h2>
+            <p>Use it as part of your workflow — pre-project, mid-project, or handover.</p>
+          </div>
+
+          <div class="reportGrid">
+            <div class="reportCard">
+              <div class="rcTop">Pre-launch check</div>
+              <div class="rcBody">Document conditions at release time as part of QA and sign-off.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">Client onboarding audit</div>
+              <div class="rcBody">Capture baseline risk signals before you start work or quote remediation.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">End-of-project handover</div>
+              <div class="rcBody">Attach a professional snapshot to handover docs and final invoices.</div>
+            </div>
+            <div class="reportCard">
+              <div class="rcTop">Retainer risk documentation</div>
+              <div class="rcBody">Run snapshots for retained clients as part of recurring advisory deliverables.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="agencySection" id="receive">
+          <div class="sectionHead">
+            <h2>What agencies deliver to clients</h2>
+            <p>Clear, structured documentation — designed to be forwarded without explanation.</p>
+          </div>
+
+          <div class="agencyDeliver">
+            <div class="deliverItem">
+              <div class="deliverTitle">Risk level summary</div>
+              <div class="deliverText">Low / Medium / High signal-based summary with rationale.</div>
+            </div>
+            <div class="deliverItem">
+              <div class="deliverTitle">Findings by category</div>
+              <div class="deliverText">Tracking, consent indicators, policies, forms/data capture, accessibility notes.</div>
+            </div>
+            <div class="deliverItem">
+              <div class="deliverTitle">Coverage & limitations</div>
+              <div class="deliverText">Scope boundaries and what was checked, written in plain English.</div>
+            </div>
+            <div class="deliverItem">
+              <div class="deliverTitle">Share link + verification</div>
+              <div class="deliverText">Permanent link plus public integrity verification for tamper checks.</div>
+            </div>
+          </div>
+
+          <div class="agencyCallout">
+            <strong>This is not a SaaS platform.</strong>
+            No accounts, subscriptions, dashboards, or monitoring.
+            Each report is a single deliverable — designed for client records.
+          </div>
+
+          <div class="finalCta">
+            <div>
+              <div class="finalTitle">Run a preview on a client site</div>
+              <div class="finalSub">Free structured preview. Upgrade only if you want the issued PDF deliverable.</div>
+            </div>
+            <a class="finalBtn" href="/#scan">Run a scan</a>
+          </div>
+
+          <p class="footerFine" style="margin-top:14px;">
+            Website Risk Check provides a factual point-in-time snapshot based on detectable signals only.
+            No compliance guarantees are made.
+          </p>
+        </section>
+
+      </div>
+    </section>
+  </main>
+
 </body>
 </html>

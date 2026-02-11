@@ -163,7 +163,11 @@ function buildFindingsFromFlat(flat) {
     findings.push("Images: none detected on scanned pages");
   }
 
-  findings.push(flat.contactInfoPresent ? "Contact/identity signals: detected" : "Contact/identity signals: not detected");
+  findings.push(
+    flat.contactInfoPresent
+      ? "Contact/identity signals: detected"
+      : "Contact/identity signals: not detected"
+  );
   findings.push(flat.https ? "HTTPS: detected" : "HTTPS: not detected");
 
   return findings.slice(0, 12);
@@ -430,37 +434,153 @@ app.get("/verify/:hash", (req, res) => {
   return res.send(renderVerifyPage({ valid: false, hash }));
 });
 
+function escapeHtml(s = "") {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderVerifyPage(data) {
   const ok = data.valid === true;
+
+  const safeHash = escapeHtml(data.hash || "");
+  const safeHostname = escapeHtml(data.hostname || "");
+  const safeUrl = escapeHtml(data.url || "");
+  const safeScanId = escapeHtml(data.scanId || "");
+  const safeScannedAt = escapeHtml(data.scannedAt || "");
+
+  const title = ok ? "Verified report" : "Unverified report";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Report verification</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body{font-family:system-ui;background:#f7f7f8;padding:48px}
-.card{max-width:720px;margin:auto;background:#fff;padding:40px;border-radius:18px;border:1px solid rgba(0,0,0,0.06)}
-.status{padding:10px 14px;border-radius:999px;font-size:13px;margin-bottom:20px;background:${ok ? "#ecfdf3" : "#fef2f2"};color:${ok ? "#166534" : "#991b1b"}}
-.mono{font-family:monospace;background:#f2f2f3;padding:12px;border-radius:10px;font-size:13px;word-break:break-all}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} — Website Risk Check</title>
+  <meta name="description" content="Verify the integrity of a Website Risk Check report using its cryptographic fingerprint." />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="/style.css?v=12" />
 </head>
+
 <body>
-<div class="card">
-<h1>Report verification</h1>
-<div class="status">${ok ? "Valid report" : "Invalid or unknown report"}</div>
-${
-  ok
-    ? `
-<p><strong>Domain:</strong> ${data.hostname || ""}</p>
-<p><strong>Scan ID:</strong> ${data.scanId || ""}</p>
-<p><strong>Scanned at:</strong> ${data.scannedAt || ""}</p>
-<p><strong>Integrity hash:</strong></p>
-<div class="mono">${data.hash}</div>`
-    : `<p>This report could not be verified.</p>`
-}
-</div>
+  <div class="bg" aria-hidden="true"></div>
+
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
+
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page">
+    <section class="container">
+      <div class="verifyShell">
+
+        <header class="verifyHead">
+          <div>
+            <div class="verifyKicker">Public verification</div>
+            <h1 class="verifyTitle">${ok ? "Report verified" : "Report not verified"}</h1>
+            <p class="verifySub">
+              ${
+                ok
+                  ? "This report’s cryptographic fingerprint matches a sealed report stored by Website Risk Check."
+                  : "This hash does not match any sealed report on record, or the link is malformed."
+              }
+            </p>
+          </div>
+
+          <div class="verifyBadge ${ok ? "isOk" : "isBad"}">
+            <span class="verifyDot" aria-hidden="true"></span>
+            <span>${ok ? "Valid" : "Invalid"}</span>
+          </div>
+        </header>
+
+        <div class="issueCard">
+          <div class="issueTop">
+            <div>
+              <div class="issueTitle">Verification details</div>
+              <div class="issueHint">Cryptographic fingerprint</div>
+            </div>
+          </div>
+
+          <div class="verifyBlock">
+            <div class="verifyLabel">Integrity hash</div>
+            <div class="monoBox">${safeHash || "—"}</div>
+          </div>
+
+          ${
+            ok
+              ? `
+          <div class="verifyGrid">
+            <div class="verifyItem">
+              <div class="verifyItemTop">Domain</div>
+              <div class="verifyItemVal">${safeHostname || "—"}</div>
+            </div>
+            <div class="verifyItem">
+              <div class="verifyItemTop">Scan ID</div>
+              <div class="verifyItemVal">${safeScanId || "—"}</div>
+            </div>
+            <div class="verifyItem">
+              <div class="verifyItemTop">Scanned at</div>
+              <div class="verifyItemVal">${safeScannedAt || "—"}</div>
+            </div>
+            <div class="verifyItem">
+              <div class="verifyItemTop">URL</div>
+              <div class="verifyItemVal">${safeUrl || "—"}</div>
+            </div>
+          </div>`
+              : `
+          <div class="helperNote" style="margin-top:14px;">
+            If you received this link from an agency or consultant, ask them to resend the report link, or confirm the hash inside the PDF.
+          </div>`
+          }
+
+          <div class="dividerLine" style="margin:16px 0;"></div>
+
+          <div class="verifyForm">
+            <div class="verifyLabel">Verify another hash</div>
+            <div class="verifyInputRow">
+              <input id="hashInput" type="text" inputmode="text" placeholder="Paste 64-character hash…" />
+              <button id="hashGo" class="btnPrimary" type="button">Verify</button>
+            </div>
+            <div class="issueFine">
+              Tip: the hash is printed inside the PDF report (verification section).
+            </div>
+          </div>
+
+          <div class="issueNotes">
+            <p>
+              Verification confirms integrity only. It does not certify compliance and is not legal advice.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const input = document.getElementById("hashInput");
+      const btn = document.getElementById("hashGo");
+      function go() {
+        const v = (input.value || "").trim().toLowerCase();
+        if (!/^[a-f0-9]{64}$/.test(v)) return;
+        window.location.href = "/verify/" + v;
+      }
+      btn.addEventListener("click", go);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+    })();
+  </script>
 </body>
 </html>`;
 }

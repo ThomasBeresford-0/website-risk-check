@@ -8,65 +8,57 @@
   <meta name="description" content="Redeem your 3-pack website snapshots." />
 
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
-  <div class="bgFX" aria-hidden="true"></div>
+  <div class="bg" aria-hidden="true"></div>
 
-  <div class="page">
-    <nav class="nav">
-      <div class="navInner">
-        <a class="brand" href="/" aria-label="Website Risk Check home">
-          <span class="brandMark" aria-hidden="true"></span>
-          <span class="brandText">Website Risk Check</span>
-        </a>
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check home">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
-        <div class="navCtas">
-          <a class="navPill" href="/#scan">Run a scan</a>
-        </div>
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
       </div>
-    </nav>
+    </div>
+  </nav>
 
-    <main class="wrap" style="padding: 34px 0 84px;">
-      <div id="threepack-card" class="scanCard" style="max-width: 920px; margin: 0 auto;">
-        <div class="scanHead" style="margin-bottom: 10px;">
+  <main class="page">
+    <section class="container">
+      <div class="threepackShell">
+
+        <header class="threepackHead">
           <div>
-            <div class="scanTitle" style="font-size:18px;">Your 3-pack is ready</div>
-            <div class="scanSub">
-              Redeem up to <strong>3</strong> website snapshots. Each redemption generates a permanent report link.
+            <div class="threepackKicker">3-pack redemption</div>
+            <h1 class="threepackTitle">Your bundle is ready.</h1>
+            <p class="threepackSub">
+              Redeem up to <strong>3</strong> sealed snapshots. Each redemption issues a permanent report link
+              you can forward to stakeholders.
+            </p>
+          </div>
+
+          <div id="statusPill" role="status" aria-live="polite" class="threepackStatus">
+            Loading…
+          </div>
+        </header>
+
+        <div id="threepack-card" class="issueCard">
+          <div class="issueTop">
+            <div>
+              <div class="issueTitle">Redeem a snapshot</div>
+              <div class="issueHint">No account · No subscription</div>
             </div>
           </div>
 
-          <div
-            id="statusPill"
-            role="status"
-            aria-live="polite"
-            class="statusPill"
-            style="
-              display:inline-flex;align-items:center;gap:10px;
-              padding:10px 14px;border-radius:999px;
-              background:rgba(248,250,252,.92);
-              border:1px solid rgba(15,23,42,.10);
-              font-size:13px;font-weight:800;color:#0f172a;
-              white-space:nowrap;
-            "
-          >
-            Loading…
-          </div>
-        </div>
-
-        <div class="preview" style="margin-top:16px; padding-top:16px;">
-          <div class="previewHead">
-            <div class="previewTitle">Redeem a snapshot</div>
-            <div class="previewHint">No account • No subscription</div>
-          </div>
-
-          <p class="tiny" style="margin-top:10px;">
-            Enter a website URL and generate a report. This produces a sealed, point-in-time snapshot with a permanent link.
+          <p class="threepackHelper">
+            Enter a website URL to generate a sealed, point-in-time report with a permanent share link.
           </p>
 
-          <form class="scanForm" style="margin-top:12px;">
+          <form class="threepackForm" onsubmit="return false;">
             <label class="srOnly" for="url">Website URL</label>
             <input
               id="url"
@@ -79,70 +71,34 @@
             <button id="redeem" class="btnPrimary" type="button">Generate report</button>
           </form>
 
-          <div class="divider" style="height:1px;background:rgba(15,23,42,.10);margin:18px 0;"></div>
+          <div class="dividerLine" style="margin:18px 0;"></div>
 
-          <div class="previewHead">
-            <div class="previewTitle">Your generated reports</div>
-            <div class="previewHint">Permanent links • Shareable</div>
+          <div class="issueTop" style="margin-bottom:10px;">
+            <div>
+              <div class="issueTitle">Generated reports</div>
+              <div class="issueHint">Permanent links · Shareable</div>
+            </div>
           </div>
 
-          <ul
-            id="reports"
-            class="list"
-            aria-live="polite"
-            style="
-              margin:12px 0 0;
-              padding:0;
-              list-style:none;
-              display:flex;
-              flex-direction:column;
-              gap:10px;
-            "
-          >
-            <li class="muted" style="padding:12px 14px;">No reports generated yet.</li>
+          <ul id="reports" class="reportsList" aria-live="polite">
+            <li class="reportsEmpty">No reports generated yet.</li>
           </ul>
 
-          <div class="scanFoot">
-            <span class="tiny">
-              Tip: agencies often attach these links to client handover emails.
-            </span>
+          <div class="helperNote" style="margin-top:14px;">
+            Tip: agencies often include these permanent links in client handover emails and audit deliverables.
           </div>
         </div>
-      </div>
 
-      <noscript>
-        <div style="max-width:920px;margin:14px auto 0;padding:12px 14px;border-radius:14px;border:1px solid #e5e7eb;background:#fffbeb;">
-          JavaScript is required to redeem your 3-pack and generate reports.
-        </div>
-      </noscript>
-    </main>
-  </div>
+        <noscript>
+          <div class="noscriptWarn">
+            JavaScript is required to redeem your 3-pack and generate reports.
+          </div>
+        </noscript>
+
+      </div>
+    </section>
+  </main>
 
   <script src="threepack.js?v=3" defer></script>
-
-  <style>
-    /* Lightweight list styling for threepack page (theme-aligned) */
-    .list li{
-      padding:12px 14px;
-      border:1px solid rgba(15,23,42,.10);
-      border-radius:16px;
-      background:rgba(255,255,255,.86);
-      box-shadow:var(--shadow-soft);
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .list a{
-      color:var(--text);
-      text-decoration:none;
-      border-bottom:1px solid rgba(15,23,42,.25);
-      font-weight:800;
-    }
-    .list a:hover{
-      border-bottom-color:rgba(15,23,42,.55);
-    }
-    .muted{ color:var(--muted); }
-  </style>
 </body>
 </html>

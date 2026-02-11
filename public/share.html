@@ -3,100 +3,125 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shared Website Risk Check</title>
+  <title>Shared report — Website Risk Check</title>
 
-  <style>
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: #f7f7f8;
-      margin: 0;
-      padding: 40px 20px;
-      color: #111;
-    }
+  <meta
+    name="description"
+    content="View and download a shared Website Risk Check report. Timestamped, client-ready documentation with public verification."
+  />
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 32px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    }
-
-    h1 {
-      font-size: 28px;
-      margin-bottom: 12px;
-    }
-
-    p {
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    button {
-      margin-top: 24px;
-      padding: 14px 18px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #111;
-      color: #fff;
-    }
-
-    .muted {
-      margin-top: 18px;
-      font-size: 14px;
-      color: #666;
-    }
-
-    .small {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #888;
-    }
-  </style>
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="style.css?v=12" />
 </head>
 
 <body>
-  <div class="container">
-    <h1>Website Risk Check</h1>
+  <div class="bg" aria-hidden="true"></div>
 
-    <p>
-      This is a shared, point-in-time snapshot of a website’s detectable
-      compliance and risk signals.
-    </p>
+  <nav class="nav">
+    <div class="container navInner">
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <span class="brandMark" aria-hidden="true"></span>
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
-    <button id="download">Download the PDF report</button>
+      <div class="navCtas">
+        <a class="navBtn" href="/#scan">Run a scan</a>
+      </div>
+    </div>
+  </nav>
 
-    <p class="muted">
-      This report reflects the state of the website at the time of scan.
-      It does not provide legal advice or certify compliance.
-    </p>
+  <main class="page">
+    <section class="container">
+      <div class="shareShell">
 
-    <p class="small">
-      If you received this link from an agency or consultant, no login is required.
-    </p>
-  </div>
+        <header class="shareHead">
+          <div>
+            <div class="shareKicker">Shared report</div>
+            <h1 class="shareTitle">Point-in-time website compliance & risk snapshot.</h1>
+            <p class="shareSub">
+              This link provides access to a sealed report generated at a specific time.
+              No login required.
+            </p>
+          </div>
+
+          <div class="seal">
+            <span class="sealDot" aria-hidden="true"></span>
+            <span class="sealText">Snapshot sealed</span>
+          </div>
+        </header>
+
+        <div class="issueCard">
+          <div class="issueTop">
+            <div>
+              <div class="issueTitle">Download the report</div>
+              <div class="issueHint">Client-ready PDF deliverable</div>
+            </div>
+          </div>
+
+          <div class="shareActions">
+            <button id="download" class="btnPrimary btnWide" type="button">
+              Download PDF report
+            </button>
+            <div class="issueFine">
+              If you received this link from an agency or consultant, you can download immediately.
+            </div>
+          </div>
+
+          <div class="dividerLine" style="margin:16px 0;"></div>
+
+          <div class="shareIncluded">
+            <div class="shareMini">
+              <div class="shareMiniTop">Included</div>
+              <div class="shareMiniBody">
+                Timestamp, coverage notes, detected signals, explanations, limitations, and verification reference.
+              </div>
+            </div>
+            <div class="shareMini">
+              <div class="shareMiniTop">Not included</div>
+              <div class="shareMiniBody">
+                Legal advice, certification, ongoing monitoring, or compliance guarantees.
+              </div>
+            </div>
+          </div>
+
+          <div class="issueNotes">
+            <p>
+              This report reflects what was publicly detectable at scan-time. It is a factual snapshot of observable signals.
+            </p>
+            <p>
+              If the report is modified, verification will fail. For integrity checks, use the verification link included in the report.
+            </p>
+          </div>
+        </div>
+
+        <div class="helperNote" id="shareError" style="display:none;">
+          Invalid or missing share link. Please request a new link from the sender.
+        </div>
+
+      </div>
+    </section>
+  </main>
 
   <script>
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get("session_id");
 
-    function downloadReport() {
-      if (!sessionId) {
-        alert("Invalid or missing share link.");
-        return;
-      }
+    const errorEl = document.getElementById("shareError");
+    const downloadBtn = document.getElementById("download");
 
-      window.location.href =
-        `/download-report?session_id=${encodeURIComponent(sessionId)}`;
+    function downloadReport() {
+      if (!sessionId) return;
+      window.location.href = `/download-report?session_id=${encodeURIComponent(sessionId)}`;
     }
 
-    document
-      .getElementById("download")
-      .addEventListener("click", downloadReport);
+    if (!sessionId) {
+      downloadBtn.disabled = true;
+      downloadBtn.style.opacity = "0.7";
+      downloadBtn.style.cursor = "not-allowed";
+      errorEl.style.display = "block";
+    } else {
+      downloadBtn.addEventListener("click", downloadReport);
+    }
   </script>
 </body>
 </html>

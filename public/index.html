@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website Risk Check — Independent website record</title>
+  <title>Website Compliance & Risk Report | Client-Ready Audit</title>
 
   <meta
     name="description"
-    content="Establish a documented, timestamped record of website risk signals. Built for agencies, consultants and serious business owners. One-time payment. No subscription."
+    content="Generate a client-ready website compliance and risk report in minutes. Built for agencies and consultants. Fixed, timestamped, shareable PDF. One-time payment."
   />
 
-  <meta name="theme-color" content="#0b0f14" />
-  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="style.css?v=11" />
 </head>
 <body>
 
@@ -19,8 +18,8 @@
   <div class="container navInner">
     <div class="brand">Website Risk Check</div>
     <div class="navRight">
-      <a href="#purpose">Purpose</a>
-      <a href="#record">The Record</a>
+      <a href="#agencies">For Agencies</a>
+      <a href="#report">The Report</a>
       <a href="#faq">FAQ</a>
     </div>
   </div>
@@ -28,188 +27,166 @@
 
 <main>
 
-  <!-- HERO -->
-  <section class="hero" id="scan">
-    <div class="container heroWrap">
+<section class="hero" id="scan">
+  <div class="container heroGrid">
 
-      <div class="heroLeft">
-        <p class="kicker">Independent documentation service</p>
+    <div class="heroLeft">
+      <h1>
+        Website Compliance & Risk Report — Client-Ready in Minutes
+      </h1>
 
-        <h1>
-          Establish a documented record of a website’s observable risk signals.
-        </h1>
+      <p class="sub">
+        Built for agencies and consultants. Generate a fixed, timestamped,
+        shareable PDF you can bill to clients.
+      </p>
 
-        <p class="sub">
-          This is not monitoring. Not certification. Not legal advice.
-          It is a fixed, timestamped snapshot — designed to be filed, shared,
-          and verified later.
-        </p>
+      <div class="trustLine">
+        One-time payment · No subscription · Public verification included
+      </div>
+    </div>
 
-        <div class="meta">
-          One-time payment · Timestamped PDF · Permanent share link · Public integrity verification
+    <div class="scanPanel">
+
+      <div class="scanHeader">
+        <div>
+          <div class="scanTitle">Free structured preview</div>
+          <div class="scanSub">No account required</div>
         </div>
+        <div class="price">£99</div>
       </div>
 
-      <!-- SCAN PANEL -->
-      <div class="scanPanel">
+      <form id="check-form" class="scanForm">
+        <label class="srOnly" for="url-input">Website URL</label>
+        <input
+          id="url-input"
+          type="url"
+          placeholder="https://example.com"
+          required
+        />
+        <button id="scanBtn" type="submit" class="primaryBtn">
+          Generate preview
+        </button>
+      </form>
 
-        <div class="scanTop">
-          <div>
-            <div class="scanLabel">Structured preview</div>
-            <div class="scanSub">Free. No account required.</div>
-          </div>
-          <div class="price">£99</div>
+      <div id="preview" class="previewBlock">
+
+        <div class="previewHeader">
+          <span>Preview findings</span>
+          <span class="hint">Full report includes structured breakdown</span>
         </div>
 
-        <form id="check-form" class="scanForm">
-          <label class="srOnly" for="url-input">Website URL</label>
-          <input
-            id="url-input"
-            type="url"
-            placeholder="https://example.com"
-            required
-            autocomplete="url"
-          />
-          <button id="scanBtn" type="submit" class="primaryBtn">
-            Generate preview
+        <ul id="findings"></ul>
+
+        <div class="actions">
+          <button id="pay-button" type="button" class="primaryBtn full">
+            Issue full report (£99)
           </button>
-        </form>
 
-        <div id="preview" class="previewBlock">
+          <button id="threepack-button" type="button" class="secondaryBtn full">
+            3 reports (£199)
+          </button>
 
-          <div class="previewHeader">
-            <span>Preliminary findings</span>
-            <span class="hint">Full report contains structured breakdown</span>
+          <div class="secureNote">
+            Secure checkout via Stripe · One-time payment
           </div>
-
-          <ul id="findings"></ul>
-
-          <div class="actions">
-            <button id="pay-button" type="button" class="primaryBtn full">
-              Issue full report (£99)
-            </button>
-
-            <button id="threepack-button" type="button" class="secondaryBtn full">
-              Issue 3 reports (£199)
-            </button>
-
-            <div class="secureNote">
-              Secure Stripe checkout · One-time payment · No subscription
-            </div>
-          </div>
-
-        </div>
-
-        <div class="legal">
-          By proceeding you confirm you have permission to assess this website.
-          Snapshot records observable signals only.
         </div>
 
       </div>
 
-    </div>
-  </section>
-
-  <!-- PURPOSE -->
-  <section class="section" id="purpose">
-    <div class="container narrow">
-
-      <h2>Why this exists</h2>
-
-      <p class="lead">
-        Agencies need documentation.
-        Consultants need defensible records.
-        Business owners need evidence of site conditions at a specific point in time.
-      </p>
-
-      <p>
-        Website Risk Check creates a fixed record of what was observable at the moment of scanning.
-        Nothing more. Nothing implied.
-      </p>
-
-    </div>
-  </section>
-
-  <!-- RECORD -->
-  <section class="section alt" id="record">
-    <div class="container narrow">
-
-      <h2>The record includes</h2>
-
-      <div class="recordList">
-
-        <div>
-          <h3>Timestamped PDF document</h3>
-          <p>
-            Structured summary, detected signals, coverage notes,
-            methodology and limitations — fixed at issuance.
-          </p>
-        </div>
-
-        <div>
-          <h3>Permanent share link</h3>
-          <p>
-            A stable URL for internal or external distribution.
-            No login required to view.
-          </p>
-        </div>
-
-        <div>
-          <h3>Public integrity verification</h3>
-          <p>
-            Independent verification page confirming whether the report
-            has been altered after generation.
-          </p>
-        </div>
-
+      <div class="legalNote">
+        Snapshot of observable website signals at scan-time. Not legal advice.
       </div>
 
     </div>
-  </section>
 
-  <!-- FAQ -->
-  <section class="section" id="faq">
-    <div class="container narrow">
+  </div>
+</section>
 
-      <h2>FAQ</h2>
+<section class="section alt" id="agencies">
+  <div class="container narrow">
 
-      <details>
-        <summary>Is this a compliance certificate?</summary>
-        <p>
-          No. It is a point-in-time documentation snapshot of observable signals.
-          It does not guarantee compliance.
-        </p>
-      </details>
+    <h2>Built for Agencies & Consultants</h2>
 
-      <details>
-        <summary>Is this monitoring?</summary>
-        <p>
-          No. Each report is generated once. There is no subscription or ongoing tracking.
-        </p>
-      </details>
+    <p class="lead">
+      Use this as a billable deliverable in website audits,
+      compliance reviews, or pre-project assessments.
+    </p>
 
-      <details>
-        <summary>Who typically uses this?</summary>
-        <p>
-          Agencies validating client sites, consultants documenting findings,
-          and business owners needing structured evidence.
-        </p>
-      </details>
-
+    <div class="roiBox">
+      Agencies typically bill £500–£2,000 for structured website audits.
+      Generate a professional, timestamped report for £99.
     </div>
-  </section>
 
-  <footer class="footer">
-    <div class="container footerInner">
+  </div>
+</section>
+
+<section class="section" id="report">
+  <div class="container narrow">
+
+    <h2>The Report Includes</h2>
+
+    <div class="reportList">
+
       <div>
-        <strong>Website Risk Check</strong>
-        <p>Independent website documentation service.</p>
+        <h3>Timestamped PDF document</h3>
+        <p>
+          Structured summary, detected signals, coverage notes,
+          methodology and limitations.
+        </p>
       </div>
-      <div class="footNote">
-        Point-in-time snapshot only. Not legal advice or certification.
+
+      <div>
+        <h3>Permanent share link</h3>
+        <p>
+          Stable URL for internal or external distribution.
+          No login required.
+        </p>
       </div>
+
+      <div>
+        <h3>Public verification page</h3>
+        <p>
+          Independent integrity check confirming the document
+          has not been altered after generation.
+        </p>
+      </div>
+
     </div>
-  </footer>
+
+  </div>
+</section>
+
+<section class="section alt" id="faq">
+  <div class="container narrow">
+
+    <h2>FAQ</h2>
+
+    <details>
+      <summary>Is this a compliance certificate?</summary>
+      <p>No. It is a point-in-time documentation snapshot of observable signals.</p>
+    </details>
+
+    <details>
+      <summary>Is this monitoring?</summary>
+      <p>No. Each report is generated once. There is no subscription.</p>
+    </details>
+
+    <details>
+      <summary>Who uses this?</summary>
+      <p>Agencies, consultants and business owners needing formal documentation.</p>
+    </details>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footerInner">
+    <div>
+      <strong>Website Risk Check</strong>
+      <p>Client-ready website compliance & risk documentation.</p>
+    </div>
+  </div>
+</footer>
 
 </main>
 

@@ -1,6 +1,6 @@
 /* =========================================
-   Website Risk Check — Authority Theme v5 (INSTITUTIONAL)
-   Calm • Evidence-grade • Conversion-led • No SaaS fluff
+   Website Risk Check — Authority Theme v6 (Human)
+   Evidence-grade • Calm • Less template-y • More “real product”
 ========================================= */
 
 :root{
@@ -52,17 +52,17 @@ a{ text-decoration:none; color:inherit; }
 }
 
 /* =========================================
-   BACKGROUND FX (more restrained)
+   BACKGROUND FX
 ========================================= */
 
 .bgFX{
   position:fixed;
-  inset:-120px;
+  inset:-140px;
   z-index:-1;
   background:
-    radial-gradient(900px 550px at 20% 10%, rgba(37,99,235,.08), rgba(37,99,235,0) 70%),
-    radial-gradient(900px 550px at 85% 18%, rgba(22,163,74,.06), rgba(22,163,74,0) 65%),
-    radial-gradient(900px 550px at 55% 88%, rgba(217,119,6,.06), rgba(217,119,6,0) 70%),
+    radial-gradient(1000px 600px at 22% 10%, rgba(37,99,235,.07), rgba(37,99,235,0) 68%),
+    radial-gradient(1000px 600px at 84% 18%, rgba(22,163,74,.05), rgba(22,163,74,0) 65%),
+    radial-gradient(1000px 600px at 55% 92%, rgba(217,119,6,.05), rgba(217,119,6,0) 70%),
     linear-gradient(#f6f7f9, #f6f7f9);
   filter:saturate(105%);
 }
@@ -94,7 +94,7 @@ a{ text-decoration:none; color:inherit; }
   display:flex;
   align-items:center;
   gap:10px;
-  font-weight:800;
+  font-weight:900;
   letter-spacing:-.2px;
 }
 
@@ -140,100 +140,101 @@ a{ text-decoration:none; color:inherit; }
   box-shadow:0 14px 34px rgba(15,23,42,.14);
 }
 
+button{ font-family:inherit; }
+
 /* =========================================
-   HERO (redesigned hierarchy)
+   HERO (Human)
 ========================================= */
 
-.hero{
-  padding:84px 0 76px;
+.heroHuman{
+  padding:78px 0 60px;
 }
 
-.heroTop{ margin-bottom:18px; }
-
-.badges{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.badge{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:8px 12px;
-  border-radius:999px;
-  background:rgba(255,255,255,.80);
-  border:1px solid rgba(15,23,42,.08);
-  color:#111827;
-  font-size:12.5px;
-  font-weight:800;
-  box-shadow:0 10px 22px rgba(15,23,42,.05);
-}
-
-.heroGrid{
+.heroGridHuman{
   display:grid;
   grid-template-columns:1.15fr .85fr;
-  gap:52px;
+  gap:54px;
   align-items:start;
 }
 
-.heroTitleV2{
+.kickerRow{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+
+.kicker{
+  font-size:12px;
+  font-weight:900;
+  color:#334155;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
+.kickerSep{
+  color:rgba(15,23,42,.35);
+}
+
+.heroTitleHuman{
   font-size:56px;
-  line-height:1.03;
+  line-height:1.02;
   margin:0 0 16px;
   letter-spacing:-1.1px;
 }
 
-.heroLead{
+.underline{
+  text-decoration:underline;
+  text-decoration-thickness:3px;
+  text-underline-offset:6px;
+  text-decoration-color:rgba(37,99,235,.25);
+}
+
+.heroLeadHuman{
   font-size:18px;
   color:var(--muted);
   line-height:1.72;
-  max-width:720px;
   margin:0;
+  max-width:720px;
 }
 
-.heroActions{
+.heroButtons{
   display:flex;
   gap:12px;
   flex-wrap:wrap;
   margin:22px 0 10px;
 }
 
-.btnBig{
-  padding:14px 18px;
-  border-radius:16px;
-}
-
-.heroMeta{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:14px;
-  margin-top:22px;
-}
-
-.metaItem{
-  background:rgba(255,255,255,.80);
-  border:1px solid rgba(15,23,42,.08);
-  border-radius:16px;
+.microTruth{
+  margin-top:18px;
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
   padding:14px 14px;
+  border-radius:16px;
+  border:1px solid rgba(15,23,42,.10);
+  background:rgba(255,255,255,.80);
   box-shadow:var(--shadow-soft);
 }
 
-.metaTitle{
+.microTruthLeft{
   font-weight:900;
   font-size:13px;
+  color:#0f172a;
+  flex:0 0 auto;
 }
 
-.metaDesc{
+.microTruthRight{
   font-size:13px;
   color:var(--muted);
-  margin-top:4px;
-  line-height:1.35;
+  line-height:1.45;
+  font-weight:700;
 }
 
-.heroDisclaimer{ margin-top:14px; }
-
-button{ font-family:inherit; }
+.legalNote{
+  margin-top:14px;
+}
 
 /* =========================================
    BUTTONS
@@ -301,11 +302,95 @@ button{ font-family:inherit; }
   justify-content:center;
 }
 
+.btnBig{
+  padding:14px 18px;
+  border-radius:16px;
+}
+
 /* =========================================
-   SCAN CARD (more “document” tone)
+   ARTIFACT CARD
 ========================================= */
 
-.scanCard{
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.artifactWrap{
+  margin-top:18px;
+  max-width:920px;
+}
+
+.artifactCardHuman{
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(15,23,42,.10);
+  border-radius:22px;
+  padding:18px;
+  box-shadow:var(--shadow-soft);
+}
+
+.artifactHeader{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.artifactTag{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.artifactName{
+  font-size:13px;
+  font-weight:900;
+  color:#0f172a;
+  letter-spacing:-.1px;
+}
+
+.artifactGridHuman{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0,1fr));
+  gap:10px;
+}
+
+.artifactMini{
+  background:rgba(248,250,252,.92);
+  border-radius:16px;
+  padding:14px;
+  border:1px solid rgba(15,23,42,.10);
+}
+
+.artifactMiniLabel{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:900;
+  letter-spacing:-.1px;
+}
+
+.artifactMiniText{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--text);
+  font-weight:900;
+  line-height:1.35;
+}
+
+.artifactFine{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid rgba(15,23,42,.08);
+}
+
+/* =========================================
+   SCAN CARD
+========================================= */
+
+.scanCardHuman{
   background:var(--panel);
   border-radius:var(--radius-lg);
   padding:28px;
@@ -373,11 +458,8 @@ button{ font-family:inherit; }
   box-shadow:var(--ring);
 }
 
-.scanNotes{
-  display:flex;
-  flex-direction:column;
+.scanNotesHuman{
   gap:10px;
-  margin-top:10px;
 }
 
 .noteRow{
@@ -523,86 +605,6 @@ button{ font-family:inherit; }
   margin-top:4px;
   font-size:12.5px;
   color:var(--muted);
-}
-
-/* =========================================
-   ARTIFACT BAND (new, critical)
-========================================= */
-
-.mono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-}
-
-.artifactBand{
-  margin-top:22px;
-  max-width:900px;
-}
-
-.artifactCard{
-  background:rgba(255,255,255,.82);
-  border:1px solid rgba(15,23,42,.10);
-  border-radius:var(--radius-lg);
-  padding:18px;
-  box-shadow:var(--shadow-soft);
-}
-
-.artifactTop{ margin-bottom:14px; }
-
-.artifactKicker{
-  font-size:12px;
-  font-weight:900;
-  color:var(--muted);
-  letter-spacing:.08em;
-  text-transform:uppercase;
-}
-
-.artifactTitle{
-  margin-top:8px;
-  font-weight:900;
-  letter-spacing:-.2px;
-  font-size:15px;
-}
-
-.artifactSub{
-  margin-top:6px;
-  font-size:13.5px;
-  color:var(--muted);
-  line-height:1.55;
-  max-width:820px;
-}
-
-.artifactGrid{
-  display:grid;
-  grid-template-columns:repeat(4, minmax(0,1fr));
-  gap:10px;
-}
-
-.artifactMini{
-  background:rgba(248,250,252,.92);
-  border-radius:16px;
-  padding:14px;
-  border:1px solid rgba(15,23,42,.10);
-}
-
-.artifactMiniLabel{
-  font-size:12px;
-  color:var(--muted);
-  font-weight:900;
-  letter-spacing:-.1px;
-}
-
-.artifactMiniText{
-  margin-top:6px;
-  font-size:13px;
-  color:var(--text);
-  font-weight:900;
-  line-height:1.35;
-}
-
-.artifactFine{
-  margin-top:12px;
-  padding-top:12px;
-  border-top:1px solid rgba(15,23,42,.08);
 }
 
 /* =========================================
@@ -873,7 +875,7 @@ button{ font-family:inherit; }
 
 /* =========================================
    INJECTED ELITE PREVIEW SHELL (app.js)
-   Keep this EXACTLY so the renderer matches the theme.
+   Keep these so the injected UI matches the site.
 ========================================= */
 
 #wrcNotice,
@@ -936,7 +938,6 @@ button{ font-family:inherit; }
 
 #wrcConfidence{ color:var(--muted) !important; }
 
-/* Mobile: grid becomes 1 col (mirrors JS but CSS-first) */
 @media (max-width: 560px){
   #wrcGrid{ grid-template-columns:1fr; }
 }
@@ -948,14 +949,12 @@ button{ font-family:inherit; }
 @media (max-width: 980px){
   .navLinks{ display:none; }
 
-  .heroGrid{
+  .heroGridHuman{
     grid-template-columns:1fr;
     gap:20px;
   }
 
-  .heroTitleV2{ font-size:44px; }
-
-  .heroMeta{ grid-template-columns:1fr; }
+  .heroTitleHuman{ font-size:44px; }
 
   .scanForm{ flex-direction:column; }
 
@@ -963,7 +962,7 @@ button{ font-family:inherit; }
 
   .split{ grid-template-columns:1fr; }
 
-  .artifactGrid{ grid-template-columns:1fr; }
+  .artifactGridHuman{ grid-template-columns:1fr; }
 
   .footerInner{ flex-direction:column; }
 
@@ -979,7 +978,7 @@ button{ font-family:inherit; }
 @media (max-width: 460px){
   .wrap{ padding:0 18px; }
   .navInner{ padding:14px 18px; }
-  .hero{ padding:54px 0 70px; }
-  .scanCard{ padding:20px; }
+  .heroHuman{ padding:54px 0 64px; }
+  .scanCardHuman{ padding:20px; }
   .btnBig{ width:100%; }
 }

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website Risk Check — Instant Website Risk Snapshot</title>
+  <title>Website Risk Check — Point-in-Time Website Snapshot</title>
 
   <meta
     name="description"
-    content="Run a one-time website risk snapshot. Free preview in seconds. Pay once to download a timestamped PDF report with a permanent share link."
+    content="Run a one-time website compliance snapshot. Free preview in seconds. Pay once to download a timestamped PDF report with a permanent share link."
   />
 
   <style>
@@ -18,9 +18,6 @@
       --muted: #666;
       --border: #e5e7eb;
       --accent: #111;
-      --low: #1a7f37;
-      --medium: #b54708;
-      --high: #b42318;
     }
 
     * { box-sizing: border-box; }
@@ -136,40 +133,6 @@
       padding-top: 20px;
     }
 
-    .riskRow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-
-    .risk {
-      font-size: 22px;
-      font-weight: 800;
-      margin: 0;
-    }
-
-    .risk.low { color: var(--low); }
-    .risk.medium { color: var(--medium); }
-    .risk.high { color: var(--high); }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      background: #f2f2f3;
-      border: 1px solid rgba(0,0,0,0.06);
-      font-size: 13px;
-      color: #333;
-      white-space: nowrap;
-    }
-
-    .badge strong { color: #111; }
-
     ul {
       margin: 12px 0 18px 20px;
       padding: 0;
@@ -213,7 +176,6 @@
     .miniCard h3 {
       margin: 0 0 8px;
       font-size: 14px;
-      letter-spacing: -0.01em;
     }
 
     .miniCard p {
@@ -229,7 +191,6 @@
       font-size: 28px;
       margin-bottom: 18px;
       text-align: center;
-      letter-spacing: -0.02em;
     }
 
     .grid {
@@ -247,21 +208,6 @@
       border: 1px solid rgba(0,0,0,0.05);
     }
 
-    .linksRow {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    a.inlineLink {
-      color: #111;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(0,0,0,0.25);
-    }
-    a.inlineLink:hover { border-bottom-color: rgba(0,0,0,0.6); }
-
     footer {
       margin-top: 86px;
       text-align: center;
@@ -278,90 +224,60 @@
 <body>
   <div class="wrap">
 
-    <!-- HERO -->
     <header>
-      <h1>See what your website exposes — right now</h1>
+      <h1>See what your website shows — right now</h1>
       <p>
-        Get a <strong>one-time</strong>, timestamped snapshot of compliance and risk signals detected on your website.
-        Free preview in seconds. Pay once to download a professional PDF you can keep, forward, or file.
+        Get a <strong>one-time</strong>, timestamped snapshot of what is
+        objectively detectable on your website. Free preview in seconds.
+        Pay once to download a professional PDF you can keep, share, or file.
       </p>
-      <div class="subline">No accounts • No subscriptions • No monitoring • No scare tactics</div>
+      <div class="subline">No accounts • No subscriptions • No monitoring • No judgement</div>
     </header>
 
-    <!-- SCAN CARD -->
     <div class="card">
       <form id="check-form">
-        <input
-          id="url-input"
-          type="url"
-          placeholder="https://yourwebsite.com"
-          required
-          autocomplete="url"
-          inputmode="url"
-        />
+        <input id="url-input" type="url" placeholder="https://yourwebsite.com" required />
         <button id="scanBtn" type="submit">Run free scan</button>
       </form>
 
       <div class="note">
-        <strong>Free preview</strong> • Full PDF report <strong>£79</strong> • One-time payment • ~10 seconds
+        <strong>Free preview</strong> • Full PDF report <strong>£79</strong> • One-time payment
       </div>
 
       <div class="micro">
-        After payment you receive a <strong>timestamped PDF</strong> plus a <strong>permanent share link</strong> (no login required).
+        Paid report includes a <strong>timestamped PDF</strong> and a
+        <strong>permanent share link</strong> (no login required).
       </div>
 
       <div id="preview" class="preview">
-        <div class="riskRow">
-          <div id="risk" class="risk"></div>
-          <div class="badge">
-            Paid report includes: <strong>PDF + permanent share link</strong>
-          </div>
-        </div>
-
         <ul id="findings"></ul>
 
         <div class="ctaRow">
           <button id="pay-button" class="secondary">
             Download full PDF report (£79)
           </button>
-          <span class="fineprint">Secure checkout via Stripe • You’ll be redirected back instantly</span>
+          <span class="fineprint">Secure checkout via Stripe</span>
         </div>
 
         <div class="split">
           <div class="miniCard">
             <h3>What’s in the paid report</h3>
             <p>
-              Timestamp, scan ID, scan coverage, findings table, plain-English interpretation,
-              common next steps, and a permanent link suitable for client delivery.
+              Scan timestamp, scan ID, scan coverage, detected signals,
+              limitations, and a permanent verification link.
             </p>
           </div>
           <div class="miniCard">
             <h3>What this is not</h3>
             <p>
               Not legal advice. Not certification. Not monitoring.
-              It’s a factual snapshot of what was detectable at the time of scan.
+              It records observable signals only.
             </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- AGENCY LINKING (REAL DISTRIBUTION) -->
-    <section>
-      <h2>Built for founders — adopted by agencies</h2>
-      <div class="grid">
-        <div class="pill">✔ Agencies use the report as neutral, timestamped evidence before launches</div>
-        <div class="pill">✔ Shareable link means you can deliver it straight to clients without a login</div>
-        <div class="pill">✔ Simple, boring, defensible — no dashboard, no lock-in, no drama</div>
-      </div>
-
-      <div class="linksRow">
-        <a class="inlineLink" href="/agency.html">Agency workflow →</a>
-        <a class="inlineLink" href="/website-compliance-check.html">Website compliance check →</a>
-      </div>
-    </section>
-
-    <!-- WHAT WE CHECK -->
     <section>
       <h2>What this scan checks</h2>
       <div class="grid">
@@ -369,31 +285,15 @@
         <div class="pill">✔ Cookie consent banner presence (heuristic)</div>
         <div class="pill">✔ Privacy policy and terms pages</div>
         <div class="pill">✔ Forms collecting personal data (heuristic)</div>
-        <div class="pill">✔ Basic accessibility red flags (headings, alt text)</div>
-        <div class="pill">✔ Visible contact and business information</div>
+        <div class="pill">✔ Basic accessibility red flags</div>
+        <div class="pill">✔ Visible contact information</div>
       </div>
     </section>
 
-    <!-- WHAT IT IS / IS NOT -->
-    <section>
-      <h2>What this report is (and isn’t)</h2>
-      <div class="grid">
-        <div class="pill">✔ A factual, point-in-time snapshot of your website</div>
-        <div class="pill">✔ Evidence you can download, share, or keep on file</div>
-        <div class="pill">✖ Not legal advice or compliance certification</div>
-        <div class="pill">✖ Not ongoing monitoring or alerts</div>
-        <div class="pill">✖ Not a policy generator or cookie solution</div>
-        <div class="pill">✖ Not a subscription or SaaS platform</div>
-      </div>
-    </section>
-
-    <!-- FOOTER -->
     <footer>
-      Website Risk Check provides a point-in-time diagnostic snapshot only.
-      It does not provide legal advice, compliance guarantees, or ongoing monitoring.
-      Results reflect what is objectively detectable on the scanned website at the time of analysis.
-      <br /><br />
-      Agencies: commonly used for pre-launch checks and client handover documentation.
+      Website Risk Check provides a point-in-time snapshot only.
+      It does not provide legal advice, compliance guarantees,
+      or ongoing monitoring.
     </footer>
 
   </div>

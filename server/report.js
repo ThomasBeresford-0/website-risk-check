@@ -1,29 +1,43 @@
 // server/report.js
-// FULL RAMBO — evidence-grade, agency-safe, IMMUTABLE PDF
+// FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
-import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
+/* =========================
+   HELPERS
+========================= */
 
 function yesNo(v) {
-  return v ? "Yes" : "No";
+  return v ? "Detected" : "Not detected";
 }
 
-function addFooter(doc, data) {
-  const bottom = doc.page.height - 40;
+function iso(ts) {
+  return new Date(ts).toISOString();
+}
+
+function addFooter(doc, meta) {
+  const bottom = doc.page.height - 42;
+  const verifyUrl = `${process.env.BASE_URL}/verify/${meta.integrityHash}`;
 
   doc
-    .fontSize(9)
+    .fontSize(8)
     .fillColor("#666")
     .text(
-      `Website Risk Check • Scan ID: ${data.scanId} • ${new Date(
-        data.scannedAt
-      ).toLocaleString()} • Point-in-time snapshot`,
+      `WebsiteRiskCheck.com • Report ID: ${meta.scanId} • Generated: ${iso(
+        meta.scannedAt
+      )}`,
+      50,
+      bottom - 10,
+      { align: "center", width: doc.page.width - 100 }
+    )
+    .text(
+      `Verify this report: ${verifyUrl}`,
       50,
       bottom,
       { align: "center", width: doc.page.width - 100 }
@@ -35,9 +49,9 @@ function addWatermark(doc, text) {
   doc.save();
   doc.rotate(-45, { origin: [doc.page.width / 2, doc.page.height / 2] });
   doc
-    .fontSize(50)
+    .fontSize(48)
     .fillColor("#eeeeee")
-    .opacity(0.4)
+    .opacity(0.35)
     .text(text, doc.page.width / -4, doc.page.height / 2, {
       align: "center",
       width: doc.page.width * 2,
@@ -45,96 +59,90 @@ function addWatermark(doc, text) {
   doc.opacity(1).fillColor("#000").restore();
 }
 
-function drawBox(doc, title, lines) {
-  const startY = doc.y;
-  const boxHeight = 18 + lines.length * 16;
-
-  doc
-    .roundedRect(50, startY, doc.page.width - 100, boxHeight, 6)
-    .stroke("#ddd");
-
-  doc.fontSize(12).text(title, 60, startY + 6);
-
-  let y = startY + 22;
-  doc.fontSize(11);
-  lines.forEach((l) => {
-    doc.text(`• ${l}`, 60, y);
-    y += 16;
-  });
-
-  doc.moveDown(2);
+function section(doc, title) {
+  doc.fontSize(16).text(title);
+  doc.moveDown(0.5);
 }
 
-/**
- * generateReport
- * @param {object} data - scan data + metadata
- * @param {string} outputPath - absolute path to write PDF
- */
+/* =========================
+   REPORT GENERATION
+========================= */
+
 export async function generateReport(data, outputPath) {
   return new Promise(async (resolve, reject) => {
-    const doc = new PDFDocument({
-      margin: 50,
-      size: "A4",
-    });
+    /* ======================================================
+       INTEGRITY HASH (OBJECTIVE FACTS ONLY)
+    ====================================================== */
 
+    const integrityPayload = {
+      url: data.url,
+      hostname: data.hostname,
+      scanId: data.scanId,
+      scannedAt: data.scannedAt,
+      https: data.https,
+      hasPrivacyPolicy: data.hasPrivacyPolicy,
+      hasTerms: data.hasTerms,
+      hasCookiePolicy: data.hasCookiePolicy,
+      hasCookieBanner: data.hasCookieBanner,
+      trackingScriptsDetected: data.trackingScriptsDetected,
+      cookieVendorsDetected: data.cookieVendorsDetected,
+      formsDetected: data.formsDetected,
+      formsPersonalDataSignals: data.formsPersonalDataSignals,
+      totalImages: data.totalImages,
+      imagesMissingAlt: data.imagesMissingAlt,
+      accessibilityNotes: data.accessibilityNotes,
+      contactInfoPresent: data.contactInfoPresent,
+    };
+
+    const integrityHash = crypto
+      .createHash("sha256")
+      .update(JSON.stringify(integrityPayload))
+      .digest("hex");
+
+    data.integrityHash = integrityHash;
+
+    const doc = new PDFDocument({ margin: 50, size: "A4" });
     const stream = fs.createWriteStream(outputPath);
     doc.pipe(stream);
 
-    const shareUrl = `${process.env.BASE_URL}/r/${data.shareToken}`;
+    const verifyUrl = `${process.env.BASE_URL}/verify/${integrityHash}`;
 
     /* ======================================================
-       COVER PAGE
+       COVER
     ====================================================== */
 
-    addWatermark(doc, "WEBSITE RISK CHECK");
+    addWatermark(doc, "COMPLIANCE SNAPSHOT");
 
-    doc.fontSize(30).text("Website Risk Check", { align: "center" });
-    doc.moveDown(0.4);
+    doc.fontSize(28).text("Website Compliance & Risk Snapshot", {
+      align: "center",
+    });
 
-    doc
-      .fontSize(14)
-      .text("Website compliance & risk snapshot", { align: "center" });
-
-    doc.moveDown(2);
-
-    doc
-      .fontSize(22)
-      .text(`Overall risk level: ${data.riskLevel}`, { align: "center" });
-
-    doc.moveDown(2);
+    doc.moveDown(1);
 
     doc.fontSize(12).text(
-      `Prepared for:\n${data.hostname || data.url}`,
-      { align: "center" }
-    );
-
-    doc.moveDown(1);
-
-    doc.fontSize(11).text(
-      `Website scanned:\n${data.url}`,
-      { align: "center" }
-    );
-
-    doc.moveDown(1);
-
-    doc.fontSize(11).text(
-      `Scan date: ${new Date(data.scannedAt).toLocaleString()}\nScan ID: ${
-        data.scanId
-      }`,
-      { align: "center" }
-    );
-
-    doc.moveDown(2);
-
-    doc.fontSize(10).text(
-      "Purpose: internal review, agency audit, or client-facing documentation.",
+      "Publicly observable signals recorded at the time of scan",
       { align: "center" }
     );
 
     doc.moveDown(3);
 
-    doc.fontSize(10).text(
-      "This report is a factual, point-in-time snapshot of detectable signals only.\nIt does not provide legal advice or certify compliance.",
+    doc.fontSize(12).text(`Scanned domain:\n${data.hostname || data.url}`, {
+      align: "center",
+    });
+
+    doc.moveDown(1);
+
+    doc.fontSize(11).text(
+      `Generated: ${iso(data.scannedAt)}\nReport ID: ${
+        data.scanId
+      }\nIntegrity hash: ${integrityHash.slice(0, 20)}…`,
+      { align: "center" }
+    );
+
+    doc.moveDown(3);
+
+    doc.fontSize(9).text(
+      "This document records observable facts only. It does not certify compliance and does not constitute legal advice.",
       { align: "center" }
     );
 
@@ -145,60 +153,50 @@ export async function generateReport(data, outputPath) {
        EXECUTIVE SUMMARY
     ====================================================== */
 
-    addWatermark(doc, "POINT-IN-TIME");
+    addWatermark(doc, "SUMMARY");
 
-    doc.fontSize(18).text("Executive summary");
-    doc.moveDown(1);
+    section(doc, "Executive summary");
 
-    doc.fontSize(12).text(
-      "This report captures what was objectively detectable on the website at the time of scanning. It is designed to answer a single question:"
+    doc.fontSize(11).text(
+      "This report provides a factual, point-in-time snapshot of compliance-relevant signals detected on the target website."
     );
-
-    doc.moveDown(0.5);
-
-    doc
-      .fontSize(12)
-      .text("“What does this website visibly expose right now?”", {
-        italics: true,
-      });
 
     doc.moveDown(1);
 
-    doc.fontSize(12).text(
-      "The scan focuses on high-signal indicators related to privacy transparency, cookies and tracking, form data collection, accessibility basics, and contact visibility."
+    doc.fontSize(11).text("Scan scope:");
+    doc.list(
+      [
+        "Homepage inspection",
+        "Common public policy paths",
+        "Unauthenticated, public-facing content only",
+        "No crawling, no behavioural simulation",
+      ],
+      { bulletRadius: 2 }
     );
-
-    drawBox(doc, "Scan coverage", [
-      "Homepage only",
-      "Limited set of common policy page paths",
-      "No full crawl performed",
-      "No authenticated or gated content",
-    ]);
 
     if (data.riskReasons?.length) {
-      doc.fontSize(13).text("Key risk indicators detected:");
-      doc.moveDown(0.5);
-      doc.fontSize(11).list(data.riskReasons, { bulletRadius: 2 });
+      doc.moveDown(1);
+      doc.fontSize(11).text("Notable observations:");
+      doc.list(data.riskReasons, { bulletRadius: 2 });
     }
 
     addFooter(doc, data);
     doc.addPage();
 
     /* ======================================================
-       FINDINGS
+       OBSERVED FINDINGS
     ====================================================== */
 
-    addWatermark(doc, "DETECTABLE SIGNALS");
+    addWatermark(doc, "OBSERVED SIGNALS");
 
-    doc.fontSize(18).text("Detectable findings");
-    doc.moveDown(1);
+    section(doc, "Observed findings");
 
-    const rows = [
+    const findings = [
       ["HTTPS enabled", yesNo(data.https)],
-      ["Privacy policy detected", yesNo(data.hasPrivacyPolicy)],
-      ["Terms page detected", yesNo(data.hasTerms)],
-      ["Cookie banner detected", yesNo(data.hasCookieBanner)],
-      ["Cookie policy detected", yesNo(data.hasCookiePolicy)],
+      ["Privacy policy present", yesNo(data.hasPrivacyPolicy)],
+      ["Terms page present", yesNo(data.hasTerms)],
+      ["Cookie banner present", yesNo(data.hasCookieBanner)],
+      ["Cookie policy present", yesNo(data.hasCookiePolicy)],
       [
         "Tracking scripts detected",
         data.trackingScriptsDetected.length
@@ -213,49 +211,40 @@ export async function generateReport(data, outputPath) {
       ],
       ["Forms detected", String(data.formsDetected)],
       [
-        "Possible personal-data fields (heuristic)",
+        "Potential personal-data fields (heuristic)",
         String(data.formsPersonalDataSignals || 0),
       ],
       [
         "Images missing alt text",
         `${data.imagesMissingAlt} of ${data.totalImages}`,
       ],
-      ["Contact or business info present", yesNo(data.contactInfoPresent)],
+      ["Contact information present", yesNo(data.contactInfoPresent)],
     ];
 
     let y = doc.y + 10;
-    rows.forEach(([label, value]) => {
+    findings.forEach(([label, value]) => {
       doc.fontSize(11).text(label, 50, y, { width: 260 });
       doc.fontSize(11).text(value, 330, y, { width: 210 });
-      y += 22;
+      y += 20;
     });
-
-    if (data.accessibilityNotes?.length) {
-      doc.moveDown(2);
-      doc.fontSize(14).text("Accessibility notes");
-      doc.moveDown(0.5);
-      doc.fontSize(11).list(data.accessibilityNotes, { bulletRadius: 2 });
-    }
 
     addFooter(doc, data);
     doc.addPage();
 
     /* ======================================================
-       NEXT STEPS
+       LIMITATIONS
     ====================================================== */
 
-    addWatermark(doc, "NEXT STEPS");
+    addWatermark(doc, "LIMITATIONS");
 
-    doc.fontSize(18).text("Common next steps");
-    doc.moveDown(1);
+    section(doc, "Assessment limitations");
 
-    doc.fontSize(12).list(
+    doc.fontSize(11).list(
       [
-        "Review whether a clear privacy policy is appropriate for this website.",
-        "Confirm whether cookie consent is required if tracking tools are in use.",
-        "Ensure forms clearly explain how submitted data is handled.",
-        "Address basic accessibility issues where relevant.",
-        "Seek professional advice if compliance is business-critical.",
+        "Results apply only at the recorded timestamp.",
+        "No claim of completeness or compliance is made.",
+        "Site content may change without notice.",
+        "Hidden or dynamically loaded content may not be detected.",
       ],
       { bulletRadius: 2 }
     );
@@ -264,33 +253,29 @@ export async function generateReport(data, outputPath) {
     doc.addPage();
 
     /* ======================================================
-       SHARE / VERIFICATION
+       VERIFICATION
     ====================================================== */
 
     addWatermark(doc, "VERIFICATION");
 
-    doc.fontSize(18).text("Report verification");
-    doc.moveDown(1);
+    section(doc, "Report verification");
 
-    doc.fontSize(12).text(
-      "This report can be re-downloaded or shared using the permanent link below."
+    doc.fontSize(11).text(
+      "This report can be independently verified using its cryptographic fingerprint."
     );
 
     doc.moveDown(1);
 
-    const qrDataUrl = await QRCode.toDataURL(shareUrl);
+    doc.fontSize(10).text(`Integrity hash (SHA-256):\n${integrityHash}`);
+
+    doc.moveDown(1);
+
+    doc.fontSize(10).text(`Verify this report:\n${verifyUrl}`);
+
+    doc.moveDown(1);
+
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl);
     doc.image(qrDataUrl, 50, doc.y, { width: 120 });
-
-    doc.fontSize(10).text(shareUrl, 180, doc.y + 40, {
-      width: doc.page.width - 230,
-    });
-
-    doc.moveDown(4);
-
-    doc.fontSize(10).text(
-      "Anyone with this link can access the report. No login required.",
-      { align: "center" }
-    );
 
     addFooter(doc, data);
 

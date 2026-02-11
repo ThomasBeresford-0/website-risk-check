@@ -7,7 +7,7 @@
 
   <meta
     name="description"
-    content="Your Website Risk Check report is ready. Download your timestamped PDF and copy a permanent share link."
+    content="Your Website Risk Check report is ready. Download your timestamped PDF, verify its authenticity, and copy a permanent share link."
   />
 
   <style>
@@ -20,7 +20,7 @@
       --accent:#111;
       --soft:#f2f2f3;
       --ok:#1a7f37;
-      --warn:#b54708;
+      --deal:#0f766e;
     }
 
     *{ box-sizing:border-box; }
@@ -34,10 +34,10 @@
     }
 
     .container{
-      max-width:780px;
+      max-width:820px;
       margin:0 auto;
       background:var(--card);
-      padding:38px;
+      padding:40px;
       border-radius:18px;
       box-shadow:0 20px 40px rgba(0,0,0,0.08);
       border:1px solid rgba(0,0,0,0.04);
@@ -97,7 +97,7 @@
     button{
       padding:14px 18px;
       font-size:15px;
-      font-weight:700;
+      font-weight:800;
       border:none;
       border-radius:12px;
       cursor:pointer;
@@ -106,6 +106,7 @@
     }
 
     button.secondary{ background:#2a2a2a; }
+
     button.ghost{
       background:transparent;
       color:#111;
@@ -126,18 +127,6 @@
       word-break:break-all;
       border:1px solid rgba(0,0,0,0.06);
       display:none;
-    }
-
-    .divider{
-      height:1px;
-      background:var(--border);
-      margin:28px 0;
-    }
-
-    h2{
-      margin:0 0 8px;
-      font-size:20px;
-      letter-spacing:-0.01em;
     }
 
     .labelRow{
@@ -165,7 +154,7 @@
       font-size:13px;
       color:var(--muted);
       line-height:1.45;
-      margin:8px 0 0;
+      margin:6px 0 0;
     }
 
     .hint{
@@ -178,69 +167,6 @@
       font-size:13px;
       line-height:1.45;
     }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:14px;
-      margin-top:14px;
-    }
-
-    @media (max-width: 760px){
-      .grid{ grid-template-columns:1fr; }
-    }
-
-    .miniCard{
-      background:#f7f7f8;
-      border:1px solid rgba(0,0,0,0.06);
-      border-radius:16px;
-      padding:16px;
-    }
-
-    .miniCard h3{
-      margin:0 0 8px;
-      font-size:14px;
-      letter-spacing:-0.01em;
-    }
-
-    .miniCard p{
-      margin:0;
-      font-size:13px;
-      color:#444;
-      line-height:1.45;
-    }
-
-    input{
-      width:100%;
-      padding:14px;
-      font-size:15px;
-      border-radius:12px;
-      border:1px solid #ddd;
-      margin-top:10px;
-      outline:none;
-      background:#fff;
-    }
-
-    input:focus{
-      border-color:#cbd5e1;
-      box-shadow:0 0 0 4px rgba(0,0,0,0.06);
-    }
-
-    .tinyLinkRow{
-      margin-top:12px;
-      display:flex;
-      gap:14px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    a.inlineLink{
-      color:#111;
-      text-decoration:none;
-      border-bottom:1px solid rgba(0,0,0,0.25);
-      font-size:13px;
-    }
-    a.inlineLink:hover{ border-bottom-color: rgba(0,0,0,0.6); }
 
     .toast{
       position:fixed;
@@ -264,19 +190,26 @@
   <div class="container">
     <div class="topRow">
       <h1>Your report is ready</h1>
-      <div class="statusPill"><span class="dot"></span> Payment verified • Generating secure link</div>
+      <div class="statusPill">
+        <span class="dot"></span> Payment verified • Immutable snapshot generated
+      </div>
     </div>
 
     <p>
-      Your PDF report is downloading now. This is a <strong>point-in-time snapshot</strong> you can
-      keep, forward, or file.
+      Your PDF report is downloading now. This is a <strong>point-in-time snapshot</strong>
+      you can keep, forward, or file.
     </p>
 
     <div class="actions">
       <button id="download">Download PDF again</button>
       <button id="copy" class="secondary" style="display:none;">Copy permanent share link</button>
       <button id="open" class="ghost" style="display:none;">Open report link</button>
+      <button id="verify" class="ghost" style="display:none;">Verify report</button>
     </div>
+
+    <p class="tinyMuted">
+      Verification confirms this report has not been altered since generation.
+    </p>
 
     <div class="labelRow">
       <strong>Permanent share link (no login required)</strong>
@@ -286,64 +219,13 @@
     <div id="share-box" class="box"></div>
 
     <div class="hint">
-      If your download is blocked (some corporate browsers do this), use <strong>Open report link</strong>
-      or copy the link above and open it in a new tab.
+      If your download is blocked, use <strong>Open report</strong>,
+      <strong>Verify report</strong>, or copy the link above.
     </div>
 
-    <div class="grid">
-      <div class="miniCard">
-        <h3>What you can do with this</h3>
-        <p>
-          Attach it to a client handover, keep it in internal records, or forward it to a colleague.
-          The report includes a timestamp and scan ID.
-        </p>
-      </div>
-      <div class="miniCard">
-        <h3>Agencies</h3>
-        <p>
-          Agencies commonly use this before launches and as neutral documentation during handovers.
-          The share link is permanent and requires no login.
-        </p>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <h2>Add a second website snapshot (£39)</h2>
-
-    <p>
-      Need another site checked while you’re here?
-      Run an additional snapshot for <strong>£39</strong> (one-time).
-    </p>
-
-    <input
-      id="upsell-url"
-      type="url"
-      placeholder="https://second-website.com"
-      autocomplete="url"
-      inputmode="url"
-    />
-
-    <button id="upsell">Run second scan (£39)</button>
-
-    <p class="muted">
-      Same report. Same format. No subscription.
-    </p>
-
-    <div class="tinyLinkRow">
-      <a class="inlineLink" href="/agency.html">Agency workflow →</a>
-      <a class="inlineLink" href="/">Run another scan →</a>
-    </div>
-
-    <div class="divider"></div>
-
-    <p class="muted">
+    <p class="muted" style="margin-top:24px;">
       This report does not provide legal advice or guarantee compliance.
       It reflects detectable signals at the time of scanning.
-    </p>
-
-    <p class="tinyMuted">
-      Tip: If you’re an agency, attach this report to the handover email as neutral evidence.
     </p>
   </div>
 

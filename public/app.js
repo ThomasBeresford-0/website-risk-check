@@ -1,11 +1,14 @@
 // public/app.js
-// FULL RAMBO — conversion analytics + locked flow
+// FULL RAMBO — signal-only preview + locked conversion flow
 
 function getSid() {
   const key = "wrc_sid";
   let sid = localStorage.getItem(key);
   if (!sid) {
-    sid = (crypto?.randomUUID?.() || String(Math.random()).slice(2)) + "-" + Date.now();
+    sid =
+      (crypto?.randomUUID?.() || String(Math.random()).slice(2)) +
+      "-" +
+      Date.now();
     localStorage.setItem(key, sid);
   }
   return sid;
@@ -25,9 +28,7 @@ async function track(name, props = {}) {
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("check-form");
   const input = document.getElementById("url-input");
-
   const preview = document.getElementById("preview");
-  const riskEl = document.getElementById("risk");
   const findingsEl = document.getElementById("findings");
   const payButton = document.getElementById("pay-button");
 
@@ -35,10 +36,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let isScanning = false;
   let isPaying = false;
 
-  // fire landing view once
   track("landing_view", { path: location.pathname });
 
-  if (!form || !input || !payButton) return;
+  if (!form || !input || !preview || !findingsEl || !payButton) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -50,12 +50,10 @@ document.addEventListener("DOMContentLoaded", () => {
     isScanning = true;
     scannedUrl = url;
 
-    track("preview_started", { url });
+    track("preview_started", {});
 
     preview.style.display = "none";
     findingsEl.innerHTML = "";
-    riskEl.textContent = "Scanning website…";
-    riskEl.className = "risk";
     payButton.disabled = true;
 
     try {
@@ -69,10 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      const level = (data.riskLevel || "LOW").toLowerCase();
-      riskEl.textContent = `Risk level: ${data.riskLevel}`;
-      riskEl.className = `risk ${level}`;
-
       (data.findings || []).forEach((text) => {
         const li = document.createElement("li");
         li.textContent = text;
@@ -82,11 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
       preview.style.display = "block";
       payButton.disabled = false;
 
-      track("preview_completed", { riskLevel: data.riskLevel });
+      track("preview_completed", {
+        findings_count: (data.findings || []).length,
+      });
     } catch (err) {
       console.error(err);
-      riskEl.textContent = "Scan failed. Please try again.";
-      riskEl.className = "risk high";
+      alert("Preview scan failed. Please try again.");
       track("preview_failed", {});
     } finally {
       isScanning = false;

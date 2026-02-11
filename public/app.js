@@ -1,11 +1,7 @@
 // public/app.js
 // FULL RAMBO — elite preview renderer + locked conversion flow (single + 3-pack)
-// - Premium preview UI (risk badge + category grid + coverage + inline notices)
-// - Calm, non-fear language
-// - No new HTML required (injects UI above #findings)
-// - Works even if 3-pack button not present
-// - Removes alert() (trust-killer) and uses in-card banners instead
-// - Hardened URL handling + better UX states
+// UPDATED: consumes structured /preview-scan payload { ok, meta, coverage, signals, risk }
+// Still backwards-compatible with legacy flat preview payloads.
 
 function getSid() {
   const key = "wrc_sid";
@@ -70,12 +66,20 @@ function fmtHttpStatus(st) {
   return String(n);
 }
 
+function bool(v) {
+  return v === true;
+}
+
+function num(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 /* =========================
    INLINE NOTICE (NO ALERTS)
 ========================= */
 
 function ensureNotice(previewEl) {
-  // Banner shown inside the scan card / preview area
   let el = previewEl.querySelector("#wrcNotice");
   if (el) return el;
 
@@ -91,7 +95,6 @@ function ensureNotice(previewEl) {
   el.style.fontSize = "13px";
   el.style.lineHeight = "1.45";
 
-  // Put it at the top of preview block for maximum visibility
   previewEl.insertBefore(el, previewEl.firstChild);
   return el;
 }
@@ -132,11 +135,164 @@ function hideNotice(previewEl) {
 }
 
 /* =========================
+   NORMALIZE BACKEND PAYLOAD
+========================= */
+
+// Accepts either structured {ok, meta, coverage, signals, risk} or legacy flat payload.
+// Returns a single "view model" that the UI renderer already understands.
+function normalizePreviewPayload(data, fallbackUrl) {
+  // Structured response (new)
+  if (data && data.ok === true && data.meta && data.signals) {
+    const meta = data.meta || {};
+    const cov = data.coverage || {};
+    const sig = data.signals || {};
+    const risk = data.risk || {};
+
+    return {
+      url: safeStr(meta.url) || safeStr(fallbackUrl),
+      hostname: safeStr(meta.hostname),
+      scannedAt: safeStr(meta.scannedAt),
+      riskLevel: safeStr(risk.level) || "Medium",
+
+      https: bool(meta.https),
+      // Derive fetchOk from checkedPages for structured model
+      fetchOk: safeArr(cov.checkedPages).length > 0,
+      fetchStatus: 0, // not required in structured preview; keep for UI compatibility
+
+      hasPrivacyPolicy: bool(sig?.policies?.privacy),
+      hasTerms: bool(sig?.policies?.terms),
+      hasCookiePolicy: bool(sig?.policies?.cookies),
+      hasCookieBanner: bool(sig?.consent?.bannerDetected),
+
+      trackingScriptsDetected: safeArr(sig?.trackingScripts),
+      cookieVendorsDetected: safeArr(sig?.consent?.vendors),
+
+      formsDetected: num(sig?.forms?.detected, 0),
+      formsPersonalDataSignals: num(sig?.forms?.personalDataSignals, 0),
+
+      totalImages: num(sig?.accessibility?.images?.total, 0),
+      imagesMissingAlt: num(sig?.accessibility?.images?.missingAlt, 0),
+
+      accessibilityNotes: safeArr(sig?.accessibility?.notes),
+      contactInfoPresent: bool(sig?.contact?.detected),
+
+      checkedPages: safeArr(cov.checkedPages),
+      failedPages: safeArr(cov.failedPages),
+
+      // Optional: keep coverage notes for future UI
+      scanCoverageNotes: safeArr(cov.notes),
+    };
+  }
+
+  // Legacy response (old)
+  return {
+    url: safeStr(data?.url) || safeStr(fallbackUrl),
+    hostname: safeStr(data?.hostname),
+    scannedAt: safeStr(data?.scannedAt),
+    riskLevel: safeStr(data?.riskLevel) || "Medium",
+
+    https: typeof data?.https === "boolean" ? data.https : safeStr(fallbackUrl).startsWith("https://"),
+    fetchOk: typeof data?.fetchOk === "boolean" ? data.fetchOk : true,
+    fetchStatus: num(data?.fetchStatus, 0),
+
+    hasPrivacyPolicy: bool(data?.hasPrivacyPolicy),
+    hasTerms: bool(data?.hasTerms),
+    hasCookiePolicy: bool(data?.hasCookiePolicy),
+    hasCookieBanner: bool(data?.hasCookieBanner),
+
+    trackingScriptsDetected: safeArr(data?.trackingScriptsDetected),
+    cookieVendorsDetected: safeArr(data?.cookieVendorsDetected),
+
+    formsDetected: num(data?.formsDetected, 0),
+    formsPersonalDataSignals: num(data?.formsPersonalDataSignals, 0),
+
+    totalImages: num(data?.totalImages, 0),
+    imagesMissingAlt: num(data?.imagesMissingAlt, 0),
+
+    accessibilityNotes: safeArr(data?.accessibilityNotes),
+    contactInfoPresent: bool(data?.contactInfoPresent),
+
+    checkedPages: safeArr(data?.checkedPages),
+    failedPages: safeArr(data?.failedPages),
+
+    scanCoverageNotes: safeArr(data?.scanCoverageNotes),
+  };
+}
+
+function buildFindingsFromScan(scan) {
+  const findings = [];
+
+  findings.push(`HTTPS: ${scan.https ? "Detected" : "Not detected"}`);
+
+  const checked = safeArr(scan.checkedPages).length;
+  const failed = safeArr(scan.failedPages).length;
+  const covBits = [];
+  if (checked) covBits.push(`${checked} checked`);
+  if (failed) covBits.push(`${failed} failed`);
+  findings.push(`Coverage: ${covBits.join(" • ") || "—"}`);
+
+  findings.push(
+    scan.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected"
+  );
+  findings.push(scan.hasTerms ? "Terms: detected" : "Terms: not detected");
+  findings.push(
+    scan.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected"
+  );
+
+  findings.push(
+    scan.hasCookieBanner
+      ? "Consent banner indicator: detected (heuristic)"
+      : "Consent banner indicator: not detected (heuristic)"
+  );
+
+  const trackers = safeArr(scan.trackingScriptsDetected);
+  const vendors = safeArr(scan.cookieVendorsDetected);
+
+  findings.push(
+    trackers.length
+      ? `Tracking scripts: detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
+      : "Tracking scripts: none detected"
+  );
+
+  findings.push(
+    vendors.length
+      ? `Cookie vendor signals: detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
+      : "Cookie vendor signals: none detected"
+  );
+
+  if (scan.formsDetected > 0) {
+    findings.push(`Forms detected: ${scan.formsDetected}`);
+    findings.push(
+      `Potential personal-data field signals: ${scan.formsPersonalDataSignals} (heuristic)`
+    );
+  } else {
+    findings.push("Forms detected: none");
+  }
+
+  if (scan.totalImages > 0) {
+    findings.push(`Images missing alt text: ${scan.imagesMissingAlt} of ${scan.totalImages}`);
+  } else {
+    findings.push("Images: none detected on scanned pages");
+  }
+
+  if (safeArr(scan.accessibilityNotes).length) {
+    findings.push(`Accessibility note: ${scan.accessibilityNotes[0]}`);
+  }
+
+  findings.push(
+    scan.contactInfoPresent
+      ? "Contact/identity signals: detected"
+      : "Contact/identity signals: not detected"
+  );
+
+  return findings.slice(0, 12);
+}
+
+/* =========================
    PREMIUM PREVIEW RENDERER
 ========================= */
 
 function ensurePreviewShell(previewEl, findingsEl) {
-  // Inject a premium preview header + cards area ABOVE the old <ul> (only once).
   if (previewEl.querySelector("[data-wrc-shell='1']")) return;
 
   const shell = document.createElement("div");
@@ -153,7 +309,7 @@ function ensurePreviewShell(previewEl, findingsEl) {
             Detected signals (point-in-time)
           </div>
           <div class="wrcSub" style="margin-top:6px;font-size:13px;color:#64748b;line-height:1.45;">
-            This preview shows a small subset of what’s detectable. The paid report includes coverage notes, plain-English explanations, limitations and verification.
+            This preview shows a subset of what’s detectable. The paid report includes coverage notes, plain-English explanations, limitations and verification.
           </div>
         </div>
 
@@ -187,7 +343,6 @@ function ensurePreviewShell(previewEl, findingsEl) {
     </div>
   `;
 
-  // Insert shell before findings list
   findingsEl.parentNode.insertBefore(shell, findingsEl);
 }
 
@@ -264,9 +419,7 @@ function renderGrid(previewEl, scan) {
       lines: [
         `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"}`,
         vendors.length
-          ? `Vendor signals: ${vendors.slice(0, 2).join(", ")}${
-              vendors.length > 2 ? "…" : ""
-            }`
+          ? `Vendor signals: ${vendors.slice(0, 2).join(", ")}${vendors.length > 2 ? "…" : ""}`
           : "Vendor signals: None detected",
       ],
       good: !!scan.hasCookieBanner,
@@ -275,9 +428,7 @@ function renderGrid(previewEl, scan) {
       title: "Tracking",
       lines: [
         trackers.length
-          ? `Scripts: ${trackers.slice(0, 2).join(", ")}${
-              trackers.length > 2 ? "…" : ""
-            }`
+          ? `Scripts: ${trackers.slice(0, 2).join(", ")}${trackers.length > 2 ? "…" : ""}`
           : "Scripts: None detected",
         vendors.length ? `Vendors: ${vendors.length}` : "Vendors: 0",
       ],
@@ -287,18 +438,14 @@ function renderGrid(previewEl, scan) {
       title: "Forms",
       lines: [
         `Forms detected: ${Number(scan.formsDetected || 0)}`,
-        `Personal-data signals: ${Number(
-          scan.formsPersonalDataSignals || 0
-        )} (heuristic)`,
+        `Personal-data signals: ${Number(scan.formsPersonalDataSignals || 0)} (heuristic)`,
       ],
       good: Number(scan.formsDetected || 0) === 0,
     },
     {
       title: "Accessibility",
       lines: [
-        `Alt text missing: ${Number(scan.imagesMissingAlt || 0)} of ${Number(
-          scan.totalImages || 0
-        )}`,
+        `Alt text missing: ${Number(scan.imagesMissingAlt || 0)} of ${Number(scan.totalImages || 0)}`,
         safeArr(scan.accessibilityNotes).length
           ? `Notes: ${truncate(scan.accessibilityNotes[0], 52)}`
           : "Notes: None recorded",
@@ -308,9 +455,7 @@ function renderGrid(previewEl, scan) {
     {
       title: "Identity",
       lines: [
-        `Contact signals: ${
-          scan.contactInfoPresent ? "Detected" : "Not detected"
-        }`,
+        `Contact signals: ${scan.contactInfoPresent ? "Detected" : "Not detected"}`,
         `HTTPS: ${scan.https ? "Detected" : "Not detected"}`,
       ],
       good: !!scan.contactInfoPresent && !!scan.https,
@@ -370,7 +515,6 @@ function renderGrid(previewEl, scan) {
     grid.appendChild(card);
   }
 
-  // responsive tweak
   const mq = window.matchMedia("(max-width: 560px)");
   const applyCols = () => {
     grid.style.gridTemplateColumns = mq.matches
@@ -416,12 +560,8 @@ function renderCoverage(previewEl, scan) {
     <div style="font-weight:800;color:#0f172a;font-size:13px;">Coverage summary</div>
     <div style="margin-top:6px;font-size:12.5px;color:#475569;line-height:1.45;">
       <div><strong>Target:</strong> ${domain}</div>
-      <div><strong>Checked:</strong> ${
-        checkedPaths.length ? checkedPaths.join(", ") : "—"
-      }</div>
-      <div><strong>Failed:</strong> ${
-        failedPaths.length ? failedPaths.join(", ") : "None"
-      }</div>
+      <div><strong>Checked:</strong> ${checkedPaths.length ? checkedPaths.join(", ") : "—"}</div>
+      <div><strong>Failed:</strong> ${failedPaths.length ? failedPaths.join(", ") : "None"}</div>
     </div>
   `;
 }
@@ -435,7 +575,7 @@ function renderConfidence(previewEl, scan) {
   const failed = safeArr(scan.failedPages).length;
 
   let msg = "This preview reflects what was detectable at the time of scanning.";
-  if (!ok) {
+  if (!ok || checked === 0) {
     msg =
       "We couldn’t retrieve enough HTML to generate a reliable preview. Try again, check the URL, or test a different page.";
   } else if (checked <= 1) {
@@ -468,8 +608,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const preview = document.getElementById("preview");
   const findingsEl = document.getElementById("findings");
 
-  const payButton = document.getElementById("pay-button"); // single report
-  const threepackButton = document.getElementById("threepack-button"); // optional
+  const payButton = document.getElementById("pay-button");
+  const threepackButton = document.getElementById("threepack-button");
 
   let scannedUrl = null;
   let isScanning = false;
@@ -478,7 +618,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   track("landing_view", { path: location.pathname });
 
-  // Single button is required, 3-pack may not exist on older pages
   if (!form || !input || !preview || !findingsEl || !payButton) return;
 
   function setPayButtonsEnabled(enabled) {
@@ -538,12 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (res.status === 429) {
-        showNotice(
-          preview,
-          "warn",
-          "You’re scanning too quickly",
-          "Please wait a moment and try again."
-        );
+        showNotice(preview, "warn", "You’re scanning too quickly", "Please wait a moment and try again.");
         track("preview_rate_limited", {});
         return;
       }
@@ -561,55 +695,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      // Elite shell + rendering (works even if backend is old)
       ensurePreviewShell(preview, findingsEl);
 
-      // If backend returns new fields, use them. Otherwise infer minimal state.
-      const scan = {
-        url: data.url || url,
-        hostname: data.hostname,
-        scannedAt: data.scannedAt,
-        riskLevel: data.riskLevel,
+      const scan = normalizePreviewPayload(data, url);
 
-        https: data.https,
-        fetchOk: data.fetchOk,
-        fetchStatus: data.fetchStatus,
-
-        hasPrivacyPolicy: data.hasPrivacyPolicy,
-        hasTerms: data.hasTerms,
-        hasCookiePolicy: data.hasCookiePolicy,
-        hasCookieBanner: data.hasCookieBanner,
-
-        trackingScriptsDetected: data.trackingScriptsDetected,
-        cookieVendorsDetected: data.cookieVendorsDetected,
-
-        formsDetected: data.formsDetected,
-        formsPersonalDataSignals: data.formsPersonalDataSignals,
-
-        totalImages: data.totalImages,
-        imagesMissingAlt: data.imagesMissingAlt,
-
-        accessibilityNotes: data.accessibilityNotes,
-        contactInfoPresent: data.contactInfoPresent,
-
-        checkedPages: data.checkedPages,
-        failedPages: data.failedPages,
-      };
-
-      // Fallbacks if backend still only returns findings[]
-      if (typeof scan.https !== "boolean") scan.https = url.startsWith("https://");
-      if (typeof scan.fetchOk !== "boolean") scan.fetchOk = true;
-      if (!scan.riskLevel) scan.riskLevel = "Medium";
-
-      // If backend indicates fetch failure, show a clear (non-fear) banner
-      if (scan.fetchOk === false) {
+      // If coverage is empty, show a clear (non-fear) banner
+      if (scan.fetchOk === false || safeArr(scan.checkedPages).length === 0) {
         showNotice(
           preview,
           "warn",
           "Limited coverage",
-          `We couldn’t retrieve enough HTML to run a full preview (HTTP ${fmtHttpStatus(
-            scan.fetchStatus
-          )}). You can still try again or test a different URL.`
+          "We couldn’t retrieve enough HTML to run a full preview. You can still try again or test a different URL."
         );
       } else {
         hideNotice(preview);
@@ -622,15 +718,24 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCoverage(preview, scan);
       renderConfidence(preview, scan);
 
-      // Keep legacy bullet list as a secondary detail area
-      renderLegacyFindingsList(findingsEl, data.findings || []);
+      // Findings list:
+      // - If backend provided legacy findings, show them
+      // - Otherwise build them client-side from the structured model
+      const findings =
+        safeArr(data?.findings).length
+          ? data.findings
+          : buildFindingsFromScan(scan);
+
+      renderLegacyFindingsList(findingsEl, findings);
 
       preview.style.display = "block";
       setPayButtonsEnabled(true);
 
       track("preview_completed", {
-        findings_count: safeArr(data.findings).length,
+        findings_count: safeArr(findings).length,
         risk: scan.riskLevel,
+        checked_pages: safeArr(scan.checkedPages).length,
+        failed_pages: safeArr(scan.failedPages).length,
       });
     } catch (err) {
       console.error(err);
@@ -665,12 +770,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (!res.ok) {
-        showNotice(
-          preview,
-          "err",
-          "Checkout unavailable",
-          "We couldn’t start Stripe checkout right now. Please try again."
-        );
+        showNotice(preview, "err", "Checkout unavailable", "We couldn’t start Stripe checkout right now. Please try again.");
         track("checkout_failed", { kind: "single", status: res.status });
         setPayButtonsEnabled(true);
         setCheckoutUi("single", false);
@@ -680,12 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
       if (!data.url) {
-        showNotice(
-          preview,
-          "err",
-          "Checkout error",
-          "Stripe checkout did not return a redirect URL. Please try again."
-        );
+        showNotice(preview, "err", "Checkout error", "Stripe checkout did not return a redirect URL. Please try again.");
         track("checkout_failed", { kind: "single", reason: "no_url" });
         setPayButtonsEnabled(true);
         setCheckoutUi("single", false);
@@ -697,12 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = data.url;
     } catch (err) {
       console.error(err);
-      showNotice(
-        preview,
-        "err",
-        "Checkout failed",
-        "We couldn’t start checkout. Please try again."
-      );
+      showNotice(preview, "err", "Checkout failed", "We couldn’t start checkout. Please try again.");
       setPayButtonsEnabled(true);
       setCheckoutUi("single", false);
       isPayingSingle = false;
@@ -729,12 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (!res.ok) {
-          showNotice(
-            preview,
-            "err",
-            "Checkout unavailable",
-            "We couldn’t start Stripe checkout right now. Please try again."
-          );
+          showNotice(preview, "err", "Checkout unavailable", "We couldn’t start Stripe checkout right now. Please try again.");
           track("checkout_failed", { kind: "threepack", status: res.status });
           setPayButtonsEnabled(true);
           setCheckoutUi("threepack", false);
@@ -744,12 +829,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const data = await res.json();
         if (!data.url) {
-          showNotice(
-            preview,
-            "err",
-            "Checkout error",
-            "Stripe checkout did not return a redirect URL. Please try again."
-          );
+          showNotice(preview, "err", "Checkout error", "Stripe checkout did not return a redirect URL. Please try again.");
           track("checkout_failed", { kind: "threepack", reason: "no_url" });
           setPayButtonsEnabled(true);
           setCheckoutUi("threepack", false);
@@ -761,12 +841,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.href = data.url;
       } catch (err) {
         console.error(err);
-        showNotice(
-          preview,
-          "err",
-          "Checkout failed",
-          "We couldn’t start checkout. Please try again."
-        );
+        showNotice(preview, "err", "Checkout failed", "We couldn’t start checkout. Please try again.");
         setPayButtonsEnabled(true);
         setCheckoutUi("threepack", false);
         isPayingThreepack = false;

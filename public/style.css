@@ -785,6 +785,85 @@ button{
 }
 
 /* =========================================
+   INJECTED ELITE PREVIEW SHELL (app.js)
+   Styles the JS-injected shell so it matches theme perfectly
+========================================= */
+
+#wrcNotice,
+#wrcSuccessNotice,
+#wrcThreepackNotice{
+  border-radius:16px !important;
+  border:1px solid rgba(15,23,42,.10) !important;
+  box-shadow:var(--shadow-soft) !important;
+}
+
+.wrcSummary{
+  margin: 10px 0 14px;
+}
+
+.wrcSummaryTop{
+  gap:14px;
+}
+
+.wrcKicker{
+  font-size:12px !important;
+  color:var(--muted) !important;
+  font-weight:800 !important;
+  letter-spacing:.08em !important;
+}
+
+.wrcTitle{
+  font-size:16px !important;
+  font-weight:900 !important;
+  color:var(--text) !important;
+  letter-spacing:-.2px !important;
+}
+
+.wrcSub{
+  font-size:13px !important;
+  color:var(--muted) !important;
+  line-height:1.55 !important;
+}
+
+#wrcRiskBadge,
+#wrcScopeBadge{
+  border-radius:999px !important;
+  border:1px solid rgba(15,23,42,.12) !important;
+  font-weight:900 !important;
+}
+
+#wrcGrid{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+#wrcGrid > div{
+  border:1px solid rgba(15,23,42,.10) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.86) !important;
+  box-shadow:var(--shadow-soft) !important;
+}
+
+#wrcCoverage{
+  border:1px solid rgba(15,23,42,.10) !important;
+  border-radius:16px !important;
+  background:rgba(248,250,252,.92) !important;
+}
+
+#wrcConfidence{
+  color:var(--muted) !important;
+}
+
+/* Mobile: grid becomes 1 col (mirrors JS but CSS-first) */
+@media (max-width: 560px){
+  #wrcGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+/* =========================================
    RESPONSIVE
 ========================================= */
 

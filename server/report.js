@@ -1,5 +1,5 @@
 // server/report.js
-// FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (final structure)
+// FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
@@ -16,7 +16,12 @@ const __filename = fileURLToPath(import.meta.url);
 ========================= */
 
 function iso(ts) {
-  return new Date(ts).toISOString();
+  // Accept ISO strings or ms
+  try {
+    return new Date(ts).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
 }
 
 function yesNo(v) {
@@ -37,7 +42,122 @@ function ensureSpace(doc, minSpace = 120) {
   if (doc.y + minSpace > bottom) doc.addPage();
 }
 
+function getMeta(data) {
+  // Structured preferred
+  if (data && typeof data === "object" && data.meta) return data.meta;
+
+  // Legacy fallback
+  return {
+    url: data?.url,
+    hostname: data?.hostname,
+    scanId: data?.scanId,
+    scannedAt: data?.scannedAt,
+    https: data?.https,
+  };
+}
+
+function getCoverage(data) {
+  if (data && typeof data === "object" && data.coverage) return data.coverage;
+
+  return {
+    checkedPages: safeArr(data?.checkedPages),
+    failedPages: safeArr(data?.failedPages),
+    notes: safeArr(data?.scanCoverageNotes),
+  };
+}
+
+function getSignals(data) {
+  if (data && typeof data === "object" && data.signals) return data.signals;
+
+  // Legacy flatten → structured-ish
+  return {
+    policies: {
+      privacy: !!data?.hasPrivacyPolicy,
+      terms: !!data?.hasTerms,
+      cookies: !!data?.hasCookiePolicy,
+    },
+    consent: {
+      bannerDetected: !!data?.hasCookieBanner,
+      vendors: safeArr(data?.cookieVendorsDetected),
+    },
+    trackingScripts: safeArr(data?.trackingScriptsDetected),
+    forms: {
+      detected: num(data?.formsDetected),
+      personalDataSignals: num(data?.formsPersonalDataSignals),
+    },
+    accessibility: {
+      notes: safeArr(data?.accessibilityNotes),
+      images: {
+        total: num(data?.totalImages),
+        missingAlt: num(data?.imagesMissingAlt),
+      },
+    },
+    contact: {
+      detected: !!data?.contactInfoPresent,
+    },
+  };
+}
+
+/**
+ * Integrity hash must be derived from objective, deterministic fields only.
+ * We feed a normalized model to integrity.js so hash is stable regardless of storage shape.
+ */
+function buildIntegrityInput(data) {
+  const meta = getMeta(data);
+  const coverage = getCoverage(data);
+  const signals = getSignals(data);
+
+  return {
+    meta: {
+      url: meta?.url || "",
+      hostname: meta?.hostname || "",
+      scanId: meta?.scanId || "",
+      scannedAt: meta?.scannedAt || "",
+      https: !!meta?.https,
+    },
+    coverage: {
+      checkedPages: safeArr(coverage?.checkedPages).map((p) => ({
+        url: p?.url || "",
+        status: num(p?.status, 0),
+      })),
+      failedPages: safeArr(coverage?.failedPages).map((p) => ({
+        url: p?.url || "",
+        status: num(p?.status, 0),
+      })),
+      notes: safeArr(coverage?.notes).map((s) => String(s)),
+    },
+    signals: {
+      policies: {
+        privacy: !!signals?.policies?.privacy,
+        terms: !!signals?.policies?.terms,
+        cookies: !!signals?.policies?.cookies,
+      },
+      consent: {
+        bannerDetected: !!signals?.consent?.bannerDetected,
+        vendors: safeArr(signals?.consent?.vendors).map((s) => String(s)),
+      },
+      trackingScripts: safeArr(signals?.trackingScripts).map((s) => String(s)),
+      forms: {
+        detected: num(signals?.forms?.detected, 0),
+        personalDataSignals: num(signals?.forms?.personalDataSignals, 0),
+      },
+      accessibility: {
+        notes: safeArr(signals?.accessibility?.notes).map((s) => String(s)),
+        images: {
+          total: num(signals?.accessibility?.images?.total, 0),
+          missingAlt: num(signals?.accessibility?.images?.missingAlt, 0),
+        },
+      },
+      contact: {
+        detected: !!signals?.contact?.detected,
+      },
+    },
+  };
+}
+
 function addHeader(doc, data) {
+  const meta = getMeta(data);
+
   const topY = 22;
   const left = doc.page.margins.left;
   const right = doc.page.width - doc.page.margins.right;
@@ -55,7 +175,7 @@ function addHeader(doc, data) {
   doc
     .font("Helvetica")
     .fillColor("#6B7280")
-    .text(`${data.hostname || data.url}`, left, topY, {
+    .text(`${meta.hostname || meta.url || ""}`, left, topY, {
       width: right - left,
       align: "right",
     });
@@ -63,13 +183,14 @@ function addHeader(doc, data) {
   doc.restore();
 }
 
-function addFooter(doc, meta) {
+function addFooter(doc, meta, integrityHash) {
   const bottom = doc.page.height - 38;
   const left = doc.page.margins.left;
   const width =
     doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
-  const verifyUrl = `${process.env.BASE_URL}/verify/${meta.integrityHash}`;
+  const base = process.env.BASE_URL || "";
+  const verifyUrl = `${base}/verify/${integrityHash}`;
 
   doc.save();
   doc
@@ -185,16 +306,29 @@ function whatThisMeansFor(level) {
 export async function generateReport(data, outputPath) {
   return new Promise(async (resolve, reject) => {
     try {
-      // Source-of-truth integrity hash (objective fields only)
-      const integrityHash = computeIntegrityHash(data);
-      data.integrityHash = integrityHash;
+      const base = process.env.BASE_URL || "";
+      const meta = getMeta(data);
+      const coverage = getCoverage(data);
+      const signals = getSignals(data);
 
-      // Source-of-truth risk model (signal-based)
+      // Compute integrity hash from normalized objective model
+      const integrityInput = buildIntegrityInput(data);
+      const integrityHash = computeIntegrityHash(integrityInput);
+
+      // Compute risk from the scan data (supports both shapes)
       const risk = computeRisk(data);
+
+      // Attach in BOTH places for downstream compatibility
+      data.integrityHash = integrityHash;
       data.riskLevel = risk.level;
       data.riskScore = risk.score;
+      data.riskReasons = safeArr(risk.reasons);
 
-      const verifyUrl = `${process.env.BASE_URL}/verify/${integrityHash}`;
+      if (data.meta) {
+        data.meta.integrityHash = integrityHash;
+      }
+
+      const verifyUrl = `${base}/verify/${integrityHash}`;
 
       const doc = new PDFDocument({
         margin: 54,
@@ -210,7 +344,6 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      // Header on subsequent pages
       doc.on("pageAdded", () => addHeader(doc, data));
 
       /* ======================================================
@@ -260,7 +393,7 @@ export async function generateReport(data, outputPath) {
       doc
         .font("Helvetica")
         .fillColor("#374151")
-        .text(`${data.hostname || data.url}`, left + 100, doc.y, {
+        .text(`${meta.hostname || meta.url}`, left + 100, doc.y, {
           width: width - 100,
         });
 
@@ -273,7 +406,7 @@ export async function generateReport(data, outputPath) {
       doc
         .font("Helvetica")
         .fillColor("#374151")
-        .text(`${iso(data.scannedAt)}`, left + 120, doc.y, {
+        .text(`${iso(meta.scannedAt)}`, left + 120, doc.y, {
           width: width - 120,
         });
 
@@ -286,7 +419,7 @@ export async function generateReport(data, outputPath) {
       doc
         .font("Helvetica")
         .fillColor("#374151")
-        .text(`${data.scanId}`, left + 120, doc.y, { width: width - 120 });
+        .text(`${meta.scanId}`, left + 120, doc.y, { width: width - 120 });
 
       doc.moveDown(0.8);
 
@@ -304,16 +437,14 @@ export async function generateReport(data, outputPath) {
       doc.moveDown(1.4);
 
       subTitle(doc, "Scan scope (coverage)");
-      bulletList(
-        doc,
-        safeArr(data.scanCoverageNotes).length
-          ? data.scanCoverageNotes
-          : [
-              "Homepage only.",
-              "Public, unauthenticated HTML.",
-              "No full crawl or behavioural simulation.",
-            ]
-      );
+      const coverageNotes = safeArr(coverage?.notes).length
+        ? coverage.notes
+        : [
+            "Homepage + standard policy/contact paths only (max 6 pages).",
+            "Public, unauthenticated HTML only.",
+            "No behavioural simulation.",
+          ];
+      bulletList(doc, coverageNotes);
 
       doc.moveDown(1.2);
 
@@ -326,7 +457,7 @@ export async function generateReport(data, outputPath) {
           { width, lineGap: 3 }
         );
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
       doc.addPage();
 
       /* ======================================================
@@ -344,33 +475,33 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Key findings (detectable signals)");
 
-      const trackers = safeArr(data.trackingScriptsDetected);
-      const vendors = safeArr(data.cookieVendorsDetected);
+      const trackers = safeArr(signals?.trackingScripts);
+      const vendors = safeArr(signals?.consent?.vendors);
 
-      const totalImages = num(data.totalImages);
-      const imagesMissingAlt = num(data.imagesMissingAlt);
+      const totalImages = num(signals?.accessibility?.images?.total);
+      const imagesMissingAlt = num(signals?.accessibility?.images?.missingAlt);
 
       const keyFindings = [];
 
-      keyFindings.push(`HTTPS: ${data.https ? "Detected" : "Not detected"}`);
+      keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Fetch status: ${
-          data.fetchOk === false
-            ? `Failed (HTTP ${data.fetchStatus || "unknown"})`
-            : "Successful"
+        `Fetch: ${
+          safeArr(coverage?.checkedPages).length ? "Successful" : "Limited/failed"
         }`
       );
 
       keyFindings.push(
-        `Privacy policy: ${data.hasPrivacyPolicy ? "Detected" : "Not detected"}`
+        `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
       );
-      keyFindings.push(`Terms: ${data.hasTerms ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Cookie policy: ${data.hasCookiePolicy ? "Detected" : "Not detected"}`
+        `Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`
+      );
+      keyFindings.push(
+        `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
       );
       keyFindings.push(
         `Consent banner indicator: ${
-          data.hasCookieBanner ? "Detected" : "Not detected"
+          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
         } (heuristic)`
       );
 
@@ -393,10 +524,10 @@ export async function generateReport(data, outputPath) {
         }`
       );
 
-      keyFindings.push(`Forms detected: ${num(data.formsDetected)}`);
+      keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
       keyFindings.push(
         `Potential personal-data field signals: ${num(
-          data.formsPersonalDataSignals
+          signals?.forms?.personalDataSignals
         )} (heuristic)`
       );
       keyFindings.push(
@@ -404,7 +535,7 @@ export async function generateReport(data, outputPath) {
       );
       keyFindings.push(
         `Contact/identity signals: ${
-          data.contactInfoPresent ? "Detected" : "Not detected"
+          signals?.contact?.detected ? "Detected" : "Not detected"
         }`
       );
 
@@ -412,9 +543,9 @@ export async function generateReport(data, outputPath) {
 
       doc.moveDown(0.8);
       subTitle(doc, "Notable observations");
-      bulletList(doc, safeArr(data.riskReasons).length ? data.riskReasons.slice(0, 10) : risk.reasons.slice(0, 10));
+      bulletList(doc, safeArr(risk.reasons).slice(0, 10));
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
       doc.addPage();
 
       /* ======================================================
@@ -425,7 +556,7 @@ export async function generateReport(data, outputPath) {
       sectionTitle(doc, "Findings by category");
 
       subTitle(doc, "Connection");
-      bulletList(doc, [`HTTPS: ${data.https ? "Detected" : "Not detected"}`]);
+      bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
       bodyText(
         doc,
         "HTTPS reduces interception risk and is commonly expected for customer-facing websites."
@@ -434,9 +565,9 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Policies (public-path detection)");
       bulletList(doc, [
-        `Privacy policy present: ${yesNo(data.hasPrivacyPolicy)}`,
-        `Terms present: ${yesNo(data.hasTerms)}`,
-        `Cookie policy present: ${yesNo(data.hasCookiePolicy)}`,
+        `Privacy policy present: ${yesNo(!!signals?.policies?.privacy)}`,
+        `Terms present: ${yesNo(!!signals?.policies?.terms)}`,
+        `Cookie policy present: ${yesNo(!!signals?.policies?.cookies)}`,
       ]);
       bodyText(
         doc,
@@ -446,12 +577,8 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Cookies & tracking (HTML detection)");
       bulletList(doc, [
-        `Tracking scripts: ${
-          trackers.length ? trackers.join(", ") : "None detected"
-        }`,
-        `Cookie vendor signals: ${
-          vendors.length ? vendors.join(", ") : "None detected"
-        }`,
+        `Tracking scripts: ${trackers.length ? trackers.join(", ") : "None detected"}`,
+        `Cookie vendor signals: ${vendors.length ? vendors.join(", ") : "None detected"}`,
       ]);
       bodyText(
         doc,
@@ -460,7 +587,9 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       subTitle(doc, "Consent indicators (heuristic)");
-      bulletList(doc, [`Cookie/consent banner indicator: ${yesNo(data.hasCookieBanner)}`]);
+      bulletList(doc, [
+        `Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`,
+      ]);
       bodyText(
         doc,
         "This is a heuristic signal based on text and DOM patterns and/or the presence of consent vendors. It is not a guarantee."
@@ -469,8 +598,10 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Forms & data capture (heuristic)");
       bulletList(doc, [
-        `Forms detected: ${num(data.formsDetected)}`,
-        `Potential personal-data field signals: ${num(data.formsPersonalDataSignals)}`,
+        `Forms detected: ${num(signals?.forms?.detected)}`,
+        `Potential personal-data field signals: ${num(
+          signals?.forms?.personalDataSignals
+        )}`,
       ]);
       bodyText(
         doc,
@@ -481,8 +612,8 @@ export async function generateReport(data, outputPath) {
       subTitle(doc, "Accessibility signals (heuristic)");
       bulletList(doc, [
         `Images missing alt text: ${imagesMissingAlt} of ${totalImages}`,
-        ...(safeArr(data.accessibilityNotes).length
-          ? safeArr(data.accessibilityNotes).map((n) => `Note: ${n}`)
+        ...(safeArr(signals?.accessibility?.notes).length
+          ? safeArr(signals?.accessibility?.notes).map((n) => `Note: ${n}`)
           : ["No accessibility notes recorded by this scan."]),
       ]);
       bodyText(
@@ -493,7 +624,7 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Contact & identity signals");
       bulletList(doc, [
-        `Contact/business identity signals: ${yesNo(data.contactInfoPresent)}`,
+        `Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`,
       ]);
       bodyText(
         doc,
@@ -501,7 +632,7 @@ export async function generateReport(data, outputPath) {
       );
       hr(doc);
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
       doc.addPage();
 
       /* ======================================================
@@ -526,7 +657,7 @@ export async function generateReport(data, outputPath) {
         "Re-run a snapshot after major changes (redesign, marketing tag updates, new forms, new third-party embeds).",
       ]);
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
       doc.addPage();
 
       /* ======================================================
@@ -568,7 +699,7 @@ export async function generateReport(data, outputPath) {
         "Absence of detection is not proof of absence.",
       ]);
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
       doc.addPage();
 
       /* ======================================================
@@ -606,7 +737,7 @@ export async function generateReport(data, outputPath) {
       subTitle(doc, "What the integrity hash covers");
       bulletList(doc, [
         "Target URL/hostname, scan ID, scan timestamp",
-        "Fetch status (success/failure) and scope-locked coverage notes",
+        "Scope-locked coverage notes",
         "HTTPS signal",
         "Policy presence signals (privacy/terms/cookie policy)",
         "Consent indicator signal (cookie banner heuristic)",
@@ -623,7 +754,7 @@ export async function generateReport(data, outputPath) {
       ensureSpace(doc, 220);
       doc.image(qrDataUrl, doc.page.margins.left, doc.y, { width: 130 });
 
-      addFooter(doc, data);
+      addFooter(doc, meta, integrityHash);
 
       doc.end();
 

@@ -7,218 +7,150 @@
 
   <meta
     name="description"
-    content="Your Website Risk Check report has been issued. Download, verify, and share an immutable compliance snapshot."
+    content="Your Website Risk Check report has been issued. Download, verify, and share an immutable point-in-time snapshot."
   />
 
-  <style>
-    :root{
-      --bg:#f7f7f8;
-      --card:#fff;
-      --text:#111;
-      --muted:#666;
-      --border:#e5e7eb;
-      --accent:#111;
-      --soft:#f2f2f3;
-      --ok:#1a7f37;
-      --deal:#0f766e;
-    }
-
-    *{ box-sizing:border-box; }
-
-    body{
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      margin:0;
-      padding:48px 20px;
-      background:var(--bg);
-      color:var(--text);
-    }
-
-    .container{
-      max-width:860px;
-      margin:0 auto;
-      background:var(--card);
-      padding:44px;
-      border-radius:18px;
-      box-shadow:0 20px 40px rgba(0,0,0,0.08);
-      border:1px solid rgba(0,0,0,0.04);
-    }
-
-    .topRow{
-      display:flex;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-
-    h1{ font-size:30px; margin:0; letter-spacing:-0.02em; }
-
-    .statusPill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 14px;
-      border-radius:999px;
-      background:var(--soft);
-      border:1px solid rgba(0,0,0,0.06);
-      font-size:13px;
-    }
-
-    .dot{
-      width:10px;height:10px;border-radius:50%;
-      background:var(--ok);
-    }
-
-    p{ font-size:16px; line-height:1.55; }
-
-    .actions{
-      display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;
-    }
-
-    button{
-      padding:14px 18px;
-      font-size:15px;
-      font-weight:800;
-      border:none;
-      border-radius:12px;
-      cursor:pointer;
-      background:var(--accent);
-      color:#fff;
-    }
-
-    button.secondary{ background:#2a2a2a; }
-    button.ghost{
-      background:transparent;
-      color:#111;
-      border:1px solid rgba(0,0,0,0.12);
-    }
-
-    .box{
-      display:none;
-      margin-top:14px;
-      padding:14px;
-      background:var(--soft);
-      border-radius:12px;
-      font-size:14px;
-      word-break:break-all;
-      border:1px solid rgba(0,0,0,0.06);
-    }
-
-    .divider{
-      height:1px;
-      background:var(--border);
-      margin:36px 0;
-    }
-
-    .muted{ font-size:14px; color:var(--muted); }
-    .tinyMuted{ font-size:13px; color:var(--muted); margin-top:6px; }
-
-    input{
-      width:100%;
-      padding:14px;
-      font-size:15px;
-      border-radius:12px;
-      border:1px solid #ddd;
-      margin-top:10px;
-    }
-
-    .dealCard{
-      margin-top:18px;
-      border-radius:16px;
-      border:1px solid rgba(15,118,110,0.22);
-      background:linear-gradient(180deg, rgba(15,118,110,0.08), rgba(15,118,110,0.03));
-      padding:18px;
-    }
-
-    .badge{
-      font-size:12px;
-      font-weight:900;
-      color:#0f766e;
-      margin-bottom:6px;
-    }
-
-    h2{
-      font-size:18px;
-      margin:0 0 6px;
-      letter-spacing:-0.01em;
-    }
-  </style>
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 
 <body>
-<div class="container">
+  <div class="bgFX" aria-hidden="true"></div>
 
-  <!-- ISSUANCE -->
-  <div class="topRow">
-    <h1>Report issued</h1>
-    <div class="statusPill">
-      <span class="dot"></span> Payment verified • Snapshot sealed
-    </div>
+  <div class="page">
+    <nav class="nav">
+      <div class="navInner">
+        <a class="brand" href="/" aria-label="Website Risk Check">
+          <span class="brandMark" aria-hidden="true"></span>
+          <span class="brandText">Website Risk Check</span>
+        </a>
+
+        <div class="navCtas">
+          <a class="navPill" href="/#scan">Run a scan</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="wrap" style="padding: 34px 0 84px;">
+      <div id="success-card" class="scanCard" style="max-width: 920px; margin: 0 auto;">
+        <div class="scanHead" style="margin-bottom: 10px;">
+          <div>
+            <div class="scanTitle" style="font-size:18px;">Report issued</div>
+            <div class="scanSub">
+              Payment verified. Your snapshot is sealed as a point-in-time record.
+            </div>
+          </div>
+
+          <div class="statusPill" style="
+              display:inline-flex;align-items:center;gap:10px;
+              padding:10px 14px;border-radius:999px;
+              background:rgba(248,250,252,.92);
+              border:1px solid rgba(15,23,42,.10);
+              font-size:13px;font-weight:800;color:#0f172a;
+            ">
+            <span aria-hidden="true" style="
+                width:10px;height:10px;border-radius:999px;
+                background:rgba(22,163,74,.95);
+                box-shadow:0 0 0 6px rgba(22,163,74,.12);
+              "></span>
+            Snapshot sealed
+          </div>
+        </div>
+
+        <p class="heroLead" style="font-size:15.5px; margin: 0; max-width: 780px;">
+          This report reflects what was publicly detectable at the moment of scanning.
+          Once issued, reports cannot be altered. Any modification invalidates verification.
+        </p>
+
+        <div class="preview" style="margin-top:16px; padding-top:16px;">
+          <div class="previewHead">
+            <div class="previewTitle">Your report</div>
+            <div class="previewHint">Download + permanent link + verification</div>
+          </div>
+
+          <div class="ctaRow" style="margin-top:12px;">
+            <button id="download" class="btnPrimary" type="button">Download PDF</button>
+            <button id="copy" class="btnSecondary" type="button" style="display:none;">Copy share link</button>
+            <button id="open" class="btnSecondary" type="button" style="display:none;">Open report</button>
+            <button id="verify" class="btnSecondary" type="button" style="display:none;">Verify integrity</button>
+            <span class="fineprint">No account required</span>
+          </div>
+
+          <div id="share-box" class="box" style="
+              display:none;
+              margin-top:12px;
+              padding:14px;
+              background:rgba(248,250,252,.92);
+              border-radius:16px;
+              font-size:13.5px;
+              word-break:break-all;
+              border:1px solid rgba(15,23,42,.10);
+            "></div>
+
+          <p class="tiny" style="margin-top:12px;">
+            Verification allows any third party to independently confirm this report using its cryptographic fingerprint — no login required.
+          </p>
+
+          <p class="tiny" style="margin-top:10px;">
+            This document is not legal advice and does not certify compliance. It is a factual snapshot of observable signals at a specific time.
+          </p>
+        </div>
+
+        <div class="divider" style="height:1px;background:rgba(15,23,42,.10);margin:22px 0;"></div>
+
+        <div class="previewHead">
+          <div class="previewTitle">Additional snapshots (optional)</div>
+          <div class="previewHint">Same format. Same verification. No subscription.</div>
+        </div>
+
+        <div class="split" style="margin-top:12px;">
+          <div class="miniCard" style="background:rgba(255,255,255,.86);">
+            <h3>Single additional snapshot — £39</h3>
+            <p>
+              Generate an additional sealed snapshot for another domain. Useful for multi-site operators.
+            </p>
+
+            <label class="srOnly" for="upsell-url">Additional website URL</label>
+            <input id="upsell-url" type="url" placeholder="https://another-site.com" style="
+                width:100%;
+                padding:14px 14px;
+                font-size:15px;
+                border-radius:14px;
+                border:1px solid rgba(15,23,42,.14);
+                margin-top:10px;
+                background:#fff;
+              " />
+
+            <div class="ctaRow" style="margin-top:12px;">
+              <button id="upsell" class="btnSecondary" type="button">Run additional scan (£39)</button>
+            </div>
+          </div>
+
+          <div class="miniCard" style="
+              border-color:rgba(37,99,235,.35);
+              background:linear-gradient(180deg, rgba(37,99,235,.10), rgba(37,99,235,.03));
+            ">
+            <h3>3 snapshots bundle — £99</h3>
+            <p>
+              Redeem at your convenience. Commonly used by agencies and multi-site operators.
+            </p>
+
+            <div class="ctaRow" style="margin-top:12px;">
+              <button id="threepack" class="btnSecondary btnBest" type="button">Get 3 snapshots (£99)</button>
+              <span class="fineprint">Best value</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scanFoot">
+          <span class="tiny">
+            If your download doesn’t start automatically, click “Download PDF”. Your permanent link will appear once the report is ready.
+          </span>
+        </div>
+      </div>
+    </main>
   </div>
 
-  <p>
-    This website risk report has been generated and sealed as a
-    <strong>point-in-time snapshot</strong>.
-    It reflects what was publicly detectable at the moment of scanning.
-  </p>
-
-  <p class="muted">
-    Once issued, reports cannot be altered. Any modification invalidates verification.
-  </p>
-
-  <!-- PRIMARY ACTIONS -->
-  <div class="actions">
-    <button id="download">Download PDF</button>
-    <button id="copy" class="secondary" style="display:none;">Copy share link</button>
-    <button id="open" class="ghost" style="display:none;">Open report</button>
-    <button id="verify" class="ghost" style="display:none;">Verify integrity</button>
-  </div>
-
-  <div id="share-box" class="box"></div>
-
-  <!-- VERIFICATION EXPLANATION -->
-  <p class="tinyMuted" style="margin-top:14px;">
-    Verification allows any third party to independently confirm this report
-    using its cryptographic fingerprint — no account or login required.
-  </p>
-
-  <!-- LEGAL / SCOPE -->
-  <p class="muted" style="margin-top:22px;">
-    This document is not legal advice and does not certify compliance.
-    It is a factual, evidentiary snapshot of observable signals at a specific time.
-  </p>
-
-  <!-- COMMERCIAL SEPARATION -->
-  <div class="divider"></div>
-
-  <h2>Additional snapshots (optional)</h2>
-  <p class="muted">
-    Identical format. Identical verification. No subscription.
-  </p>
-
-  <!-- SINGLE -->
-  <div>
-    <strong>Single additional snapshot — £39</strong>
-    <input id="upsell-url" type="url" placeholder="https://another-site.com" />
-    <div class="actions">
-      <button id="upsell">Run additional scan (£39)</button>
-    </div>
-  </div>
-
-  <!-- BUNDLE -->
-  <div class="dealCard">
-    <div class="badge">Best value</div>
-    <strong>3 snapshots bundle — £99</strong>
-    <p class="tinyMuted">
-      Redeem at your convenience. Commonly used by agencies and multi-site operators.
-    </p>
-    <div class="actions">
-      <button id="threepack">Get 3 snapshots (£99)</button>
-    </div>
-  </div>
-
-</div>
-
-<script src="success.js"></script>
+  <script src="success.js?v=3" defer></script>
 </body>
 </html>

@@ -1,5 +1,7 @@
 // server/scan.js
-// AUDIT-GRADE — scope-locked, deterministic, evidence-only scanner (expanded coverage + risk)
+// AUDIT-GRADE — structured + legacy-flat, scope-locked, deterministic scanner
+// - Returns structured model for /preview-scan UI
+// - ALSO returns flat legacy fields for paid PDF + integrity hashing compatibility
 
 import * as cheerio from "cheerio";
 import crypto from "crypto";
@@ -8,11 +10,9 @@ import { computeRisk } from "./risk.js";
 const USER_AGENT =
   "WebsiteRiskCheckBot/1.0 (+https://www.websiteriskcheck.com)";
 
-// Hard limits so we never become a crawler
-const MAX_PAGES = 6; // homepage + up to 5 standard paths
+const MAX_PAGES = 6;
 const FETCH_TIMEOUT_MS = 9000;
 
-// Standard paths (tight scope)
 const STANDARD_PATHS = [
   "/privacy",
   "/privacy-policy",
@@ -23,7 +23,7 @@ const STANDARD_PATHS = [
 ];
 
 /* =========================
-   URL NORMALISATION
+   URL HELPERS
 ========================= */
 
 function normalizeUrl(input) {
@@ -32,7 +32,7 @@ function normalizeUrl(input) {
     u.hash = "";
     return u.toString();
   } catch {
-    return `https://${input.replace(/^\/+/, "")}`;
+    return `https://${String(input || "").replace(/^\/+/, "")}`;
   }
 }
 
@@ -101,7 +101,7 @@ async function fetchHtml(url) {
 }
 
 /* =========================
-   TRACKING SCRIPTS (KNOWN)
+   DETECTION HELPERS
 ========================= */
 
 function detectTracking(html) {
@@ -125,10 +125,6 @@ function detectTracking(html) {
   return Array.from(new Set(found));
 }
 
-/* =========================
-   COOKIE CONSENT VENDORS
-========================= */
-
 function detectCookieVendors(html) {
   const vendors = [];
 
@@ -141,10 +137,6 @@ function detectCookieVendors(html) {
 
   return Array.from(new Set(vendors));
 }
-
-/* =========================
-   COOKIE BANNER (HEURISTIC)
-========================= */
 
 function detectCookieBannerHeuristic($) {
   const text = $("body").text().toLowerCase();
@@ -163,10 +155,6 @@ function detectCookieBannerHeuristic($) {
   return keywordMatch || domMatch;
 }
 
-/* =========================
-   POLICY LINKS (HOMEPAGE ONLY, STILL USED)
-========================= */
-
 function detectPolicyLinks($, baseUrl) {
   const links = [];
 
@@ -184,10 +172,6 @@ function detectPolicyLinks($, baseUrl) {
     cookies: links.some((l) => /cookie/i.test(l)),
   };
 }
-
-/* =========================
-   FORMS
-========================= */
 
 function detectForms($) {
   const forms = $("form");
@@ -221,10 +205,6 @@ function detectForms($) {
   };
 }
 
-/* =========================
-   ACCESSIBILITY SIGNALS
-========================= */
-
 function detectAccessibility($) {
   const notes = [];
 
@@ -232,7 +212,6 @@ function detectAccessibility($) {
     notes.push("No <html lang> attribute detected.");
 
   if ($("h1").length === 0) notes.push("No H1 heading detected.");
-
   if ($("h1").length > 1) notes.push("Multiple H1 headings detected.");
 
   return notes;
@@ -250,10 +229,6 @@ function detectImagesMissingAlt($) {
   return { totalImages: imgs.length, imagesMissingAlt: missing };
 }
 
-/* =========================
-   CONTACT INFO
-========================= */
-
 function detectContactInfo($) {
   const text = $("body").text().toLowerCase();
 
@@ -264,39 +239,12 @@ function detectContactInfo($) {
   );
 }
 
-/* =========================
-   PAGE LIST (SCOPE-LOCKED)
-========================= */
-
-function buildCandidateUrls(homeUrl) {
-  const origin = baseOrigin(homeUrl);
-  const out = [homeUrl];
-
-  for (const p of STANDARD_PATHS) {
-    if (out.length >= MAX_PAGES) break;
-    try {
-      out.push(new URL(p, origin).toString());
-    } catch {}
-  }
-
-  // de-dupe
-  return Array.from(new Set(out));
-}
-
-function pathOf(u) {
+function safePath(u) {
   try {
     return new URL(u).pathname || "/";
   } catch {
     return "/";
   }
-}
-
-function finalize(result) {
-  const risk = computeRisk(result);
-  result.riskLevel = risk.level;
-  result.riskScore = risk.score;
-  result.riskReasons = risk.reasons;
-  return result;
 }
 
 /* =========================
@@ -307,23 +255,34 @@ export async function scanWebsite(inputUrl) {
   const url = normalizeUrl(inputUrl);
   const scanId = crypto.randomBytes(6).toString("hex");
   const scannedAt = Date.now();
-  const https = url.startsWith("https://");
 
   const hostname = safeHostname(url);
   const origin = baseOrigin(url);
-  const targets = buildCandidateUrls(url);
+  const https = url.startsWith("https://");
 
-  // Aggregates
+  const targets = [
+    url,
+    ...STANDARD_PATHS.map((p) => {
+      try {
+        return new URL(p, origin).toString();
+      } catch {
+        return null;
+      }
+    }).filter(Boolean),
+  ].slice(0, MAX_PAGES);
+
+  const checkedPages = [];
+  const failedPages = [];
+
   let anyFetchOk = false;
   let firstStatus = 0;
 
-  let hasPrivacyPolicy = false;
-  let hasTerms = false;
-  let hasCookiePolicy = false;
-  let hasCookieBanner = false;
+  // Structured aggregates
+  const policies = { privacy: false, terms: false, cookies: false };
+  const consentVendors = new Set();
+  let consentBannerDetected = false;
 
   const trackingSet = new Set();
-  const vendorSet = new Set();
 
   let formsDetectedTotal = 0;
   let formsPersonalSignalsTotal = 0;
@@ -332,14 +291,10 @@ export async function scanWebsite(inputUrl) {
   let imagesMissingAltTotal = 0;
 
   const accessibilityNotes = new Set();
-  let contactInfoPresent = false;
+  let contactInfoDetected = false;
 
-  const checkedPages = [];
-  const failedPages = [];
-
-  // Fetch each target (tight scope, same origin enforced)
+  // Fetch each target (same-origin enforced)
   for (const t of targets) {
-    // enforce same host/origin (prevents weird redirects to CDNs etc.)
     try {
       const tu = new URL(t);
       if (`${tu.protocol}//${tu.host}` !== origin) continue;
@@ -361,150 +316,147 @@ export async function scanWebsite(inputUrl) {
 
     const $ = cheerio.load(res.html);
 
-    // On homepage, still detect link policies (useful)
+    // Homepage link-based detection
     if (t === url) {
       const linkPolicies = detectPolicyLinks($, url);
-      hasPrivacyPolicy = hasPrivacyPolicy || !!linkPolicies.privacy;
-      hasTerms = hasTerms || !!linkPolicies.terms;
-      hasCookiePolicy = hasCookiePolicy || !!linkPolicies.cookies;
+      policies.privacy ||= !!linkPolicies.privacy;
+      policies.terms ||= !!linkPolicies.terms;
+      policies.cookies ||= !!linkPolicies.cookies;
     }
 
     // Path-based policy detection: if the page exists, count as present
-    try {
-      const pathname = new URL(t).pathname.toLowerCase();
-      if (pathname === "/privacy" || pathname === "/privacy-policy")
-        hasPrivacyPolicy = true;
-      if (pathname === "/terms" || pathname === "/terms-and-conditions")
-        hasTerms = true;
-      if (pathname === "/cookie-policy") hasCookiePolicy = true;
-    } catch {}
+    const pathname = safePath(t).toLowerCase();
+    if (pathname === "/privacy" || pathname === "/privacy-policy")
+      policies.privacy = true;
+    if (pathname === "/terms" || pathname === "/terms-and-conditions")
+      policies.terms = true;
+    if (pathname === "/cookie-policy") policies.cookies = true;
 
-    // Trackers/vendors across all checked pages
-    for (const s of detectTracking(res.html)) trackingSet.add(s);
-    for (const v of detectCookieVendors(res.html)) vendorSet.add(v);
+    // Tracking / consent vendors
+    detectTracking(res.html).forEach((s) => trackingSet.add(s));
+    detectCookieVendors(res.html).forEach((v) => consentVendors.add(v));
 
-    // Banner signal: heuristic on any checked page
-    if (detectCookieBannerHeuristic($)) hasCookieBanner = true;
+    // Banner signal (heuristic)
+    if (detectCookieBannerHeuristic($)) consentBannerDetected = true;
 
-    // Forms/images/accessibility/contact aggregated
-    const forms = detectForms($);
-    formsDetectedTotal += forms.formsDetected;
-    formsPersonalSignalsTotal += forms.formsPersonalDataSignals;
+    // Forms
+    const formData = detectForms($);
+    formsDetectedTotal += formData.formsDetected;
+    formsPersonalSignalsTotal += formData.formsPersonalDataSignals;
 
-    const imgs = detectImagesMissingAlt($);
-    totalImagesTotal += imgs.totalImages;
-    imagesMissingAltTotal += imgs.imagesMissingAlt;
+    // Images / a11y
+    const imgData = detectImagesMissingAlt($);
+    totalImagesTotal += imgData.totalImages;
+    imagesMissingAltTotal += imgData.imagesMissingAlt;
 
-    for (const n of detectAccessibility($)) accessibilityNotes.add(n);
+    detectAccessibility($).forEach((n) => accessibilityNotes.add(n));
 
-    if (!contactInfoPresent && detectContactInfo($)) contactInfoPresent = true;
+    // Contact
+    if (!contactInfoDetected && detectContactInfo($)) contactInfoDetected = true;
   }
 
-  if (!anyFetchOk) {
-    const attemptedPaths = targets.map((u) => pathOf(u)).join(", ");
-
-    const result = {
-      url,
-      hostname,
-      scanId,
-      scannedAt,
-      https,
-      fetchOk: false,
-      fetchStatus: firstStatus || 0,
-
-      // Minimal signals (unknown/undetected)
-      hasPrivacyPolicy: false,
-      hasTerms: false,
-      hasCookiePolicy: false,
-      hasCookieBanner: false,
-      cookieVendorsDetected: [],
-      trackingScriptsDetected: [],
-      formsDetected: 0,
-      formsPersonalDataSignals: 0,
-      totalImages: 0,
-      imagesMissingAlt: 0,
-      contactInfoPresent: false,
-
-      accessibilityNotes: ["No HTML pages could be retrieved for analysis."],
-
-      checkedPages,
-      failedPages,
-
-      scanCoverageNotes: [
-        "Attempted: homepage + standard policy/contact paths.",
-        `Attempted pages: ${attemptedPaths}`,
-      ],
-    };
-
-    return finalize(result);
-  }
-
-  const cookieVendorsDetected = Array.from(vendorSet);
-  const trackingScriptsDetected = Array.from(trackingSet);
-
-  // Vendor presence can imply consent tooling exists
-  if (cookieVendorsDetected.length > 0) hasCookieBanner = true;
-
+  // Coverage notes (kept identical to paid report copy)
   const checkedList =
-    checkedPages
-      .map((p) => {
-        try {
-          return new URL(p.url).pathname || "/";
-        } catch {
-          return "/";
-        }
-      })
-      .join(", ") || "none";
+    checkedPages.map((p) => safePath(p.url)).join(", ") || "none";
 
   const failedList = failedPages.length
     ? failedPages
-        .map((p) => {
-          try {
-            return `${new URL(p.url).pathname} (HTTP ${p.status || 0})`;
-          } catch {
-            return `unknown (HTTP ${p.status || 0})`;
-          }
-        })
+        .map((p) => `${safePath(p.url)} (HTTP ${p.status || 0})`)
         .join(", ")
     : "none";
 
-  const result = {
+  const coverageNotes = anyFetchOk
+    ? [
+        "Homepage + standard policy/contact paths only (max 6 pages).",
+        "Public, unauthenticated HTML only.",
+        "No full crawl or behavioural simulation.",
+        `Checked: ${checkedList}`,
+        `Failed: ${failedList}`,
+      ]
+    : [
+        "Attempted: homepage + standard policy/contact paths.",
+        `Attempted pages: ${targets.map((u) => safePath(u)).join(", ")}`,
+      ];
+
+  // Structured model
+  const structured = {
+    meta: {
+      url,
+      hostname,
+      scanId,
+      scannedAt, // number (ms) for consistency with PDF + integrity
+      https,
+    },
+    coverage: {
+      checkedPages,
+      failedPages,
+      notes: coverageNotes,
+      fetchOk: anyFetchOk,
+      fetchStatus: anyFetchOk ? firstStatus || 200 : firstStatus || 0,
+    },
+    signals: {
+      policies,
+      consent: {
+        bannerDetected: consentBannerDetected || consentVendors.size > 0,
+        vendors: Array.from(consentVendors),
+      },
+      trackingScripts: Array.from(trackingSet),
+      forms: {
+        detected: formsDetectedTotal,
+        personalDataSignals: formsPersonalSignalsTotal,
+      },
+      accessibility: {
+        notes: Array.from(accessibilityNotes),
+        images: { total: totalImagesTotal, missingAlt: imagesMissingAltTotal },
+      },
+      contact: { detected: contactInfoDetected },
+    },
+  };
+
+  // Legacy/flat fields for existing report.js + integrity.js + verify flow
+  const flat = {
     url,
     hostname,
     scanId,
     scannedAt,
     https,
-    fetchOk: true,
-    fetchStatus: firstStatus || 200,
 
-    hasPrivacyPolicy,
-    hasTerms,
-    hasCookiePolicy,
-    hasCookieBanner,
+    fetchOk: anyFetchOk,
+    fetchStatus: anyFetchOk ? firstStatus || 200 : firstStatus || 0,
 
-    cookieVendorsDetected,
-    trackingScriptsDetected,
+    hasPrivacyPolicy: !!policies.privacy,
+    hasTerms: !!policies.terms,
+    hasCookiePolicy: !!policies.cookies,
+    hasCookieBanner: !!(structured.signals.consent.bannerDetected),
+
+    cookieVendorsDetected: structured.signals.consent.vendors,
+    trackingScriptsDetected: structured.signals.trackingScripts,
 
     formsDetected: formsDetectedTotal,
     formsPersonalDataSignals: formsPersonalSignalsTotal,
 
     totalImages: totalImagesTotal,
     imagesMissingAlt: imagesMissingAltTotal,
+    accessibilityNotes: structured.signals.accessibility.notes,
 
-    accessibilityNotes: Array.from(accessibilityNotes),
-    contactInfoPresent,
+    contactInfoPresent: contactInfoDetected,
 
     checkedPages,
     failedPages,
-
-    scanCoverageNotes: [
-      "Homepage + standard policy/contact paths only (max 6 pages).",
-      "Public, unauthenticated HTML only.",
-      "No full crawl or behavioural simulation.",
-      `Checked: ${checkedList}`,
-      `Failed: ${failedList}`,
-    ],
+    scanCoverageNotes: coverageNotes,
   };
 
-  return finalize(result);
+  // Risk computed from FLAT shape (so it matches your current risk.js logic)
+  const risk = computeRisk(flat);
+
+  structured.risk = {
+    level: risk.level,
+    score: risk.score,
+    reasons: risk.reasons,
+  };
+
+  // Return merged object so:
+  // - /preview-scan can use structured: meta/coverage/signals/risk
+  // - paid report + integrity + verify can use flat keys
+  return { ...flat, ...structured, risk: structured.risk };
 }

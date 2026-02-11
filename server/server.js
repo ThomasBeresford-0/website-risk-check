@@ -80,8 +80,91 @@ app.get("/health", (_req, res) => {
 
 const previewHits = new Map();
 
+// tiny helper: keep preview light, never dump huge arrays
+function cap(arr, n = 12) {
+  return Array.isArray(arr) ? arr.slice(0, n) : [];
+}
+
+function buildPreviewFindings(scan) {
+  const findings = [];
+
+  // Policies
+  findings.push(
+    scan.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected"
+  );
+  findings.push(
+    scan.hasTerms ? "Terms: detected" : "Terms: not detected"
+  );
+  findings.push(
+    scan.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected"
+  );
+
+  // Consent + tracking
+  findings.push(
+    scan.hasCookieBanner
+      ? "Consent banner indicator: detected (heuristic)"
+      : "Consent banner indicator: not detected (heuristic)"
+  );
+
+  if (Array.isArray(scan.trackingScriptsDetected) && scan.trackingScriptsDetected.length) {
+    findings.push(
+      `Tracking scripts: detected (${scan.trackingScriptsDetected.slice(0, 4).join(", ")}${
+        scan.trackingScriptsDetected.length > 4 ? "…" : ""
+      })`
+    );
+  } else {
+    findings.push("Tracking scripts: none detected");
+  }
+
+  if (Array.isArray(scan.cookieVendorsDetected) && scan.cookieVendorsDetected.length) {
+    findings.push(
+      `Cookie vendor signals: detected (${scan.cookieVendorsDetected.slice(0, 4).join(", ")}${
+        scan.cookieVendorsDetected.length > 4 ? "…" : ""
+      })`
+    );
+  } else {
+    findings.push("Cookie vendor signals: none detected");
+  }
+
+  // Forms
+  if ((scan.formsDetected || 0) > 0) {
+    findings.push(`Forms detected: ${scan.formsDetected}`);
+    findings.push(
+      `Potential personal-data field signals: ${scan.formsPersonalDataSignals || 0} (heuristic)`
+    );
+  } else {
+    findings.push("Forms detected: none");
+  }
+
+  // Accessibility quick hits
+  if ((scan.totalImages || 0) > 0) {
+    findings.push(
+      `Images missing alt text: ${scan.imagesMissingAlt || 0} of ${scan.totalImages || 0}`
+    );
+  } else {
+    findings.push("Images: none detected on scanned pages");
+  }
+
+  if (Array.isArray(scan.accessibilityNotes) && scan.accessibilityNotes.length) {
+    findings.push(`Accessibility note: ${scan.accessibilityNotes[0]}`);
+  }
+
+  // Contact/identity
+  findings.push(
+    scan.contactInfoPresent
+      ? "Contact/identity signals: detected"
+      : "Contact/identity signals: not detected"
+  );
+
+  // HTTPS
+  findings.push(scan.https ? "HTTPS: detected" : "HTTPS: not detected");
+
+  return findings.slice(0, 12);
+}
+
 app.post("/preview-scan", async (req, res) => {
   try {
+    // Basic per-IP throttling
     const ip =
       req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
       req.ip;
@@ -98,26 +181,59 @@ app.post("/preview-scan", async (req, res) => {
 
     const scan = await scanWebsite(url);
 
-    res.json({
+    // IMPORTANT:
+    // - Preview returns structured signals for the frontend UI
+    // - Still keeps it lightweight (caps arrays)
+    // - No PDF generation, no persistence, no tokens
+    const payload = {
+      // identity
       url: scan.url,
+      hostname: scan.hostname,
       scannedAt: scan.scannedAt,
+
+      // top-level outcomes
+      https: !!scan.https,
+      fetchOk: scan.fetchOk !== false,
+      fetchStatus: scan.fetchStatus || 0,
+
+      // risk
+      // If scan.js doesn't compute riskLevel, it will be undefined — frontend will fallback
       riskLevel: scan.riskLevel,
-      findings: [
-        scan.hasPrivacyPolicy
-          ? "Privacy policy detected"
-          : "No privacy policy detected",
-        scan.hasCookieBanner
-          ? "Cookie consent banner detected"
-          : "No cookie consent banner detected",
-        scan.trackingScriptsDetected.length
-          ? `Tracking scripts detected (${scan.trackingScriptsDetected.join(", ")})`
-          : "No tracking scripts detected",
-        scan.formsDetected > 0
-          ? `Forms detected (${scan.formsDetected})`
-          : "No forms detected",
-      ],
-    });
-  } catch {
+
+      // policy + consent signals
+      hasPrivacyPolicy: !!scan.hasPrivacyPolicy,
+      hasTerms: !!scan.hasTerms,
+      hasCookiePolicy: !!scan.hasCookiePolicy,
+      hasCookieBanner: !!scan.hasCookieBanner,
+
+      // detections (capped)
+      trackingScriptsDetected: cap(scan.trackingScriptsDetected, 12),
+      cookieVendorsDetected: cap(scan.cookieVendorsDetected, 12),
+
+      // forms
+      formsDetected: Number(scan.formsDetected || 0),
+      formsPersonalDataSignals: Number(scan.formsPersonalDataSignals || 0),
+
+      // accessibility
+      totalImages: Number(scan.totalImages || 0),
+      imagesMissingAlt: Number(scan.imagesMissingAlt || 0),
+      accessibilityNotes: cap(scan.accessibilityNotes, 8),
+
+      // identity/contact
+      contactInfoPresent: !!scan.contactInfoPresent,
+
+      // coverage (for credibility)
+      checkedPages: cap(scan.checkedPages, 12),
+      failedPages: cap(scan.failedPages, 12),
+      scanCoverageNotes: cap(scan.scanCoverageNotes, 10),
+
+      // legacy list (so old UI + new UI both work)
+      findings: buildPreviewFindings(scan),
+    };
+
+    res.json(payload);
+  } catch (e) {
+    console.error("preview-scan error:", e);
     res.status(500).json({ error: "Preview failed" });
   }
 });

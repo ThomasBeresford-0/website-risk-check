@@ -83,12 +83,10 @@ button,input{ font-family:inherit; }
   letter-spacing:-.2px;
 }
 
-.brandMark{
-  width:10px;
-  height:10px;
-  border-radius:999px;
-  background:var(--ink);
-  box-shadow:0 0 0 6px rgba(15,23,42,.06);
+.brandLogo{
+  width:22px;
+  height:22px;
+  display:block;
 }
 
 .brandText{ font-size:14px; }

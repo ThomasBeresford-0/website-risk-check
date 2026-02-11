@@ -1,441 +1,384 @@
-<!-- index.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebsiteRiskCheck — Verifiable Website Risk Snapshot</title>
-    <meta
-      name="description"
-      content="Generate a point-in-time, verifiable website risk snapshot. Timestamped, immutable PDF + permanent share link + public cryptographic verification."
-    />
-    <link rel="stylesheet" href="/style.css?v=15" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Website Risk Check — Verifiable Point-in-Time Website Snapshot</title>
 
-  <body>
-    <header class="siteHeader">
-      <div class="container headerRow">
-        <a class="brand" href="/" aria-label="WebsiteRiskCheck">
+  <meta
+    name="description"
+    content="Generate a point-in-time, verifiable website risk snapshot. Free structured preview in seconds. Pay once for an immutable timestamped PDF with a permanent share link and public verification."
+  />
+
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="stylesheet" href="style.css?v=4" />
+</head>
+
+<body>
+  <div class="bgFX" aria-hidden="true"></div>
+
+  <div class="page">
+    <nav class="nav">
+      <div class="navInner">
+        <a class="brand" href="/" aria-label="Website Risk Check">
           <span class="brandMark" aria-hidden="true"></span>
-          <span class="brandText">WebsiteRiskCheck</span>
+          <span class="brandText">Website Risk Check</span>
         </a>
 
-        <nav class="nav">
-          <a class="navLink" href="#how">How it works</a>
-          <a class="navLink" href="#sample">Sample</a>
-          <a class="navLink" href="#pricing">Pricing</a>
+        <div class="navLinks">
+          <a class="navLink" href="#what">Coverage</a>
+          <a class="navLink" href="#how">Method</a>
           <a class="navLink" href="#faq">FAQ</a>
-        </nav>
+        </div>
 
-        <div class="headerActions">
-          <a class="btn btnGhost" href="#sample">View sample</a>
-          <a class="btn btnPrimary" href="#generate">Generate snapshot</a>
+        <div class="navCtas">
+          <a class="navPill" href="#scan">Generate snapshot</a>
         </div>
       </div>
-    </header>
+    </nav>
 
-    <main>
-      <!-- HERO -->
-      <section class="hero">
-        <div class="container heroGrid">
-          <div class="heroCopy">
-            <div class="pill">
-              <span class="dot" aria-hidden="true"></span>
-              Point-in-time • Immutable • Verifiable
-            </div>
+    <main class="wrap">
+      <header class="hero heroV2">
+        <div class="heroTop">
+          <div class="badges">
+            <span class="badge">Point-in-time</span>
+            <span class="badge">Immutable artifact</span>
+            <span class="badge">Public verification</span>
+            <span class="badge">Pay once</span>
+          </div>
+        </div>
 
-            <h1 class="h1">
-              Generate a <span class="em">verifiable</span> website risk snapshot.
-            </h1>
+        <div class="heroGrid heroGridV2">
+          <div class="heroLeft heroLeftV2">
+            <h1 class="heroTitleV2">Generate a verifiable website risk snapshot.</h1>
 
-            <p class="lead">
-              A single evidentiary artifact: objectively detectable signals, captured at a specific time, packaged into a
-              timestamped PDF with a permanent share link and public verification.
+            <p class="heroLead heroLeadV2">
+              Website Risk Check creates a <strong>timestamped</strong>, <strong>scope-locked</strong> record of objectively detectable signals —
+              packaged into a PDF designed to be <strong>shared</strong>, <strong>filed</strong>, and <strong>verified independently later</strong>.
             </p>
 
-            <div class="ctaRow" id="generate">
-              <a class="btn btnPrimary btnLarge" href="#scan">Generate snapshot</a>
-              <a class="btn btnGhost btnLarge" href="#sample">View sample verified report</a>
+            <div class="heroActions">
+              <a class="btnPrimary btnLink btnBig" href="#scan">Generate snapshot</a>
+              <a class="btnSecondary btnLink btnBig" href="#sample">View sample report</a>
             </div>
 
-            <div class="heroMeta">
+            <div class="heroMeta heroMetaV2">
               <div class="metaItem">
-                <div class="metaTitle">One-time payment</div>
-                <div class="metaValue">£99 • no subscription</div>
-              </div>
-              <div class="metaItem">
-                <div class="metaTitle">Output</div>
-                <div class="metaValue">PDF + /r/:token + /verify/:hash</div>
+                <div class="metaTitle">Free preview</div>
+                <div class="metaDesc">Structured top findings in seconds</div>
               </div>
               <div class="metaItem">
-                <div class="metaTitle">Scope-locked Take</div>
-                <div class="metaValue">Deterministic scan coverage</div>
+                <div class="metaTitle">Evidence output</div>
+                <div class="metaDesc">PDF + permanent /r link + verify page</div>
+              </div>
+              <div class="metaItem">
+                <div class="metaTitle">No SaaS baggage</div>
+                <div class="metaDesc">No dashboards, no monitoring, no subscription</div>
               </div>
             </div>
-          </div>
 
-          <!-- Artifact mock (no images required) -->
-          <div class="artifact">
-            <div class="artifactTop">
-              <div class="artifactTitle">Website Risk Snapshot</div>
-              <div class="artifactSub">Timestamped PDF • Integrity Hash • Verification URL</div>
+            <div class="heroDisclaimer">
+              <span class="tiny">
+                Not legal advice. Not certification. Not monitoring. This is a point-in-time record of observable signals.
+              </span>
             </div>
 
-            <div class="artifactBody">
-              <div class="artifactBadgeRow">
-                <span class="badge badgeHigh">RISK: HIGH</span>
-                <span class="badge">POINT-IN-TIME</span>
-                <span class="badge">IMMUTABLE</span>
-              </div>
-
-              <div class="artifactLines">
-                <div class="line"></div>
-                <div class="line w80"></div>
-                <div class="line w60"></div>
-              </div>
-
-              <div class="artifactGrid">
-                <div class="miniCard">
-                  <div class="miniTitle">Scope</div>
-                  <div class="miniText">Homepage + standard policy paths (max 6 pages)</div>
+            <section class="artifactBand">
+              <div class="artifactCard">
+                <div class="artifactTop">
+                  <div class="artifactTitle">What you’re buying is an evidentiary artifact — not access.</div>
+                  <div class="artifactSub">
+                    One immutable report, with stable links and independent verification. Designed to be shared with stakeholders.
+                  </div>
                 </div>
-                <div class="miniCard">
-                  <div class="miniTitle">Signals</div>
-                  <div class="miniText">Policies • Consent • Trackers • Forms • Accessibility • Contact</div>
+
+                <div class="artifactGrid">
+                  <div class="artifactMini">
+                    <div class="artifactMiniLabel">Timestamped PDF</div>
+                    <div class="artifactMiniText">Audit-grade structure</div>
+                  </div>
+                  <div class="artifactMini">
+                    <div class="artifactMiniLabel">Permanent link</div>
+                    <div class="artifactMiniText mono">/r/:token</div>
+                  </div>
+                  <div class="artifactMini">
+                    <div class="artifactMiniLabel">Public verify page</div>
+                    <div class="artifactMiniText mono">/verify/:hash</div>
+                  </div>
+                  <div class="artifactMini">
+                    <div class="artifactMiniLabel">Scope-locked</div>
+                    <div class="artifactMiniText">Deterministic coverage</div>
+                  </div>
                 </div>
-                <div class="miniCard">
-                  <div class="miniTitle">Integrity</div>
-                  <div class="miniText mono">SHA-256: 9f1c…b82a</div>
-                </div>
-                <div class="miniCard">
-                  <div class="miniTitle">Verify</div>
-                  <div class="miniText mono">/verify/9f1c…b82a</div>
+
+                <div class="artifactFine">
+                  <span class="tiny">
+                    Verification uses an integrity hash derived from objective audit fields. If the report is modified, verification fails.
+                  </span>
                 </div>
               </div>
+            </section>
+          </div>
 
-              <div class="artifactFooter">
-                <div class="monoSmall">This is not legal advice or certification. It is an objectively derived record.</div>
+          <div class="heroRight heroRightV2" id="scan">
+            <div class="scanCard scanCardV2">
+              <div class="scanHead scanHeadV2">
+                <div>
+                  <div class="scanTitle scanTitleV2">Generate a free preview</div>
+                  <div class="scanSub scanSubV2">Paste a URL. Get structured top findings before payment.</div>
+                </div>
+                <div class="scanPrice scanPriceV2">
+                  <div class="scanPriceTop">Full snapshot</div>
+                  <div class="scanPriceValue">£99</div>
+                </div>
+              </div>
+
+              <!-- KEEP THESE IDs EXACTLY -->
+              <form id="check-form" class="scanForm scanFormV2">
+                <label class="srOnly" for="url-input">Website URL</label>
+                <input
+                  id="url-input"
+                  type="url"
+                  placeholder="https://yourwebsite.com"
+                  required
+                  autocomplete="url"
+                />
+                <button id="scanBtn" type="submit" class="btnPrimary">
+                  Run free preview
+                </button>
+              </form>
+
+              <div class="scanNotes scanNotesV2">
+                <div class="noteRow">
+                  <span class="dot dotGreen" aria-hidden="true"></span>
+                  <span><strong>Preview</strong> shows top signals only</span>
+                </div>
+                <div class="noteRow">
+                  <span class="dot dotBlue" aria-hidden="true"></span>
+                  <span>Paid snapshot includes <strong>timestamped PDF</strong> + <strong>permanent /r link</strong></span>
+                </div>
+                <div class="noteRow">
+                  <span class="dot dotAmber" aria-hidden="true"></span>
+                  <span>Secure checkout via Stripe • One-time payment</span>
+                </div>
+              </div>
+
+              <!-- KEEP preview/findings/pay buttons IDs EXACTLY -->
+              <div id="preview" class="preview previewV2">
+                <div class="previewHead previewHeadV2">
+                  <div class="previewTitle">Preview findings</div>
+                  <div class="previewHint">Pay once to lock the snapshot and download the PDF</div>
+                </div>
+
+                <ul id="findings" class="findings"></ul>
+
+                <div class="ctaRow ctaRowV2">
+                  <button id="pay-button" class="btnSecondary" type="button">
+                    Download full PDF snapshot (£99)
+                  </button>
+
+                  <button id="threepack-button" class="btnSecondary btnBest" type="button">
+                    Multi-site pack: 3 snapshots (£199)
+                  </button>
+
+                  <span class="fineprint">Secure checkout via Stripe</span>
+                </div>
+
+                <div class="split splitV2">
+                  <div class="miniCard miniCardV2">
+                    <h3>What you receive</h3>
+                    <p>
+                      Timestamp, scan coverage, detected signals, plain-English notes, limitations,
+                      permanent share link, and public verification backed by an integrity hash.
+                    </p>
+                  </div>
+                  <div class="miniCard miniCardV2">
+                    <h3>What this is not</h3>
+                    <p>
+                      Not legal advice. Not certification. Not monitoring. Observable signals only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="scanFoot scanFootV2">
+                <span class="tiny">
+                  By scanning you confirm you have permission to review this website. This tool records observable signals only.
+                </span>
+              </div>
+            </div>
+
+            <div class="trustRow trustRowV2" aria-label="Trust indicators">
+              <div class="trustItem">
+                <div class="trustTop">One-time payment</div>
+                <div class="trustBottom">No ongoing fees</div>
+              </div>
+              <div class="trustItem">
+                <div class="trustTop">Permanent link</div>
+                <div class="trustBottom">Share without login</div>
+              </div>
+              <div class="trustItem">
+                <div class="trustTop">Public verification</div>
+                <div class="trustBottom">Integrity checks later</div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      <!-- SCAN CARD -->
-      <section class="scanSection" id="scan">
-        <div class="container">
-          <div class="scanCard">
-            <div class="scanHeader">
-              <h2 class="h2">Generate a snapshot</h2>
-              <p class="subtle">
-                Start with a structured preview of detectable signals. Then lock the report with a one-time payment.
-              </p>
-            </div>
-
-            <form class="scanForm" id="scanForm">
-              <label class="srOnly" for="urlInput">Website URL</label>
-              <input
-                id="urlInput"
-                name="url"
-                class="input"
-                type="url"
-                inputmode="url"
-                autocomplete="off"
-                placeholder="https://example.com"
-                required
-              />
-              <button class="btn btnPrimary" id="scanBtn" type="submit">Run preview</button>
-            </form>
-
-            <div class="scanNotes">
-              <div class="note">
-                <div class="noteTitle">Privacy</div>
-                <div class="noteText">We scan only to generate your preview/report. No dashboards. No monitoring.</div>
-              </div>
-              <div class="note">
-                <div class="noteTitle">Deterministic scope</div>
-                <div class="noteText">Same inputs → same scope rules, so the artifact is stable and defensible.</div>
-              </div>
-              <div class="note">
-                <div class="noteTitle">Evidence output</div>
-                <div class="noteText">Timestamped PDF + permanent share link + public verification page.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- WHAT IT IS / IS NOT -->
-      <section class="section">
-        <div class="container">
-          <div class="twoCol">
-            <div class="panel">
-              <h2 class="h3">What this is</h2>
-              <ul class="checkList">
-                <li>A point-in-time evidentiary snapshot</li>
-                <li>Scope-locked, deterministic scan coverage</li>
-                <li>Objectively detectable signals only</li>
-                <li>Designed for documentation & stakeholder reporting</li>
-              </ul>
-            </div>
-
-            <div class="panel">
-              <h2 class="h3">What this is not</h2>
-              <ul class="xList">
-                <li>Legal advice</li>
-                <li>Certification</li>
-                <li>Ongoing monitoring</li>
-                <li>A subscription dashboard</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- USE CASES -->
-      <section class="section sectionAlt">
-        <div class="container">
-          <div class="sectionHead">
-            <h2 class="h2">Built for real-world documentation</h2>
-            <p class="subtle">When you need a record you can download, share, and verify later — independently.</p>
-          </div>
-
-          <div class="cards3">
-            <div class="card">
-              <div class="cardTitle">Pre-launch / redesign</div>
-              <p class="cardText">Capture baseline risk posture before changes — keep an immutable record of “before”.</p>
-            </div>
-            <div class="card">
-              <div class="cardTitle">Agencies & consultants</div>
-              <p class="cardText">Provide neutral documentation to clients without selling fear or locking them into SaaS.</p>
-            </div>
-            <div class="card">
-              <div class="cardTitle">Partnerships / due diligence</div>
-              <p class="cardText">Share a timestamped snapshot with stakeholders, backed by public verification.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- HOW IT WORKS -->
-      <section class="section" id="how">
-        <div class="container">
-          <div class="sectionHead">
-            <h2 class="h2">How it works</h2>
-            <p class="subtle">Simple flow. Serious output.</p>
-          </div>
-
-          <div class="steps">
-            <div class="step">
-              <div class="stepNum">1</div>
-              <div>
-                <div class="stepTitle">Run the preview</div>
-                <p class="stepText">We show structured signals we can detect objectively: policies, consent, tracking scripts, forms/data capture heuristics, accessibility red flags, and contact signals.</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="stepNum">2</div>
-              <div>
-                <div class="stepTitle">Lock the snapshot</div>
-                <p class="stepText">Pay once via Stripe to generate your timestamped report. No subscription. No account required.</p>
-              </div>
-            </div>
-
-            <div class="step">
-              <div class="stepNum">3</div>
-              <div>
-                <div class="stepTitle">Download, share, verify</div>
-                <p class="stepText">You receive a PDF plus a permanent share link and a public verification page backed by an integrity hash.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="callout">
-            <div class="calloutTitle">Why verification matters</div>
-            <p class="calloutText">
-              The report includes an integrity hash derived from objective audit fields. If the artifact is modified, verification fails.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- SAMPLE -->
       <section class="section sectionAlt" id="sample">
-        <div class="container">
-          <div class="sectionHead">
-            <h2 class="h2">View a sample verified report</h2>
-            <p class="subtle">Let people see exactly what £99 buys — and verify it themselves.</p>
+        <h2>Sample verified report</h2>
+        <p class="sectionLead">
+          Let people see the artifact structure and verify it independently. Replace these links with your real published sample.
+        </p>
+
+        <div class="ctaBand ctaBandV2">
+          <div>
+            <div class="ctaBandTitle">Open a public sample</div>
+            <div class="ctaBandText">The strongest trust signal is a real verifiable example.</div>
           </div>
 
-          <div class="sampleRow">
-            <div class="sampleCard">
-              <div class="sampleTitle">Sample report</div>
-              <p class="sampleText">
-                Open the permanent report link and review the PDF structure, scope declaration, and findings format.
-              </p>
-              <div class="sampleActions">
-                <a class="btn btnPrimary" href="/r/sample" rel="nofollow">Open sample /r link</a>
-                <a class="btn btnGhost" href="/verify/samplehash" rel="nofollow">Verify sample hash</a>
-              </div>
-              <div class="monoSmall subtle">
-                You should replace <span class="mono">/r/sample</span> and <span class="mono">/verify/samplehash</span> with your real published sample.
-              </div>
-            </div>
-
-            <div class="sampleSide">
-              <div class="miniProof">
-                <div class="miniProofTitle">Output includes:</div>
-                <ul class="tightList">
-                  <li>Timestamped PDF</li>
-                  <li>Permanent share link</li>
-                  <li>Public verification page</li>
-                  <li>Integrity hash + QR</li>
-                </ul>
-              </div>
-
-              <div class="miniProof">
-                <div class="miniProofTitle">Designed to be defensible:</div>
-                <ul class="tightList">
-                  <li>Scope-locked scanning</li>
-                  <li>Objective signals only</li>
-                  <li>Clear limitations section</li>
-                  <li>Stable token mapping</li>
-                </ul>
-              </div>
-            </div>
+          <div class="ctaBandBtns">
+            <a class="btnSecondary btnLink" href="/r/sample" rel="nofollow">Open /r sample</a>
+            <a class="btnSecondary btnLink" href="/verify/samplehash" rel="nofollow">Verify sample</a>
           </div>
         </div>
       </section>
 
-      <!-- PRICING -->
-      <section class="section" id="pricing">
-        <div class="container">
-          <div class="sectionHead">
-            <h2 class="h2">Pricing</h2>
-            <p class="subtle">One-time payment. You get an artifact — not a subscription.</p>
+      <section class="section" id="what">
+        <h2>Coverage</h2>
+        <p class="sectionLead">
+          A practical, signal-based snapshot. Not a “compliance certificate” — only what can be detected at the time of scanning.
+        </p>
+
+        <div class="grid">
+          <div class="pill">
+            <div class="pillTitle">Cookies & tracking</div>
+            <div class="pillText">Detects common trackers and third-party scripts (heuristic).</div>
           </div>
-
-          <div class="pricingGrid">
-            <div class="priceCard">
-              <div class="priceTop">
-                <div class="priceName">Single Snapshot</div>
-                <div class="priceValue">£99</div>
-                <div class="priceNote">Pay once. Generate once. Immutable output.</div>
-              </div>
-
-              <ul class="checkList compact">
-                <li>Structured preview</li>
-                <li>Audit-grade PDF report</li>
-                <li>Permanent /r/:token share link</li>
-                <li>Public /verify/:hash verification</li>
-                <li>Integrity hash + QR in PDF</li>
-              </ul>
-
-              <a class="btn btnPrimary btnLarge w100" href="#scan">Generate snapshot</a>
-              <div class="finePrint">Not legal advice. Not certification. Not monitoring.</div>
-            </div>
-
-            <div class="priceCard featured">
-              <div class="ribbon">Best value for agencies</div>
-
-              <div class="priceTop">
-                <div class="priceName">Multi-Site Pack</div>
-                <div class="priceValue">£99</div>
-                <div class="priceNote">3 snapshots • ideal for agencies / multi-domain businesses</div>
-              </div>
-
-              <ul class="checkList compact">
-                <li>Redeem up to 3 report generations</li>
-                <li>Each report is timestamped & verifiable</li>
-                <li>Permanent share link per report</li>
-                <li>Public verification per report</li>
-              </ul>
-
-              <a class="btn btnPrimary btnLarge w100" href="/pricing" rel="nofollow">Get the 3-pack</a>
-              <div class="finePrint">Same artifact standard — just more runs.</div>
-            </div>
+          <div class="pill">
+            <div class="pillTitle">Consent banner presence</div>
+            <div class="pillText">Checks for indicators of a cookie/consent banner (heuristic).</div>
+          </div>
+          <div class="pill">
+            <div class="pillTitle">Policy pages</div>
+            <div class="pillText">Looks for privacy policy, terms, and related pages.</div>
+          </div>
+          <div class="pill">
+            <div class="pillTitle">Forms & data collection</div>
+            <div class="pillText">Flags obvious forms that may collect personal data (heuristic).</div>
+          </div>
+          <div class="pill">
+            <div class="pillTitle">Accessibility red flags</div>
+            <div class="pillText">Basic checks for common issues (heuristic).</div>
+          </div>
+          <div class="pill">
+            <div class="pillTitle">Contact signals</div>
+            <div class="pillText">Detects visible contact/identity cues on the site.</div>
           </div>
         </div>
       </section>
 
-      <!-- FAQ -->
-      <section class="section sectionAlt" id="faq">
-        <div class="container">
-          <div class="sectionHead">
-            <h2 class="h2">FAQ</h2>
-            <p class="subtle">No hype. Just clear answers.</p>
+      <section class="section" id="how">
+        <h2>Method</h2>
+
+        <div class="steps">
+          <div class="step">
+            <div class="stepNum">1</div>
+            <div class="stepBody">
+              <div class="stepTitle">Run a free preview</div>
+              <div class="stepText">Enter a URL and get a structured list of top detectable signals.</div>
+            </div>
           </div>
-
-          <div class="faqGrid">
-            <details class="faq" open>
-              <summary>Is this legal advice or certification?</summary>
-              <p>
-                No. WebsiteRiskCheck provides a point-in-time snapshot of objectively detectable signals. It’s designed for documentation and stakeholder clarity, not legal conclusions.
-              </p>
-            </details>
-
-            <details class="faq">
-              <summary>What does “verifiable” mean?</summary>
-              <p>
-                The report includes an integrity hash derived from objective audit fields. The public verification page recomputes and confirms the hash, so tampering is detectable.
-              </p>
-            </details>
-
-            <details class="faq">
-              <summary>Do you monitor my site over time?</summary>
-              <p>
-                No. This is deliberately not a dashboard or subscription. It creates a single, timestamped artifact.
-              </p>
-            </details>
-
-            <details class="faq">
-              <summary>What does the preview include?</summary>
-              <p>
-                A structured summary of detectable signals: policy presence, consent indicators, tracking scripts, forms/data capture heuristics, accessibility red flags, and contact signals.
-              </p>
-            </details>
-
-            <details class="faq">
-              <summary>Why is it £99?</summary>
-              <p>
-                You’re paying for an audit-grade artifact: deterministic capture, immutable report generation, permanent share link, and public verification — not SaaS access.
-              </p>
-            </details>
-
-            <details class="faq">
-              <summary>Can I share the report with others?</summary>
-              <p>
-                Yes. Each report includes a permanent /r link and a public verification page so third parties can independently validate integrity.
-              </p>
-            </details>
+          <div class="step">
+            <div class="stepNum">2</div>
+            <div class="stepBody">
+              <div class="stepTitle">Lock the snapshot</div>
+              <div class="stepText">Pay once via Stripe to generate the immutable report artifact.</div>
+            </div>
           </div>
+          <div class="step">
+            <div class="stepNum">3</div>
+            <div class="stepBody">
+              <div class="stepTitle">Download + share + verify</div>
+              <div class="stepText">PDF + permanent link + public verification page for independent integrity checks.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctaBand">
+          <div>
+            <div class="ctaBandTitle">Ready to scan?</div>
+            <div class="ctaBandText">Paste a URL above to generate your free preview.</div>
+          </div>
+          <a class="btnPrimary btnLink" href="#scan">Generate snapshot</a>
         </div>
       </section>
 
-      <!-- Footer -->
+      <section class="section" id="faq">
+        <h2>FAQ</h2>
+
+        <div class="faq">
+          <details class="qa">
+            <summary>Is this legal advice or a compliance certificate?</summary>
+            <div class="qaBody">
+              No. It’s a point-in-time snapshot of observable signals. It does not provide legal advice, certification, or guarantee compliance.
+            </div>
+          </details>
+
+          <details class="qa">
+            <summary>What do I get after payment?</summary>
+            <div class="qaBody">
+              A timestamped PDF report plus a permanent share link (no login required) and a public verification page.
+            </div>
+          </details>
+
+          <details class="qa">
+            <summary>Does this monitor my site continuously?</summary>
+            <div class="qaBody">
+              No. This is deliberately not monitoring and not a dashboard subscription — it generates a single artifact.
+            </div>
+          </details>
+
+          <details class="qa">
+            <summary>Can I use this for multiple sites?</summary>
+            <div class="qaBody">
+              Yes — use the <strong>3 snapshots pack</strong> if you’re checking clients or multiple domains.
+            </div>
+          </details>
+        </div>
+      </section>
+
       <footer class="footer">
-        <div class="container footerRow">
-          <div class="footerLeft">
-            <div class="brandMini">
-              <span class="brandMark" aria-hidden="true"></span>
-              <span class="brandText">WebsiteRiskCheck</span>
-            </div>
-            <div class="finePrint">
-              WebsiteRiskCheck does not provide legal advice or certification. It generates a point-in-time, objectively derived record of detectable risk signals.
+        <div class="footerInner">
+          <div class="footerBrand">
+            <div class="footerLogo" aria-hidden="true"></div>
+            <div>
+              <div class="footerName">Website Risk Check</div>
+              <div class="footerTag">Verifiable point-in-time website snapshot reports.</div>
             </div>
           </div>
 
-          <div class="footerRight">
-            <a class="footerLink" href="/pricing">Pricing</a>
-            <a class="footerLink" href="/privacy">Privacy</a>
-            <a class="footerLink" href="/terms">Terms</a>
+          <div class="footerCols">
+            <div class="footerCol">
+              <div class="footerColTitle">Product</div>
+              <a class="footerLink" href="#scan">Generate snapshot</a>
+              <a class="footerLink" href="#what">Coverage</a>
+              <a class="footerLink" href="#faq">FAQ</a>
+            </div>
+
+            <div class="footerCol">
+              <div class="footerColTitle">Important</div>
+              <div class="footerFine">
+                This tool provides a point-in-time snapshot only. It does not provide legal advice, compliance guarantees, certification, or ongoing monitoring.
+              </div>
+            </div>
           </div>
         </div>
       </footer>
     </main>
+  </div>
 
-    <!-- Keep your existing app.js if it drives the preview flow -->
-    <script src="/app.js?v=15" defer></script>
-  </body>
+  <script src="app.js?v=3" defer></script>
+</body>
 </html>

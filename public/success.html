@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your report is ready — Website Risk Check</title>
+  <title>Report issued — Website Risk Check</title>
 
   <meta
     name="description"
-    content="Your Website Risk Check report is ready. Download your timestamped PDF, verify its authenticity, and copy a permanent share link."
+    content="Your Website Risk Check report has been issued. Download, verify, and share an immutable compliance snapshot."
   />
 
   <style>
@@ -26,7 +26,7 @@
     *{ box-sizing:border-box; }
 
     body{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       margin:0;
       padding:48px 20px;
       background:var(--bg);
@@ -34,10 +34,10 @@
     }
 
     .container{
-      max-width:820px;
+      max-width:860px;
       margin:0 auto;
       background:var(--card);
-      padding:40px;
+      padding:44px;
       border-radius:18px;
       box-shadow:0 20px 40px rgba(0,0,0,0.08);
       border:1px solid rgba(0,0,0,0.04);
@@ -45,53 +45,34 @@
 
     .topRow{
       display:flex;
-      align-items:flex-start;
       justify-content:space-between;
       gap:14px;
       flex-wrap:wrap;
-      margin-bottom:10px;
+      margin-bottom:14px;
     }
 
-    h1{
-      font-size:30px;
-      margin:0;
-      letter-spacing:-0.02em;
-    }
+    h1{ font-size:30px; margin:0; letter-spacing:-0.02em; }
 
     .statusPill{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:10px 12px;
+      padding:10px 14px;
       border-radius:999px;
       background:var(--soft);
       border:1px solid rgba(0,0,0,0.06);
       font-size:13px;
-      color:#333;
-      white-space:nowrap;
     }
 
     .dot{
-      width:10px;
-      height:10px;
-      border-radius:50%;
+      width:10px;height:10px;border-radius:50%;
       background:var(--ok);
-      display:inline-block;
     }
 
-    p{
-      font-size:16px;
-      line-height:1.55;
-      margin:12px 0 16px;
-      color:#333;
-    }
+    p{ font-size:16px; line-height:1.55; }
 
     .actions{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:6px;
-      align-items:center;
+      display:flex; gap:12px; flex-wrap:wrap; margin-top:14px;
     }
 
     button{
@@ -106,19 +87,14 @@
     }
 
     button.secondary{ background:#2a2a2a; }
-
     button.ghost{
       background:transparent;
       color:#111;
       border:1px solid rgba(0,0,0,0.12);
     }
 
-    button:disabled{
-      opacity:0.65;
-      cursor:not-allowed;
-    }
-
     .box{
+      display:none;
       margin-top:14px;
       padding:14px;
       background:var(--soft);
@@ -126,120 +102,123 @@
       font-size:14px;
       word-break:break-all;
       border:1px solid rgba(0,0,0,0.06);
-      display:none;
     }
 
-    .labelRow{
-      margin-top:14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
+    .divider{
+      height:1px;
+      background:var(--border);
+      margin:36px 0;
     }
 
-    .labelRow strong{
-      font-size:13px;
-      color:#111;
-    }
+    .muted{ font-size:14px; color:var(--muted); }
+    .tinyMuted{ font-size:13px; color:var(--muted); margin-top:6px; }
 
-    .muted{
-      font-size:14px;
-      color:var(--muted);
-      line-height:1.5;
-      margin:10px 0 0;
-    }
-
-    .tinyMuted{
-      font-size:13px;
-      color:var(--muted);
-      line-height:1.45;
-      margin:6px 0 0;
-    }
-
-    .hint{
-      margin-top:12px;
-      background:#fff7ed;
-      border:1px solid rgba(181,71,8,0.25);
-      color:#7c2d12;
-      padding:12px 14px;
+    input{
+      width:100%;
+      padding:14px;
+      font-size:15px;
       border-radius:12px;
-      font-size:13px;
-      line-height:1.45;
+      border:1px solid #ddd;
+      margin-top:10px;
     }
 
-    .toast{
-      position:fixed;
-      left:50%;
-      bottom:18px;
-      transform:translateX(-50%);
-      background:#111;
-      color:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      opacity:0;
-      pointer-events:none;
-      transition:opacity .2s ease;
+    .dealCard{
+      margin-top:18px;
+      border-radius:16px;
+      border:1px solid rgba(15,118,110,0.22);
+      background:linear-gradient(180deg, rgba(15,118,110,0.08), rgba(15,118,110,0.03));
+      padding:18px;
     }
-    .toast.show{ opacity:1; }
+
+    .badge{
+      font-size:12px;
+      font-weight:900;
+      color:#0f766e;
+      margin-bottom:6px;
+    }
+
+    h2{
+      font-size:18px;
+      margin:0 0 6px;
+      letter-spacing:-0.01em;
+    }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <div class="topRow">
-      <h1>Your report is ready</h1>
-      <div class="statusPill">
-        <span class="dot"></span> Payment verified • Immutable snapshot generated
-      </div>
+<div class="container">
+
+  <!-- ISSUANCE -->
+  <div class="topRow">
+    <h1>Report issued</h1>
+    <div class="statusPill">
+      <span class="dot"></span> Payment verified • Snapshot sealed
     </div>
-
-    <p>
-      Your PDF report is downloading now. This is a <strong>point-in-time snapshot</strong>
-      you can keep, forward, or file.
-    </p>
-
-    <div class="actions">
-      <button id="download">Download PDF again</button>
-      <button id="copy" class="secondary" style="display:none;">Copy permanent share link</button>
-      <button id="open" class="ghost" style="display:none;">Open report link</button>
-      <button id="verify" class="ghost" style="display:none;">Verify report</button>
-    </div>
-
-    <p class="tinyMuted">
-      Verification confirms this report has not been altered since generation.
-    </p>
-
-    <div class="labelRow">
-      <strong>Permanent share link (no login required)</strong>
-      <span class="muted" style="margin:0;">Best for client delivery</span>
-    </div>
-
-    <div id="share-box" class="box"></div>
-
-    <div class="hint">
-      If your download is blocked, use <strong>Open report</strong>,
-      <strong>Verify report</strong>, or copy the link above.
-    </div>
-
-    <p class="muted" style="margin-top:24px;">
-      This report does not provide legal advice or guarantee compliance.
-      It reflects detectable signals at the time of scanning.
-    </p>
   </div>
 
-  <div id="toast" class="toast">Copied</div>
+  <p>
+    This website risk report has been generated and sealed as a
+    <strong>point-in-time snapshot</strong>.
+    It reflects what was publicly detectable at the moment of scanning.
+  </p>
 
-  <script src="success.js"></script>
+  <p class="muted">
+    Once issued, reports cannot be altered. Any modification invalidates verification.
+  </p>
 
-  <script>
-    window.__toast = (msg) => {
-      const el = document.getElementById("toast");
-      el.textContent = msg || "Done";
-      el.classList.add("show");
-      setTimeout(() => el.classList.remove("show"), 1300);
-    };
-  </script>
+  <!-- PRIMARY ACTIONS -->
+  <div class="actions">
+    <button id="download">Download PDF</button>
+    <button id="copy" class="secondary" style="display:none;">Copy share link</button>
+    <button id="open" class="ghost" style="display:none;">Open report</button>
+    <button id="verify" class="ghost" style="display:none;">Verify integrity</button>
+  </div>
+
+  <div id="share-box" class="box"></div>
+
+  <!-- VERIFICATION EXPLANATION -->
+  <p class="tinyMuted" style="margin-top:14px;">
+    Verification allows any third party to independently confirm this report
+    using its cryptographic fingerprint — no account or login required.
+  </p>
+
+  <!-- LEGAL / SCOPE -->
+  <p class="muted" style="margin-top:22px;">
+    This document is not legal advice and does not certify compliance.
+    It is a factual, evidentiary snapshot of observable signals at a specific time.
+  </p>
+
+  <!-- COMMERCIAL SEPARATION -->
+  <div class="divider"></div>
+
+  <h2>Additional snapshots (optional)</h2>
+  <p class="muted">
+    Identical format. Identical verification. No subscription.
+  </p>
+
+  <!-- SINGLE -->
+  <div>
+    <strong>Single additional snapshot — £39</strong>
+    <input id="upsell-url" type="url" placeholder="https://another-site.com" />
+    <div class="actions">
+      <button id="upsell">Run additional scan (£39)</button>
+    </div>
+  </div>
+
+  <!-- BUNDLE -->
+  <div class="dealCard">
+    <div class="badge">Best value</div>
+    <strong>3 snapshots bundle — £99</strong>
+    <p class="tinyMuted">
+      Redeem at your convenience. Commonly used by agencies and multi-site operators.
+    </p>
+    <div class="actions">
+      <button id="threepack">Get 3 snapshots (£99)</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="success.js"></script>
 </body>
 </html>

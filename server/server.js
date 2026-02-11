@@ -1,5 +1,5 @@
 // server/server.js
-// FULL RAMBO — immutable reports + verification + payments + analytics + bundles
+// FULL RAMBO — immutable reports + verification + payments + preview
 
 import express from "express";
 import Stripe from "stripe";
@@ -33,7 +33,8 @@ if (!STRIPE_SECRET_KEY && process.env.NODE_ENV === "production") {
   console.error("❌ STRIPE_SECRET_KEY missing");
   process.exit(1);
 }
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+
+const stripe = new Stripe(STRIPE_SECRET_KEY);
 
 /* =========================
    STORAGE
@@ -72,7 +73,7 @@ app.get("/health", (_req, res) => {
 });
 
 /* =========================
-   PREVIEW SCAN
+   PREVIEW SCAN (RATE-LIMITED)
 ========================= */
 
 const previewHits = new Map();
@@ -98,6 +99,7 @@ app.post("/preview-scan", async (req, res) => {
     res.json({
       url: scan.url,
       scannedAt: scan.scannedAt,
+      riskLevel: scan.riskLevel,
       findings: [
         scan.hasPrivacyPolicy
           ? "Privacy policy detected"
@@ -106,9 +108,7 @@ app.post("/preview-scan", async (req, res) => {
           ? "Cookie consent banner detected"
           : "No cookie consent banner detected",
         scan.trackingScriptsDetected.length
-          ? `Tracking scripts detected (${scan.trackingScriptsDetected.join(
-              ", "
-            )})`
+          ? `Tracking scripts detected (${scan.trackingScriptsDetected.join(", ")})`
           : "No tracking scripts detected",
         scan.formsDetected > 0
           ? `Forms detected (${scan.formsDetected})`
@@ -125,8 +125,6 @@ app.post("/preview-scan", async (req, res) => {
 ========================= */
 
 app.post("/create-checkout", async (req, res) => {
-  if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
-
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "URL required" });
 
@@ -145,7 +143,10 @@ app.post("/create-checkout", async (req, res) => {
         quantity: 1,
       },
     ],
-    metadata: { url, kind: "primary" },
+    metadata: {
+      url,
+      kind: "primary",
+    },
     success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${BASE_URL}/`,
   });
@@ -154,16 +155,15 @@ app.post("/create-checkout", async (req, res) => {
 });
 
 /* =========================
-   PAID → IMMUTABLE REPORT
+   PAID → IMMUTABLE REPORT (IDEMPOTENT)
 ========================= */
 
 app.get("/download-report", async (req, res) => {
-  if (!stripe) return res.status(500).send("Stripe not configured");
-
   const { session_id } = req.query;
   if (!session_id) return res.status(400).send("Missing session_id");
 
   const sessionFile = path.join(SESSION_DIR, `${session_id}.json`);
+
   if (fs.existsSync(sessionFile)) {
     const { token } = JSON.parse(fs.readFileSync(sessionFile, "utf8"));
     return res.redirect(`/r/${token}`);
@@ -183,6 +183,11 @@ app.get("/download-report", async (req, res) => {
 
   const scanData = await scanWebsite(url);
 
+  await generateReport(
+    { ...scanData, shareToken: token },
+    pdfPath
+  );
+
   fs.writeFileSync(
     jsonPath,
     JSON.stringify(
@@ -196,8 +201,6 @@ app.get("/download-report", async (req, res) => {
       2
     )
   );
-
-  await generateReport({ ...scanData, shareToken: token }, pdfPath);
 
   fs.writeFileSync(
     sessionFile,
@@ -222,7 +225,7 @@ app.get("/r/:token", (req, res) => {
 });
 
 /* =========================
-   REPORT VERIFICATION
+   REPORT VERIFICATION (PUBLIC)
 ========================= */
 
 app.get("/verify/:hash", (req, res) => {
@@ -270,27 +273,60 @@ function renderVerifyPage(data) {
 <title>Report verification — Website Risk Check</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-body{font-family:system-ui;background:#f7f7f8;padding:40px}
-.card{max-width:720px;margin:auto;background:#fff;padding:36px;border-radius:18px}
-.status{padding:12px;border-radius:999px;margin-bottom:20px;
-background:${ok ? "#ecfdf3" : "#fef2f2"};
-color:${ok ? "#166534" : "#991b1b"}}
-.mono{font-family:monospace;background:#f2f2f3;padding:12px;border-radius:10px}
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:#f7f7f8;
+  padding:48px 20px;
+}
+.card{
+  max-width:720px;
+  margin:auto;
+  background:#fff;
+  padding:40px;
+  border-radius:18px;
+  border:1px solid rgba(0,0,0,0.06);
+}
+.status{
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:999px;
+  font-size:13px;
+  margin-bottom:20px;
+  background:${ok ? "#ecfdf3" : "#fef2f2"};
+  color:${ok ? "#166534" : "#991b1b"};
+}
+.mono{
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  background:#f2f2f3;
+  padding:12px;
+  border-radius:10px;
+  font-size:13px;
+  word-break:break-all;
+}
+p{ line-height:1.55; }
 </style>
 </head>
 <body>
 <div class="card">
-<h1>Report verification</h1>
-<div class="status">${ok ? "Valid report" : "Invalid or unknown report"}</div>
-${ok ? `
-<p><strong>Domain:</strong> ${data.hostname || data.url}</p>
-<p><strong>Scan ID:</strong> ${data.scanId}</p>
-<p><strong>Scanned at:</strong> ${new Date(data.scannedAt).toISOString()}</p>
-<p class="mono">${data.hash}</p>
-` : `
-<p>This report could not be verified.</p>
-`}
-<p>This page confirms whether a report matches the cryptographic fingerprint generated at scan time.</p>
+  <h1>Report verification</h1>
+  <div class="status">${ok ? "Valid report" : "Invalid or unknown report"}</div>
+
+  ${
+    ok
+      ? `
+      <p><strong>Domain:</strong> ${data.hostname || data.url}</p>
+      <p><strong>Scan ID:</strong> ${data.scanId}</p>
+      <p><strong>Scanned at:</strong> ${new Date(data.scannedAt).toISOString()}</p>
+      <p><strong>Integrity hash:</strong></p>
+      <div class="mono">${data.hash}</div>
+      `
+      : `<p>This report could not be verified.</p>`
+  }
+
+  <p style="margin-top:24px;font-size:14px;color:#555;">
+    This page confirms whether a report matches the cryptographic fingerprint
+    generated at scan time. Any modification invalidates verification.
+  </p>
 </div>
 </body>
 </html>`;

@@ -1,11 +1,26 @@
 // server/scan.js
-// AUDIT-GRADE — scope-locked, deterministic, evidence-only scanner
+// AUDIT-GRADE — scope-locked, deterministic, evidence-only scanner (expanded coverage + risk)
 
 import * as cheerio from "cheerio";
 import crypto from "crypto";
+import { computeRisk } from "./risk.js";
 
 const USER_AGENT =
   "WebsiteRiskCheckBot/1.0 (+https://www.websiteriskcheck.com)";
+
+// Hard limits so we never become a crawler
+const MAX_PAGES = 6; // homepage + up to 5 standard paths
+const FETCH_TIMEOUT_MS = 9000;
+
+// Standard paths (tight scope)
+const STANDARD_PATHS = [
+  "/privacy",
+  "/privacy-policy",
+  "/terms",
+  "/terms-and-conditions",
+  "/cookie-policy",
+  "/contact",
+];
 
 /* =========================
    URL NORMALISATION
@@ -29,27 +44,60 @@ function safeHostname(url) {
   }
 }
 
+function baseOrigin(url) {
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "";
+  }
+}
+
+function withTimeout(promise, ms) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return {
+    ctrl,
+    wrapped: promise(ctrl.signal).finally(() => clearTimeout(t)),
+  };
+}
+
 /* =========================
    FETCH (HTML ONLY)
 ========================= */
 
 async function fetchHtml(url) {
-  const res = await fetch(url, {
-    method: "GET",
-    redirect: "follow",
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "text/html,application/xhtml+xml",
-    },
-  });
+  const { wrapped } = withTimeout(async (signal) => {
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal,
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
 
-  const contentType = res.headers.get("content-type") || "";
-  if (!contentType.includes("text/html")) {
-    return { ok: false, status: res.status, html: "" };
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("text/html")) {
+      return { ok: false, status: res.status, html: "", finalUrl: res.url };
+    }
+
+    const html = await res.text();
+    return { ok: res.ok, status: res.status, html, finalUrl: res.url };
+  }, FETCH_TIMEOUT_MS);
+
+  try {
+    return await wrapped;
+  } catch (e) {
+    return {
+      ok: false,
+      status: 0,
+      html: "",
+      finalUrl: url,
+      error: String(e?.message || e),
+    };
   }
-
-  const html = await res.text();
-  return { ok: res.ok, status: res.status, html };
 }
 
 /* =========================
@@ -116,7 +164,7 @@ function detectCookieBannerHeuristic($) {
 }
 
 /* =========================
-   POLICY LINKS
+   POLICY LINKS (HOMEPAGE ONLY, STILL USED)
 ========================= */
 
 function detectPolicyLinks($, baseUrl) {
@@ -183,11 +231,9 @@ function detectAccessibility($) {
   if (!$("html").attr("lang"))
     notes.push("No <html lang> attribute detected.");
 
-  if ($("h1").length === 0)
-    notes.push("No H1 heading detected on the homepage.");
+  if ($("h1").length === 0) notes.push("No H1 heading detected.");
 
-  if ($("h1").length > 1)
-    notes.push("Multiple H1 headings detected.");
+  if ($("h1").length > 1) notes.push("Multiple H1 headings detected.");
 
   return notes;
 }
@@ -219,6 +265,41 @@ function detectContactInfo($) {
 }
 
 /* =========================
+   PAGE LIST (SCOPE-LOCKED)
+========================= */
+
+function buildCandidateUrls(homeUrl) {
+  const origin = baseOrigin(homeUrl);
+  const out = [homeUrl];
+
+  for (const p of STANDARD_PATHS) {
+    if (out.length >= MAX_PAGES) break;
+    try {
+      out.push(new URL(p, origin).toString());
+    } catch {}
+  }
+
+  // de-dupe
+  return Array.from(new Set(out));
+}
+
+function pathOf(u) {
+  try {
+    return new URL(u).pathname || "/";
+  } catch {
+    return "/";
+  }
+}
+
+function finalize(result) {
+  const risk = computeRisk(result);
+  result.riskLevel = risk.level;
+  result.riskScore = risk.score;
+  result.riskReasons = risk.reasons;
+  return result;
+}
+
+/* =========================
    MAIN SCAN
 ========================= */
 
@@ -228,67 +309,202 @@ export async function scanWebsite(inputUrl) {
   const scannedAt = Date.now();
   const https = url.startsWith("https://");
 
-  const home = await fetchHtml(url);
+  const hostname = safeHostname(url);
+  const origin = baseOrigin(url);
+  const targets = buildCandidateUrls(url);
 
-  if (!home.ok || !home.html) {
-    return {
+  // Aggregates
+  let anyFetchOk = false;
+  let firstStatus = 0;
+
+  let hasPrivacyPolicy = false;
+  let hasTerms = false;
+  let hasCookiePolicy = false;
+  let hasCookieBanner = false;
+
+  const trackingSet = new Set();
+  const vendorSet = new Set();
+
+  let formsDetectedTotal = 0;
+  let formsPersonalSignalsTotal = 0;
+
+  let totalImagesTotal = 0;
+  let imagesMissingAltTotal = 0;
+
+  const accessibilityNotes = new Set();
+  let contactInfoPresent = false;
+
+  const checkedPages = [];
+  const failedPages = [];
+
+  // Fetch each target (tight scope, same origin enforced)
+  for (const t of targets) {
+    // enforce same host/origin (prevents weird redirects to CDNs etc.)
+    try {
+      const tu = new URL(t);
+      if (`${tu.protocol}//${tu.host}` !== origin) continue;
+    } catch {
+      continue;
+    }
+
+    const res = await fetchHtml(t);
+
+    if (!firstStatus) firstStatus = res.status || 0;
+
+    if (!res.ok || !res.html) {
+      failedPages.push({ url: t, status: res.status || 0 });
+      continue;
+    }
+
+    anyFetchOk = true;
+    checkedPages.push({ url: t, status: res.status || 200 });
+
+    const $ = cheerio.load(res.html);
+
+    // On homepage, still detect link policies (useful)
+    if (t === url) {
+      const linkPolicies = detectPolicyLinks($, url);
+      hasPrivacyPolicy = hasPrivacyPolicy || !!linkPolicies.privacy;
+      hasTerms = hasTerms || !!linkPolicies.terms;
+      hasCookiePolicy = hasCookiePolicy || !!linkPolicies.cookies;
+    }
+
+    // Path-based policy detection: if the page exists, count as present
+    try {
+      const pathname = new URL(t).pathname.toLowerCase();
+      if (pathname === "/privacy" || pathname === "/privacy-policy")
+        hasPrivacyPolicy = true;
+      if (pathname === "/terms" || pathname === "/terms-and-conditions")
+        hasTerms = true;
+      if (pathname === "/cookie-policy") hasCookiePolicy = true;
+    } catch {}
+
+    // Trackers/vendors across all checked pages
+    for (const s of detectTracking(res.html)) trackingSet.add(s);
+    for (const v of detectCookieVendors(res.html)) vendorSet.add(v);
+
+    // Banner signal: heuristic on any checked page
+    if (detectCookieBannerHeuristic($)) hasCookieBanner = true;
+
+    // Forms/images/accessibility/contact aggregated
+    const forms = detectForms($);
+    formsDetectedTotal += forms.formsDetected;
+    formsPersonalSignalsTotal += forms.formsPersonalDataSignals;
+
+    const imgs = detectImagesMissingAlt($);
+    totalImagesTotal += imgs.totalImages;
+    imagesMissingAltTotal += imgs.imagesMissingAlt;
+
+    for (const n of detectAccessibility($)) accessibilityNotes.add(n);
+
+    if (!contactInfoPresent && detectContactInfo($)) contactInfoPresent = true;
+  }
+
+  if (!anyFetchOk) {
+    const attemptedPaths = targets.map((u) => pathOf(u)).join(", ");
+
+    const result = {
       url,
-      hostname: safeHostname(url),
+      hostname,
       scanId,
       scannedAt,
       https,
       fetchOk: false,
-      fetchStatus: home.status,
-      accessibilityNotes: [
-        "Homepage HTML could not be retrieved for analysis.",
+      fetchStatus: firstStatus || 0,
+
+      // Minimal signals (unknown/undetected)
+      hasPrivacyPolicy: false,
+      hasTerms: false,
+      hasCookiePolicy: false,
+      hasCookieBanner: false,
+      cookieVendorsDetected: [],
+      trackingScriptsDetected: [],
+      formsDetected: 0,
+      formsPersonalDataSignals: 0,
+      totalImages: 0,
+      imagesMissingAlt: 0,
+      contactInfoPresent: false,
+
+      accessibilityNotes: ["No HTML pages could be retrieved for analysis."],
+
+      checkedPages,
+      failedPages,
+
+      scanCoverageNotes: [
+        "Attempted: homepage + standard policy/contact paths.",
+        `Attempted pages: ${attemptedPaths}`,
       ],
     };
+
+    return finalize(result);
   }
 
-  const $ = cheerio.load(home.html);
+  const cookieVendorsDetected = Array.from(vendorSet);
+  const trackingScriptsDetected = Array.from(trackingSet);
 
-  const trackingScriptsDetected = detectTracking(home.html);
-  const cookieVendorsDetected = detectCookieVendors(home.html);
+  // Vendor presence can imply consent tooling exists
+  if (cookieVendorsDetected.length > 0) hasCookieBanner = true;
 
-  const hasCookieBanner =
-    cookieVendorsDetected.length > 0 ||
-    detectCookieBannerHeuristic($);
+  const checkedList =
+    checkedPages
+      .map((p) => {
+        try {
+          return new URL(p.url).pathname || "/";
+        } catch {
+          return "/";
+        }
+      })
+      .join(", ") || "none";
 
-  const linkPolicies = detectPolicyLinks($, url);
-  const { formsDetected, formsPersonalDataSignals } = detectForms($);
-  const { totalImages, imagesMissingAlt } =
-    detectImagesMissingAlt($);
+  const failedList = failedPages.length
+    ? failedPages
+        .map((p) => {
+          try {
+            return `${new URL(p.url).pathname} (HTTP ${p.status || 0})`;
+          } catch {
+            return `unknown (HTTP ${p.status || 0})`;
+          }
+        })
+        .join(", ")
+    : "none";
 
-  return {
+  const result = {
     url,
-    hostname: safeHostname(url),
+    hostname,
     scanId,
     scannedAt,
     https,
     fetchOk: true,
-    fetchStatus: home.status,
+    fetchStatus: firstStatus || 200,
 
-    hasPrivacyPolicy: linkPolicies.privacy,
-    hasTerms: linkPolicies.terms,
-    hasCookiePolicy: linkPolicies.cookies,
+    hasPrivacyPolicy,
+    hasTerms,
+    hasCookiePolicy,
     hasCookieBanner,
 
     cookieVendorsDetected,
     trackingScriptsDetected,
 
-    formsDetected,
-    formsPersonalDataSignals,
+    formsDetected: formsDetectedTotal,
+    formsPersonalDataSignals: formsPersonalSignalsTotal,
 
-    totalImages,
-    imagesMissingAlt,
+    totalImages: totalImagesTotal,
+    imagesMissingAlt: imagesMissingAltTotal,
 
-    accessibilityNotes: detectAccessibility($),
-    contactInfoPresent: detectContactInfo($),
+    accessibilityNotes: Array.from(accessibilityNotes),
+    contactInfoPresent,
+
+    checkedPages,
+    failedPages,
 
     scanCoverageNotes: [
-      "Homepage only.",
-      "Public, unauthenticated HTML.",
+      "Homepage + standard policy/contact paths only (max 6 pages).",
+      "Public, unauthenticated HTML only.",
       "No full crawl or behavioural simulation.",
+      `Checked: ${checkedList}`,
+      `Failed: ${failedList}`,
     ],
   };
+
+  return finalize(result);
 }

@@ -1,5 +1,5 @@
 // public/app.js
-// FULL RAMBO — signal-only preview + locked conversion flow
+// FULL RAMBO — signal-only preview + locked conversion flow (single + 3-pack)
 
 function getSid() {
   const key = "wrc_sid";
@@ -30,15 +30,29 @@ document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("url-input");
   const preview = document.getElementById("preview");
   const findingsEl = document.getElementById("findings");
-  const payButton = document.getElementById("pay-button");
+
+  const payButton = document.getElementById("pay-button"); // single report
+  const threepackButton = document.getElementById("threepack-button"); // 3-pack best value (optional on page)
 
   let scannedUrl = null;
   let isScanning = false;
-  let isPaying = false;
+  let isPayingSingle = false;
+  let isPayingThreepack = false;
 
   track("landing_view", { path: location.pathname });
 
+  // Single button is required, 3-pack may not exist on older pages
   if (!form || !input || !preview || !findingsEl || !payButton) return;
+
+  function setPayButtonsEnabled(enabled) {
+    payButton.disabled = !enabled;
+    if (threepackButton) threepackButton.disabled = !enabled;
+  }
+
+  function resetPayButtonsText() {
+    payButton.textContent = "Download full PDF report (£99)";
+    if (threepackButton) threepackButton.textContent = "Best value: 3 reports (£199)";
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -54,7 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     preview.style.display = "none";
     findingsEl.innerHTML = "";
-    payButton.disabled = true;
+    setPayButtonsEnabled(false);
+    resetPayButtonsText();
 
     try {
       const res = await fetch("/preview-scan", {
@@ -74,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       preview.style.display = "block";
-      payButton.disabled = false;
+      setPayButtonsEnabled(true);
 
       track("preview_completed", {
         findings_count: (data.findings || []).length,
@@ -89,13 +104,13 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   payButton.addEventListener("click", async () => {
-    if (!scannedUrl || isPaying) return;
+    if (!scannedUrl || isPayingSingle || isPayingThreepack) return;
 
-    isPaying = true;
-    payButton.disabled = true;
+    isPayingSingle = true;
+    setPayButtonsEnabled(false);
     payButton.textContent = "Redirecting to secure checkout…";
 
-    track("checkout_started", {});
+    track("checkout_started", { kind: "single" });
 
     try {
       const res = await fetch("/create-checkout", {
@@ -109,15 +124,50 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!data.url) throw new Error("No checkout URL");
 
-      track("checkout_redirected", {});
+      track("checkout_redirected", { kind: "single" });
       window.location.href = data.url;
     } catch (err) {
       console.error(err);
       alert("Checkout failed. Please try again.");
-      payButton.disabled = false;
-      payButton.textContent = "Download full PDF report (£79)";
-      isPaying = false;
-      track("checkout_failed", {});
+      setPayButtonsEnabled(true);
+      resetPayButtonsText();
+      isPayingSingle = false;
+      track("checkout_failed", { kind: "single" });
     }
   });
+
+  if (threepackButton) {
+    threepackButton.addEventListener("click", async () => {
+      if (!scannedUrl || isPayingThreepack || isPayingSingle) return;
+
+      isPayingThreepack = true;
+      setPayButtonsEnabled(false);
+      threepackButton.textContent = "Redirecting to secure checkout…";
+
+      track("checkout_started", { kind: "threepack" });
+
+      try {
+        const res = await fetch("/create-threepack-checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: scannedUrl }),
+        });
+
+        if (!res.ok) throw new Error("Threepack checkout failed");
+
+        const data = await res.json();
+        if (!data.url) throw new Error("No checkout URL");
+
+        track("checkout_redirected", { kind: "threepack" });
+        window.location.href = data.url;
+      } catch (err) {
+        console.error(err);
+        alert("Checkout failed. Please try again.");
+        setPayButtonsEnabled(true);
+        resetPayButtonsText();
+        isPayingThreepack = false;
+        track("checkout_failed", { kind: "threepack" });
+      }
+    });
+  }
 });

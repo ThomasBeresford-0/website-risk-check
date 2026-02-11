@@ -20,6 +20,7 @@
       --accent:#111;
       --soft:#f2f2f3;
       --ok:#1a7f37;
+      --warn:#b54708;
     }
 
     *{ box-sizing:border-box; }
@@ -104,8 +105,11 @@
       color:#fff;
     }
 
-    button.secondary{
-      background:#2a2a2a;
+    button.secondary{ background:#2a2a2a; }
+    button.ghost{
+      background:transparent;
+      color:#111;
+      border:1px solid rgba(0,0,0,0.12);
     }
 
     button:disabled{
@@ -136,11 +140,43 @@
       letter-spacing:-0.01em;
     }
 
+    .labelRow{
+      margin-top:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .labelRow strong{
+      font-size:13px;
+      color:#111;
+    }
+
     .muted{
       font-size:14px;
       color:var(--muted);
       line-height:1.5;
       margin:10px 0 0;
+    }
+
+    .tinyMuted{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.45;
+      margin:8px 0 0;
+    }
+
+    .hint{
+      margin-top:12px;
+      background:#fff7ed;
+      border:1px solid rgba(181,71,8,0.25);
+      color:#7c2d12;
+      padding:12px 14px;
+      border-radius:12px;
+      font-size:13px;
+      line-height:1.45;
     }
 
     .grid{
@@ -239,9 +275,20 @@
     <div class="actions">
       <button id="download">Download PDF again</button>
       <button id="copy" class="secondary" style="display:none;">Copy permanent share link</button>
+      <button id="open" class="ghost" style="display:none;">Open report link</button>
+    </div>
+
+    <div class="labelRow">
+      <strong>Permanent share link (no login required)</strong>
+      <span class="muted" style="margin:0;">Best for client delivery</span>
     </div>
 
     <div id="share-box" class="box"></div>
+
+    <div class="hint">
+      If your download is blocked (some corporate browsers do this), use <strong>Open report link</strong>
+      or copy the link above and open it in a new tab.
+    </div>
 
     <div class="grid">
       <div class="miniCard">
@@ -265,7 +312,7 @@
     <h2>Add a second website snapshot (£39)</h2>
 
     <p>
-      Need another site checked while you’re here?  
+      Need another site checked while you’re here?
       Run an additional snapshot for <strong>£39</strong> (one-time).
     </p>
 
@@ -294,6 +341,10 @@
       This report does not provide legal advice or guarantee compliance.
       It reflects detectable signals at the time of scanning.
     </p>
+
+    <p class="tinyMuted">
+      Tip: If you’re an agency, attach this report to the handover email as neutral evidence.
+    </p>
   </div>
 
   <div id="toast" class="toast">Copied</div>
@@ -301,7 +352,6 @@
   <script src="success.js"></script>
 
   <script>
-    // Tiny toast helper for success.js to call (optional)
     window.__toast = (msg) => {
       const el = document.getElementById("toast");
       el.textContent = msg || "Done";

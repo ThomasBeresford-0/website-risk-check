@@ -184,6 +184,10 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, uptime: process.uptime() });
 });
 
+app.get("/__version", (_req, res) => {
+  res.type("text").send("server.js live: sample-report-assets v1");
+});
+
 /* =========================
    PREVIEW SCAN (STRUCTURED + COMPAT)
 ========================= */

@@ -8,7 +8,7 @@
   ========================= */
 
   // Choose the showcase PDF (you have both in /public)
-  const SAMPLE_PDF_URL = "/sample-report.pdf";
+  const SAMPLE_PDF_URL = "/report.pdf";
 
   const SAMPLE_VERIFY_PATH = "/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c";
 

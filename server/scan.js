@@ -2,6 +2,7 @@
 // AUDIT-GRADE — structured + legacy-flat, scope-locked, deterministic scanner
 // - Returns structured model for /preview-scan UI
 // - ALSO returns flat legacy fields for paid PDF + integrity hashing compatibility
+// - ✅ Adds deterministic findingsText[] (strings) + findings[] (structured objects) for boutique PDF risk register
 
 import * as cheerio from "cheerio";
 import crypto from "crypto";
@@ -248,6 +249,296 @@ function safePath(u) {
 }
 
 /* =========================
+   FINDINGS (DETERMINISTIC)
+   - findingsText: short human strings for UI
+   - findings: structured objects for boutique PDF risk register
+========================= */
+
+function labelProb(v) {
+  if (v >= 5) return "Almost certain";
+  if (v === 4) return "Likely";
+  if (v === 3) return "Possible";
+  if (v === 2) return "Unlikely";
+  return "Rare";
+}
+
+function labelImpact(v) {
+  if (v >= 5) return "Severe";
+  if (v === 4) return "Major";
+  if (v === 3) return "Moderate";
+  if (v === 2) return "Minor";
+  return "Low";
+}
+
+function buildFindings(meta, coverage, signals) {
+  const findings = [];
+  const findingsText = [];
+
+  const checked = Array.isArray(coverage?.checkedPages) ? coverage.checkedPages : [];
+  const failed = Array.isArray(coverage?.failedPages) ? coverage.failedPages : [];
+
+  const trackers = Array.isArray(signals?.trackingScripts) ? signals.trackingScripts : [];
+  const vendors =
+    Array.isArray(signals?.consent?.vendors) ? signals.consent.vendors : [];
+
+  const formsDetected = Number(signals?.forms?.detected || 0);
+  const pdataSignals = Number(signals?.forms?.personalDataSignals || 0);
+
+  const totalImages = Number(signals?.accessibility?.images?.total || 0);
+  const missingAlt = Number(signals?.accessibility?.images?.missingAlt || 0);
+  const altPct = totalImages > 0 ? Math.round((missingAlt / totalImages) * 100) : 0;
+
+  const hasPrivacy = !!signals?.policies?.privacy;
+  const hasTerms = !!signals?.policies?.terms;
+  const hasCookiePolicy = !!signals?.policies?.cookies;
+  const hasConsent = !!signals?.consent?.bannerDetected;
+
+  const hasTracking = trackers.length > 0 || vendors.length > 0;
+  const hasContact = !!signals?.contact?.detected;
+
+  // 0) Coverage / fetch health (always include as first)
+  {
+    const prob = checked.length ? 1 : 4;
+    const impact = checked.length ? 2 : 4;
+    const score = prob * impact;
+
+    const desc = checked.length
+      ? "Public pages were retrieved for analysis using a scope-locked approach (homepage + standard policy/contact paths)."
+      : "No public HTML pages could be retrieved for analysis, limiting detection coverage and increasing uncertainty.";
+
+    findings.push({
+      id: "coverage",
+      category: "Coverage",
+      description: desc,
+      probability: { value: prob, label: labelProb(prob) },
+      impact: { value: impact, label: labelImpact(impact) },
+      score,
+      timing: "At scan time; affects interpretability of all detections.",
+      trigger: checked.length ? "Successful retrieval of public HTML." : "Fetch failure / blocked / non-HTML responses.",
+      mitigation: checked.length
+        ? "For broader assurance, run a repeat scan after major changes or validate key pages manually."
+        : "Check site availability, robots/WAF rules, and ensure key pages are publicly accessible before re-running.",
+      evidence: {
+        checkedPaths: checked.map((p) => safePath(p.url)),
+        failedPaths: failed.map((p) => `${safePath(p.url)} (HTTP ${p.status || 0})`),
+      },
+    });
+
+    findingsText.push(
+      checked.length
+        ? `Coverage: retrieved ${checked.length} page(s) (scope-locked)`
+        : "Coverage: no pages retrieved (scan limited)"
+    );
+  }
+
+  // 1) HTTPS
+  {
+    const https = !!meta?.https;
+    if (!https) {
+      const prob = 3;
+      const impact = 4;
+      const score = prob * impact;
+      findings.push({
+        id: "https",
+        category: "Security",
+        description: "HTTPS was not detected for the target URL. This can increase interception risk and reduce visitor trust.",
+        probability: { value: prob, label: labelProb(prob) },
+        impact: { value: impact, label: labelImpact(impact) },
+        score,
+        timing: "Present whenever users access the site over HTTP.",
+        trigger: "Target URL does not resolve over HTTPS.",
+        mitigation: "Enable HTTPS site-wide and enforce redirects (HSTS where appropriate).",
+        evidence: { httpsDetected: false },
+      });
+      findingsText.push("HTTPS: not detected");
+    } else {
+      findingsText.push("HTTPS: detected");
+    }
+  }
+
+  // 2) Policies
+  {
+    const missing = (!hasPrivacy ? 1 : 0) + (!hasTerms ? 1 : 0) + (!hasCookiePolicy ? 1 : 0);
+
+    const prob = missing === 0 ? 1 : missing === 1 ? 3 : 4;
+    const impact = missing >= 2 ? 4 : missing === 1 ? 3 : 2;
+    const score = prob * impact;
+
+    const desc =
+      missing === 0
+        ? "Standard policy pages were detected on common public paths."
+        : "One or more standard policy pages were not detected on common public paths (privacy/terms/cookie policy).";
+
+    findings.push({
+      id: "policies",
+      category: "Compliance",
+      description: desc,
+      probability: { value: prob, label: labelProb(prob) },
+      impact: { value: impact, label: labelImpact(impact) },
+      score,
+      timing: "Present throughout the public lifecycle of the website.",
+      trigger: "Policy pages missing, not linked, or not accessible on standard public paths.",
+      mitigation:
+        "Publish and link policy pages from the footer/homepage. Ensure wording matches actual data practices and vendor usage.",
+      evidence: {
+        privacyDetected: hasPrivacy,
+        termsDetected: hasTerms,
+        cookiePolicyDetected: hasCookiePolicy,
+      },
+    });
+
+    findingsText.push(`Privacy policy: ${hasPrivacy ? "detected" : "not detected"}`);
+    findingsText.push(`Terms: ${hasTerms ? "detected" : "not detected"}`);
+    findingsText.push(`Cookie policy: ${hasCookiePolicy ? "detected" : "not detected"}`);
+  }
+
+  // 3) Tracking + consent
+  {
+    if (hasTracking) {
+      const prob = 4;
+      const impact = 4;
+      const score = prob * impact;
+
+      const consentNote = hasConsent
+        ? "A consent banner indicator was detected (heuristic)."
+        : "A consent banner indicator was not detected (heuristic).";
+
+      findings.push({
+        id: "tracking-consent",
+        category: "Tracking & Consent",
+        description:
+          `Third-party tracking/cookie vendor signals were detected. ${consentNote} Misalignment between scripts and consent/disclosure can increase exposure.`,
+        probability: { value: prob, label: labelProb(prob) },
+        impact: { value: impact, label: labelImpact(impact) },
+        score,
+        timing: "Present whenever marketing tags/vendors are deployed on public pages.",
+        trigger: "Detected tracking script patterns and/or consent vendor markers in HTML.",
+        mitigation:
+          "Review tag inventory and vendor list. Validate consent flow for target regions. Ensure disclosures match deployed scripts.",
+        evidence: {
+          consentBannerHeuristic: hasConsent,
+          trackingScripts: trackers,
+          cookieVendors: vendors,
+        },
+      });
+
+      findingsText.push(
+        `Tracking scripts: detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
+      );
+      findingsText.push(
+        `Cookie vendor signals: detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
+      );
+      findingsText.push(
+        hasConsent
+          ? "Consent banner indicator: detected (heuristic)"
+          : "Consent banner indicator: not detected (heuristic)"
+      );
+    } else {
+      findingsText.push("Tracking scripts: none detected");
+      findingsText.push("Cookie vendor signals: none detected");
+      findingsText.push(
+        hasConsent
+          ? "Consent banner indicator: detected (heuristic)"
+          : "Consent banner indicator: not detected (heuristic)"
+      );
+    }
+  }
+
+  // 4) Forms / personal data signals
+  {
+    if (formsDetected > 0) {
+      const prob = pdataSignals > 0 ? 4 : 3;
+      const impact = 4;
+      const score = prob * impact;
+
+      findings.push({
+        id: "forms",
+        category: "Data Capture",
+        description:
+          "Forms were detected on the public surface. If forms collect personal data, inadequate transparency, retention, or access controls can increase operational and compliance risk.",
+        probability: { value: prob, label: labelProb(prob) },
+        impact: { value: impact, label: labelImpact(impact) },
+        score,
+        timing: "Present whenever forms are live and receiving submissions.",
+        trigger: "Forms and/or common personal-data field patterns detected (heuristic).",
+        mitigation:
+          "Audit form fields for minimum necessary data. Confirm storage/access controls/retention. Align privacy disclosures and confirmations.",
+        evidence: {
+          formsDetected,
+          personalDataFieldSignals: pdataSignals,
+        },
+      });
+
+      findingsText.push(`Forms detected: ${formsDetected}`);
+      findingsText.push(`Potential personal-data field signals: ${pdataSignals} (heuristic)`);
+    } else {
+      findingsText.push("Forms detected: none");
+    }
+  }
+
+  // 5) Accessibility (alt text)
+  {
+    if (totalImages > 0) {
+      const prob = altPct >= 30 ? 4 : altPct >= 10 ? 3 : altPct > 0 ? 2 : 1;
+      const impact = altPct >= 30 ? 3 : altPct >= 10 ? 2 : 1;
+      const score = prob * impact;
+
+      findings.push({
+        id: "alt-text",
+        category: "Accessibility",
+        description:
+          "Alt text gaps were detected on images. Missing descriptions may reduce accessibility and can become a risk depending on jurisdiction, audience, and page importance.",
+        probability: { value: prob, label: labelProb(prob) },
+        impact: { value: impact, label: labelImpact(impact) },
+        score,
+        timing: "Present on affected pages where images lack descriptions.",
+        trigger: "Images missing alt attributes or empty alt text (heuristic).",
+        mitigation:
+          "Add alt text to meaningful images on key pages (conversion pages and policy/contact pages first).",
+        evidence: {
+          totalImages,
+          imagesMissingAlt: missingAlt,
+          missingAltPercent: altPct,
+        },
+      });
+
+      findingsText.push(`Images missing alt text: ${missingAlt} of ${totalImages}`);
+    } else {
+      findingsText.push("Images: none detected on scanned pages");
+    }
+  }
+
+  // 6) Contact / identity
+  {
+    const prob = hasContact ? 1 : 3;
+    const impact = hasContact ? 1 : 2;
+    const score = prob * impact;
+
+    findings.push({
+      id: "contact",
+      category: "Trust",
+      description:
+        hasContact
+          ? "Contact/business identity signals were detected on the scanned surface."
+          : "Contact/business identity signals were not detected on the scanned surface, which can reduce trust and conversion.",
+      probability: { value: prob, label: labelProb(prob) },
+      impact: { value: impact, label: labelImpact(impact) },
+      score,
+      timing: "Present on landing and checkout journeys.",
+      trigger: "No email/phone/contact link detected on scanned pages (heuristic).",
+      mitigation:
+        "Ensure a visible Contact page and footer identity details (email/phone/address where appropriate).",
+      evidence: { contactDetected: hasContact },
+    });
+
+    findingsText.push(hasContact ? "Contact/identity signals: detected" : "Contact/identity signals: not detected");
+  }
+
+  // Keep findings deterministic order
+  return { findings, findingsText };
+}
+
+/* =========================
    MAIN SCAN
 ========================= */
 
@@ -455,8 +746,24 @@ export async function scanWebsite(inputUrl) {
     reasons: risk.reasons,
   };
 
+  // ✅ Deterministic findings (both text + structured objects)
+  const { findings, findingsText } = buildFindings(
+    structured.meta,
+    structured.coverage,
+    structured.signals
+  );
+
+  structured.findings = findings;
+  structured.findingsText = findingsText;
+
   // Return merged object so:
-  // - /preview-scan can use structured: meta/coverage/signals/risk
+  // - /preview-scan can use structured: meta/coverage/signals/risk/findings/findingsText
   // - paid report + integrity + verify can use flat keys
-  return { ...flat, ...structured, risk: structured.risk };
+  return {
+    ...flat,
+    ...structured,
+    risk: structured.risk,
+    findings: structured.findings,
+    findingsText: structured.findingsText,
+  };
 }

@@ -1,6 +1,8 @@
 // server/server.js
 // FULL RAMBO — immutable reports + structured preview + verification + payments
-// + Preview compat layer (flat fields + findings[]) so existing public/app.js works.
+// ✅ Boutique PDF supported (report.js)
+// ✅ Cryptographic verification is REAL (recomputes integrity hash from stored scanData)
+// ✅ Atomic writes (no partial PDFs/JSON on crash)
 
 import express from "express";
 import Stripe from "stripe";
@@ -13,9 +15,10 @@ import { fileURLToPath } from "url";
 
 import { scanWebsite } from "./scan.js";
 import { generateReport } from "./report.js";
+import { computeIntegrityHash } from "./integrity.js";
 
 /* =========================
-   ENV
+   ENV + APP
 ========================= */
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,8 +31,11 @@ const PORT = Number(process.env.PORT) || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
+// IMPORTANT: keep this consistent across ALL pages (index, success, share, threepack, verify, sample-report)
+const ASSET_VERSION = process.env.ASSET_VERSION || "13";
+
 if (!STRIPE_SECRET_KEY) {
-  console.error("❌ STRIPE_SECRET_KEY missing");
+  console.error("STRIPE_SECRET_KEY missing");
   process.exit(1);
 }
 
@@ -48,7 +54,7 @@ const SESSION_DIR = path.join(DATA_DIR, "sessions");
 });
 
 function generateToken() {
-  return crypto.randomBytes(6).toString("base64url");
+  return crypto.randomBytes(6).toString("base64url"); // ~8 chars
 }
 
 function isValidToken(token) {
@@ -63,23 +69,41 @@ function tokenPaths(token) {
 }
 
 function generateUniqueToken() {
-  // avoid (tiny) collision — keep it deterministic, fast
   for (let i = 0; i < 6; i++) {
     const token = generateToken();
     const { pdfPath, jsonPath } = tokenPaths(token);
     if (!fs.existsSync(pdfPath) && !fs.existsSync(jsonPath)) return token;
   }
-  // if the universe hates us
   return crypto.randomBytes(10).toString("base64url");
+}
+
+// Atomic write (tmp → rename) to avoid partial files on crash
+function writeFileAtomic(filePath, data, encoding = "utf8") {
+  const tmp = `${filePath}.tmp-${crypto.randomBytes(6).toString("hex")}`;
+  fs.writeFileSync(tmp, data, encoding);
+  fs.renameSync(tmp, filePath);
+}
+
+function safeReadJson(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 /* =========================
    MIDDLEWARE
 ========================= */
 
+app.disable("x-powered-by");
+
 app.use(cors());
 app.use(express.json({ limit: "30kb" }));
-app.use(express.static(path.join(__dirname, "../public")));
+
+// Serve /public (includes /assets/sample-report.pdf if you add it there)
+app.use(express.static(path.join(__dirname, "../public"), { etag: true }));
 
 /* =========================
    HEALTH
@@ -98,9 +122,7 @@ const previewHits = new Map();
 function rateLimitPreview(ip) {
   const now = Date.now();
   const last = previewHits.get(ip) || 0;
-
   if (now - last < 5000) return false;
-
   previewHits.set(ip, now);
   return true;
 }
@@ -109,6 +131,7 @@ function cap(arr, n = 12) {
   return Array.isArray(arr) ? arr.slice(0, n) : [];
 }
 
+// Legacy fallback (only used if scan.js doesn't provide findingsText[])
 function buildFindingsFromFlat(flat) {
   const findings = [];
 
@@ -176,7 +199,9 @@ function buildFindingsFromFlat(flat) {
 app.post("/preview-scan", async (req, res) => {
   try {
     const ip =
-      req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() || req.ip;
+      req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
+      req.headers["cf-connecting-ip"]?.toString() ||
+      req.ip;
 
     if (!rateLimitPreview(ip)) {
       return res.status(429).json({
@@ -189,16 +214,13 @@ app.post("/preview-scan", async (req, res) => {
 
     const { url } = req.body;
     if (!url) {
-      return res.status(400).json({
-        ok: false,
-        error: "invalid_request",
-        message: "URL required",
-      });
+      return res
+        .status(400)
+        .json({ ok: false, error: "invalid_request", message: "URL required" });
     }
 
     const scan = await scanWebsite(url);
 
-    // --- Structured (source of truth) ---
     const structured = {
       ok: true,
       meta: scan.meta,
@@ -206,12 +228,16 @@ app.post("/preview-scan", async (req, res) => {
         checkedPages: scan.coverage?.checkedPages || [],
         failedPages: scan.coverage?.failedPages || [],
         notes: scan.coverage?.notes || [],
+        fetchOk: scan.coverage?.fetchOk,
+        fetchStatus: scan.coverage?.fetchStatus,
       },
       signals: scan.signals,
       risk: scan.risk,
+      // ✅ NEW: pass-through deterministic findings
+      findings: Array.isArray(scan.findings) ? scan.findings : [],
+      findingsText: Array.isArray(scan.findingsText) ? scan.findingsText : [],
     };
 
-    // --- Flat compat layer (so existing public/app.js renders without changes) ---
     const checkedPages = structured.coverage.checkedPages;
     const failedPages = structured.coverage.failedPages;
 
@@ -219,62 +245,65 @@ app.post("/preview-scan", async (req, res) => {
     const cookieVendorsDetected = cap(scan.signals?.consent?.vendors, 12);
 
     const totalImages = Number(scan.signals?.accessibility?.images?.total || 0);
-    const imagesMissingAlt = Number(scan.signals?.accessibility?.images?.missingAlt || 0);
+    const imagesMissingAlt = Number(
+      scan.signals?.accessibility?.images?.missingAlt || 0
+    );
 
     const flat = {
-      // identity
       url: scan.meta?.url,
       hostname: scan.meta?.hostname,
       scannedAt: scan.meta?.scannedAt,
 
-      // outcomes
       https: !!scan.meta?.https,
       fetchOk: Array.isArray(checkedPages) && checkedPages.length > 0,
-      fetchStatus: 200,
+      // try to reflect real status if available
+      fetchStatus: Number(scan.coverage?.fetchStatus || 200),
 
-      // risk
       riskLevel: scan.risk?.level || "Medium",
 
-      // policy + consent signals
       hasPrivacyPolicy: !!scan.signals?.policies?.privacy,
       hasTerms: !!scan.signals?.policies?.terms,
       hasCookiePolicy: !!scan.signals?.policies?.cookies,
       hasCookieBanner: !!scan.signals?.consent?.bannerDetected,
 
-      // detections
       trackingScriptsDetected,
       cookieVendorsDetected,
 
-      // forms
       formsDetected: Number(scan.signals?.forms?.detected || 0),
-      formsPersonalDataSignals: Number(scan.signals?.forms?.personalDataSignals || 0),
+      formsPersonalDataSignals: Number(
+        scan.signals?.forms?.personalDataSignals || 0
+      ),
 
-      // accessibility
       totalImages,
       imagesMissingAlt,
       accessibilityNotes: cap(scan.signals?.accessibility?.notes, 8),
 
-      // identity/contact
       contactInfoPresent: !!scan.signals?.contact?.detected,
 
-      // coverage (for credibility)
       checkedPages: cap(checkedPages, 12),
       failedPages: cap(failedPages, 12),
       scanCoverageNotes: cap(structured.coverage.notes, 10),
     };
 
+    // ✅ For backwards compatibility with public/app.js:
+    // - keep `findings` as strings (what the UI expects)
+    // - ALSO return `findingsStructured` so you can upgrade UI later without breaking anything
+    const findingsText =
+      Array.isArray(scan.findingsText) && scan.findingsText.length
+        ? scan.findingsText.slice(0, 12)
+        : buildFindingsFromFlat(flat);
+
     return res.json({
       ...structured,
       ...flat,
-      findings: buildFindingsFromFlat(flat), // legacy list for older UI + secondary detail
+      findings: findingsText, // strings (UI)
+      findingsStructured: structured.findings, // objects (PDF + future UI)
     });
   } catch (e) {
     console.error("preview-scan error:", e);
-    return res.status(500).json({
-      ok: false,
-      error: "preview_failed",
-      message: "Preview scan failed",
-    });
+    return res
+      .status(500)
+      .json({ ok: false, error: "preview_failed", message: "Preview scan failed" });
   }
 });
 
@@ -295,9 +324,7 @@ app.post("/create-checkout", async (req, res) => {
           price_data: {
             currency: "gbp",
             unit_amount: 9900,
-            product_data: {
-              name: "Website Risk Check — Verifiable Snapshot",
-            },
+            product_data: { name: "Website Risk Check — Verifiable Snapshot" },
           },
           quantity: 1,
         },
@@ -325,10 +352,11 @@ app.get("/download-report", async (req, res) => {
 
     const sessionFile = path.join(SESSION_DIR, `${session_id}.json`);
 
-    // Idempotent: if already created, redirect to stable token
+    // Idempotent redirect if we’ve already sealed a report for this session
     if (fs.existsSync(sessionFile)) {
-      const { token } = JSON.parse(fs.readFileSync(sessionFile, "utf8"));
-      return res.redirect(`/r/${token}`);
+      const existing = safeReadJson(sessionFile);
+      if (existing?.token) return res.redirect(`/r/${existing.token}`);
+      // If corrupted, fall through and regenerate mapping safely (but do not overwrite a paid report)
     }
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
@@ -343,34 +371,39 @@ app.get("/download-report", async (req, res) => {
     const token = generateUniqueToken();
     const { pdfPath, jsonPath } = tokenPaths(token);
 
+    // Create report to a temp path first
+    const tmpPdf = `${pdfPath}.tmp-${crypto.randomBytes(6).toString("hex")}`;
     const scanData = await scanWebsite(url);
 
-    // ✅ SOURCE OF TRUTH FOR integrityHash IS generateReport RETURN VALUE
+    // Generate PDF (report.js computes integrity hash internally, based on objective model)
     const { integrityHash } = await generateReport(
       { ...scanData, shareToken: token },
-      pdfPath
+      tmpPdf
     );
 
-    // Persist JSON record beside PDF
-    fs.writeFileSync(
-      jsonPath,
-      JSON.stringify(
-        {
-          token,
-          createdAt: Date.now(),
-          integrityHash,
-          scanData: {
-            ...scanData,
-            integrityHash, // mirror for convenience
-          },
-        },
-        null,
-        2
-      )
-    );
+    // Build sealed JSON
+    const sealed = {
+      token,
+      createdAt: Date.now(),
+      integrityHash, // convenience lookup (still verified by recompute on /verify)
+      scanData: {
+        ...scanData,
+        integrityHash,
+      },
+    };
 
-    // Session mapping for idempotency
-    fs.writeFileSync(sessionFile, JSON.stringify({ token, createdAt: Date.now() }));
+    // Write JSON atomically
+    writeFileAtomic(jsonPath, JSON.stringify(sealed, null, 2), "utf8");
+
+    // Rename PDF into place atomically
+    fs.renameSync(tmpPdf, pdfPath);
+
+    // Store session->token mapping atomically
+    writeFileAtomic(
+      sessionFile,
+      JSON.stringify({ token, createdAt: Date.now() }),
+      "utf8"
+    );
 
     return res.redirect(`/r/${token}`);
   } catch (e) {
@@ -403,32 +436,37 @@ app.get("/verify/:hash", (req, res) => {
     return res.send(renderVerifyPage({ valid: false }));
   }
 
+  // For now: simple scan of stored JSONs (fine at your current scale).
+  // If you want to scale later: build an index file hash -> token.
   const files = fs.readdirSync(REPORT_DIR).filter((f) => f.endsWith(".json"));
 
   for (const file of files) {
-    const raw = fs.readFileSync(path.join(REPORT_DIR, file), "utf8");
-    let parsed;
+    const parsed = safeReadJson(path.join(REPORT_DIR, file));
+    if (!parsed || !parsed.scanData) continue;
+
+    const scan = parsed.scanData;
+
+    // ✅ REAL verification: recompute hash from objective fields
+    let recomputed = "";
     try {
-      parsed = JSON.parse(raw);
+      recomputed = computeIntegrityHash(scan);
     } catch {
       continue;
     }
 
-    if (parsed.integrityHash === hash && parsed.scanData) {
-      const scan = parsed.scanData;
-      const meta = scan.meta || {};
+    if (recomputed !== hash) continue;
 
-      return res.send(
-        renderVerifyPage({
-          valid: true,
-          hash,
-          url: meta.url,
-          hostname: meta.hostname,
-          scanId: meta.scanId,
-          scannedAt: meta.scannedAt,
-        })
-      );
-    }
+    const meta = scan.meta || {};
+    return res.send(
+      renderVerifyPage({
+        valid: true,
+        hash,
+        url: meta.url,
+        hostname: meta.hostname,
+        scanId: meta.scanId,
+        scannedAt: meta.scannedAt,
+      })
+    );
   }
 
   return res.send(renderVerifyPage({ valid: false, hash }));
@@ -460,9 +498,15 @@ function renderVerifyPage(data) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${title} — Website Risk Check</title>
-  <meta name="description" content="Verify the integrity of a Website Risk Check report using its cryptographic fingerprint." />
+  <meta name="description" content="Verify a Website Risk Check report using its verification code." />
   <meta name="theme-color" content="#0b1220" />
-  <link rel="stylesheet" href="/style.css?v=12" />
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg?v=1" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <link rel="stylesheet" href="/style.css?v=${escapeHtml(ASSET_VERSION)}" />
 </head>
 
 <body>
@@ -471,7 +515,7 @@ function renderVerifyPage(data) {
   <nav class="nav">
     <div class="container navInner">
       <a class="brand" href="/" aria-label="Website Risk Check">
-        <span class="brandMark" aria-hidden="true"></span>
+        <img class="brandLogo" src="/favicon.svg?v=1" alt="" />
         <span class="brandText">Website Risk Check</span>
       </a>
 
@@ -492,8 +536,8 @@ function renderVerifyPage(data) {
             <p class="verifySub">
               ${
                 ok
-                  ? "This report’s cryptographic fingerprint matches a sealed report stored by Website Risk Check."
-                  : "This hash does not match any sealed report on record, or the link is malformed."
+                  ? "This verification code matches a sealed report stored by Website Risk Check. If the PDF is modified after generation, verification fails."
+                  : "This code does not match any sealed report on record, or the link is malformed."
               }
             </p>
           </div>
@@ -508,12 +552,12 @@ function renderVerifyPage(data) {
           <div class="issueTop">
             <div>
               <div class="issueTitle">Verification details</div>
-              <div class="issueHint">Cryptographic fingerprint</div>
+              <div class="issueHint">Verification code</div>
             </div>
           </div>
 
           <div class="verifyBlock">
-            <div class="verifyLabel">Integrity hash</div>
+            <div class="verifyLabel">Code</div>
             <div class="monoBox">${safeHash || "—"}</div>
           </div>
 
@@ -530,7 +574,7 @@ function renderVerifyPage(data) {
               <div class="verifyItemVal">${safeScanId || "—"}</div>
             </div>
             <div class="verifyItem">
-              <div class="verifyItemTop">Scanned at</div>
+              <div class="verifyItemTop">Scanned at (UTC)</div>
               <div class="verifyItemVal">${safeScannedAt || "—"}</div>
             </div>
             <div class="verifyItem">
@@ -540,27 +584,25 @@ function renderVerifyPage(data) {
           </div>`
               : `
           <div class="helperNote" style="margin-top:14px;">
-            If you received this link from an agency or consultant, ask them to resend the report link, or confirm the hash inside the PDF.
+            If you received this link from an agency or consultant, ask them to resend the report link, or confirm the verification code printed inside the PDF.
           </div>`
           }
 
           <div class="dividerLine" style="margin:16px 0;"></div>
 
           <div class="verifyForm">
-            <div class="verifyLabel">Verify another hash</div>
+            <div class="verifyLabel">Verify another code</div>
             <div class="verifyInputRow">
-              <input id="hashInput" type="text" inputmode="text" placeholder="Paste 64-character hash…" />
+              <input id="hashInput" type="text" inputmode="text" placeholder="Paste 64-character code…" />
               <button id="hashGo" class="btnPrimary" type="button">Verify</button>
             </div>
             <div class="issueFine">
-              Tip: the hash is printed inside the PDF report (verification section).
+              Tip: the verification code is printed inside the PDF report.
             </div>
           </div>
 
           <div class="issueNotes">
-            <p>
-              Verification confirms integrity only. It does not certify compliance and is not legal advice.
-            </p>
+            <p>Verification confirms integrity only. It does not certify compliance and is not legal advice.</p>
           </div>
         </div>
 
@@ -589,7 +631,7 @@ function renderVerifyPage(data) {
    SAMPLE REPORT PAGE
 ========================= */
 
-app.get("/sample-report", (req, res) => {
+app.get("/sample-report", (_req, res) => {
   return res.sendFile(path.join(__dirname, "../public", "sample-report.html"));
 });
 
@@ -598,5 +640,5 @@ app.get("/sample-report", (req, res) => {
 ========================= */
 
 app.listen(PORT, () => {
-  console.log(`✅ Website Risk Check running on port ${PORT}`);
+  console.log(`Website Risk Check running on port ${PORT}`);
 });

@@ -1,22 +1,48 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
+// BOUTIQUE UPGRADE: consultancy cover + risk register table styling (matches provided references)
+// ✅ Uses deterministic structured findings[] (from scan.js) when present
+// ✅ Falls back to legacy deterministic register builder if findings[] missing
+// ⚠️ Integrity hashing inputs are preserved (NO layout entropy)
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 
 import { computeRisk } from "./risk.js";
 import { computeIntegrityHash } from "./integrity.js";
 
-const __filename = fileURLToPath(import.meta.url);
+/* =========================
+   PALETTE (from your reference images)
+========================= */
+const PALETTE = {
+  // Cover template vibe
+  paper: "#E4EAE7", // light warm grey-green
+  tealDark: "#006B61", // deep teal
+  tealMid: "#467E6F", // mid teal
+  greenLight: "#99CF8D", // light green
+  ink: "#111827", // slate-900
+  muted: "#6B7280", // gray-500
+  body: "#374151", // gray-700
+  line: "#D7DEE2", // soft line
+
+  // Risk table vibe
+  navy: "#021942", // dark navy header
+  navy2: "#0A2A63",
+  grid: "#2B57C6", // blue-ish grid line like screenshot
+  rowA: "#F3F4F6", // light row
+  rowB: "#EEF2F7", // alternate row
+  scoreGreen: "#BFD83A", // greenish score fill
+  scoreYellow: "#F6BE34", // amber score fill
+  scoreOrange: "#F39C12", // orange
+  scoreRed: "#E74C3C", // red
+};
 
 /* =========================
    HELPERS
 ========================= */
 
 function iso(ts) {
-  // Accept ISO strings or ms
   try {
     return new Date(ts).toISOString();
   } catch {
@@ -42,11 +68,20 @@ function ensureSpace(doc, minSpace = 120) {
   if (doc.y + minSpace > bottom) doc.addPage();
 }
 
+function clampText(s, max = 220) {
+  const t = String(s ?? "");
+  return t.length > max ? `${t.slice(0, max - 1)}…` : t;
+}
+
+function toneForRisk(level) {
+  if (level === "High") return "red";
+  if (level === "Medium") return "amber";
+  return "green";
+}
+
 function getMeta(data) {
-  // Structured preferred
   if (data && typeof data === "object" && data.meta) return data.meta;
 
-  // Legacy fallback
   return {
     url: data?.url,
     hostname: data?.hostname,
@@ -63,6 +98,13 @@ function getCoverage(data) {
     checkedPages: safeArr(data?.checkedPages),
     failedPages: safeArr(data?.failedPages),
     notes: safeArr(data?.scanCoverageNotes),
+    fetchOk:
+      data?.fetchOk === false
+        ? false
+        : data?.fetchOk === true
+          ? true
+          : safeArr(data?.checkedPages).length > 0,
+    fetchStatus: num(data?.fetchStatus, 0),
   };
 }
 
@@ -101,6 +143,7 @@ function getSignals(data) {
 /**
  * Integrity hash must be derived from objective, deterministic fields only.
  * We feed a normalized model to integrity.js so hash is stable regardless of storage shape.
+ * ⚠️ DO NOT include layout, wording, or cosmetic fields here.
  */
 function buildIntegrityInput(data) {
   const meta = getMeta(data);
@@ -112,7 +155,7 @@ function buildIntegrityInput(data) {
       url: meta?.url || "",
       hostname: meta?.hostname || "",
       scanId: meta?.scanId || "",
-      scannedAt: meta?.scannedAt || "",
+      scannedAt: String(meta?.scannedAt || ""),
       https: !!meta?.https,
     },
     coverage: {
@@ -155,59 +198,9 @@ function buildIntegrityInput(data) {
   };
 }
 
-function addHeader(doc, data) {
-  const meta = getMeta(data);
-
-  const topY = 22;
-  const left = doc.page.margins.left;
-  const right = doc.page.width - doc.page.margins.right;
-
-  doc.save();
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(9)
-    .fillColor("#111827")
-    .text("Website Risk Snapshot", left, topY, {
-      width: right - left,
-      align: "left",
-    });
-
-  doc
-    .font("Helvetica")
-    .fillColor("#6B7280")
-    .text(`${meta.hostname || meta.url || ""}`, left, topY, {
-      width: right - left,
-      align: "right",
-    });
-
-  doc.restore();
-}
-
-function addFooter(doc, meta, integrityHash) {
-  const bottom = doc.page.height - 38;
-  const left = doc.page.margins.left;
-  const width =
-    doc.page.width - doc.page.margins.left - doc.page.margins.right;
-
-  const base = process.env.BASE_URL || "";
-  const verifyUrl = `${base}/verify/${integrityHash}`;
-
-  doc.save();
-  doc
-    .fontSize(8)
-    .fillColor("#6B7280")
-    .text(
-      `WebsiteRiskCheck.com • Report ID: ${meta.scanId} • Timestamp (UTC): ${iso(
-        meta.scannedAt
-      )}`,
-      left,
-      bottom - 10,
-      { width, align: "center" }
-    )
-    .text(`Verify: ${verifyUrl}`, left, bottom, { width, align: "center" });
-
-  doc.restore();
-}
+/* =========================
+   TYPOGRAPHY / LAYOUT PRIMITIVES
+========================= */
 
 function hr(doc, pad = 10) {
   const x1 = doc.page.margins.left;
@@ -215,7 +208,7 @@ function hr(doc, pad = 10) {
   const y = doc.y;
 
   doc.save();
-  doc.strokeColor("#E5E7EB").lineWidth(1);
+  doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(x1, y + pad).lineTo(x2, y + pad).stroke();
   doc.restore();
 
@@ -255,39 +248,420 @@ function badge(doc, text, tone = "gray", x, y) {
 }
 
 function sectionTitle(doc, title) {
-  ensureSpace(doc, 120);
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(16)
-    .fillColor("#111827")
-    .text(title);
-  doc.moveDown(0.6);
+  ensureSpace(doc, 140);
+  doc.font("Helvetica-Bold").fontSize(18).fillColor(PALETTE.ink).text(title);
+  doc.moveDown(0.7);
 }
 
 function subTitle(doc, title) {
-  ensureSpace(doc, 90);
-  doc
-    .font("Helvetica-Bold")
-    .fontSize(12)
-    .fillColor("#111827")
-    .text(title);
-  doc.moveDown(0.4);
+  ensureSpace(doc, 100);
+  doc.font("Helvetica-Bold").fontSize(12.5).fillColor(PALETTE.ink).text(title);
+  doc.moveDown(0.45);
 }
 
 function bodyText(doc, text) {
   doc
     .font("Helvetica")
-    .fontSize(10.5)
-    .fillColor("#374151")
-    .text(text, { lineGap: 3 });
+    .fontSize(10.8)
+    .fillColor(PALETTE.body)
+    .text(text, { lineGap: 4 });
 }
 
 function bulletList(doc, items) {
   const safe = safeArr(items).filter(Boolean);
   if (!safe.length) return;
-  doc.font("Helvetica").fontSize(10.5).fillColor("#374151");
-  doc.list(safe, { bulletRadius: 2, lineGap: 3 });
+  doc.font("Helvetica").fontSize(10.8).fillColor(PALETTE.body);
+  doc.list(safe, { bulletRadius: 2, lineGap: 4 });
 }
+
+/* =========================
+   HEADER / FOOTER (STRONGER FRAMING)
+========================= */
+
+function addHeader(doc, data) {
+  const meta = getMeta(data);
+
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const width = right - left;
+
+  doc.save();
+  doc.strokeColor(PALETTE.line).lineWidth(1);
+  doc.moveTo(left, 52).lineTo(right, 52).stroke();
+  doc.restore();
+
+  doc.save();
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(9)
+    .fillColor(PALETTE.ink)
+    .text("Website Risk Snapshot", left, 30, { width, align: "left" });
+
+  doc
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor(PALETTE.muted)
+    .text(`${meta.hostname || meta.url || ""}`, left, 30, {
+      width,
+      align: "right",
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(8)
+    .fillColor("#9CA3AF")
+    .text(`Page ${doc._wrcPageNo || 1}`, left, 42, { width, align: "right" });
+
+  doc.restore();
+
+  // lock content start below header band
+  if (doc.y < 72) doc.y = 78;
+}
+
+function addFooter(doc, meta, integrityHash) {
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const width = right - left;
+  const bottomY = doc.page.height - 40;
+
+  const base = process.env.BASE_URL || "";
+  const verifyUrl = `${base}/verify/${integrityHash}`;
+
+  doc.save();
+  doc.strokeColor(PALETTE.line).lineWidth(1);
+  doc.moveTo(left, bottomY - 10).lineTo(right, bottomY - 10).stroke();
+  doc.restore();
+
+  doc.save();
+  doc
+    .font("Helvetica")
+    .fontSize(8)
+    .fillColor(PALETTE.muted)
+    .text(
+      `WebsiteRiskCheck.com • Report ID: ${meta.scanId} • Timestamp (UTC): ${iso(
+        meta.scannedAt
+      )}`,
+      left,
+      bottomY,
+      { width, align: "center" }
+    )
+    .text(`Verify: ${verifyUrl}`, left, bottomY + 10, { width, align: "center" });
+
+  doc.restore();
+}
+
+/* =========================
+   COVER (CONSULTING TEMPLATE STYLE)
+========================= */
+
+function drawCoverBackground(doc) {
+  const w = doc.page.width;
+  const h = doc.page.height;
+
+  doc.save();
+  doc.rect(0, 0, w, h).fill(PALETTE.paper);
+
+  doc
+    .moveTo(0, 0)
+    .lineTo(w * 0.38, 0)
+    .lineTo(0, h * 0.18)
+    .closePath()
+    .fill(PALETTE.tealMid);
+
+  doc
+    .moveTo(w * 0.30, h)
+    .lineTo(w, h * 0.62)
+    .lineTo(w, h)
+    .closePath()
+    .fill(PALETTE.tealDark);
+
+  doc
+    .moveTo(w * 0.38, h)
+    .lineTo(w, h * 0.70)
+    .lineTo(w, h * 0.77)
+    .lineTo(w * 0.50, h)
+    .closePath()
+    .fill(PALETTE.greenLight);
+
+  doc
+    .moveTo(w * 0.44, h)
+    .lineTo(w, h * 0.74)
+    .lineTo(w, h * 0.76)
+    .lineTo(w * 0.48, h)
+    .closePath()
+    .fill("#FFFFFF");
+
+  doc.restore();
+}
+
+function drawCover(doc, meta, risk, integrityHash) {
+  drawCoverBackground(doc);
+
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const width = right - left;
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(12)
+    .fillColor(PALETTE.tealDark)
+    .text("WebsiteRiskCheck.com", left, 86, { width, align: "left" });
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(34)
+    .fillColor(PALETTE.tealMid)
+    .text("Website Risk\nSnapshot", left, 300, {
+      width,
+      align: "center",
+      lineGap: 2,
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(12)
+    .fillColor(PALETTE.body)
+    .text("Point-in-time observable signal assessment", left, 405, {
+      width,
+      align: "center",
+    });
+
+  const tone = toneForRisk(risk.level);
+  badge(doc, `Risk level: ${risk.level}`, tone, left + width / 2 - 90, 470);
+
+  const boxY = 560;
+  const boxW = Math.min(520, width);
+  const boxX = left + (width - boxW) / 2;
+
+  doc.save();
+  doc.roundedRect(boxX, boxY, boxW, 140, 14).fill("#FFFFFF").stroke(PALETTE.line);
+  doc.restore();
+
+  const labelW = 140;
+  const valX = boxX + labelW;
+
+  doc
+    .font("Helvetica-Bold")
+    .fontSize(10.5)
+    .fillColor(PALETTE.ink)
+    .text("Website", boxX + 18, boxY + 18, { width: labelW });
+
+  doc
+    .font("Helvetica")
+    .fontSize(10.5)
+    .fillColor(PALETTE.body)
+    .text(meta.hostname || meta.url || "", valX, boxY + 18, {
+      width: boxW - labelW - 18,
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fillColor(PALETTE.ink)
+    .text("Timestamp (UTC)", boxX + 18, boxY + 48, { width: labelW });
+
+  doc
+    .font("Helvetica")
+    .fillColor(PALETTE.body)
+    .text(iso(meta.scannedAt), valX, boxY + 48, {
+      width: boxW - labelW - 18,
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fillColor(PALETTE.ink)
+    .text("Report ID", boxX + 18, boxY + 78, { width: labelW });
+
+  doc
+    .font("Helvetica")
+    .fillColor(PALETTE.body)
+    .text(meta.scanId || "", valX, boxY + 78, {
+      width: boxW - labelW - 18,
+    });
+
+  doc
+    .font("Helvetica-Bold")
+    .fillColor(PALETTE.ink)
+    .text("Integrity hash", boxX + 18, boxY + 108, { width: labelW });
+
+  doc
+    .font("Helvetica")
+    .fillColor(PALETTE.body)
+    .text(`${integrityHash.slice(0, 28)}…`, valX, boxY + 108, {
+      width: boxW - labelW - 18,
+    });
+
+  doc
+    .font("Helvetica")
+    .fontSize(9.8)
+    .fillColor(PALETTE.muted)
+    .text(
+      "Observable signals only. Not legal advice. Not certification. Applies only at the recorded timestamp.",
+      left,
+      doc.page.height - 120,
+      { width, align: "center", lineGap: 3 }
+    );
+}
+
+/* =========================
+   RISK REGISTER TABLE (LIKE YOUR SCREENSHOT)
+   Columns: Category | Description | Probability | Impact | Score | Timing | Trigger | Response
+========================= */
+
+function scoreBand(score) {
+  // score is 1–25 (prob*impact)
+  if (score >= 16) return { fill: PALETTE.scoreRed, ink: "#111827" };
+  if (score >= 13) return { fill: PALETTE.scoreOrange, ink: "#111827" };
+  if (score >= 9) return { fill: PALETTE.scoreYellow, ink: "#111827" };
+  if (score >= 5) return { fill: PALETTE.scoreGreen, ink: "#111827" };
+  return { fill: "#D1FAE5", ink: "#065F46" };
+}
+
+function drawRiskRegister_v2(doc, rows) {
+  ensureSpace(doc, 260);
+
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const tableW = right - left;
+
+  const headerH = 34;
+  const rowH = 120;
+
+  const cols = [
+    { key: "category", w: 110, label: "Risk\nCategory" },
+    { key: "desc", w: 170, label: "Risk\nDescription" },
+    { key: "prob", w: 105, label: "Probability" },
+    { key: "impact", w: 95, label: "Impact" },
+    { key: "score", w: 95, label: "Risk Impact\nScore" },
+    { key: "timing", w: 150, label: "Timing of\nRisk" },
+    { key: "trigger", w: 150, label: "Risk\nTrigger" },
+    {
+      key: "response",
+      w: tableW - (110 + 170 + 105 + 95 + 95 + 150 + 150),
+      label: "Mitigation\nResponse",
+    },
+  ];
+
+  const startY = doc.y;
+
+  // Header background
+  doc.save();
+  doc.rect(left, startY, tableW, headerH).fill(PALETTE.navy);
+  doc.restore();
+
+  // Header border
+  doc.save();
+  doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+  doc.rect(left, startY, tableW, headerH).stroke();
+  doc.restore();
+
+  // Header text
+  let x = left;
+  doc.save();
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10);
+  cols.forEach((c) => {
+    doc.text(c.label, x + 8, startY + 7, { width: c.w - 16, align: "left" });
+    x += c.w;
+  });
+  doc.restore();
+
+  // Header vertical lines
+  x = left;
+  cols.forEach((c) => {
+    doc.save();
+    doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+    doc.moveTo(x, startY).lineTo(x, startY + headerH).stroke();
+    doc.restore();
+    x += c.w;
+  });
+  doc.save();
+  doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+  doc
+    .moveTo(left + tableW, startY)
+    .lineTo(left + tableW, startY + headerH)
+    .stroke();
+  doc.restore();
+
+  // Rows
+  let y = startY + headerH;
+
+  rows.forEach((r, idx) => {
+    ensureSpace(doc, rowH + 40);
+
+    const bg = idx % 2 === 0 ? PALETTE.rowA : PALETTE.rowB;
+
+    doc.save();
+    doc.rect(left, y, tableW, rowH).fill(bg);
+    doc.restore();
+
+    // score cell highlight block
+    const scoreIndex = cols.findIndex((c) => c.key === "score");
+    const scoreX = left + cols.slice(0, scoreIndex).reduce((a, c) => a + c.w, 0);
+    const scoreW = cols[scoreIndex].w;
+
+    const scoreBandStyle = scoreBand(num(r.scoreNum, 0));
+    doc.save();
+    doc.rect(scoreX, y, scoreW, rowH).fill(scoreBandStyle.fill);
+    doc.restore();
+
+    // grid border
+    doc.save();
+    doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+    doc.rect(left, y, tableW, rowH).stroke();
+    doc.restore();
+
+    // vertical lines
+    let vx = left;
+    cols.forEach((c) => {
+      doc.save();
+      doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+      doc.moveTo(vx, y).lineTo(vx, y + rowH).stroke();
+      doc.restore();
+      vx += c.w;
+    });
+    doc.save();
+    doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+    doc.moveTo(left + tableW, y).lineTo(left + tableW, y + rowH).stroke();
+    doc.restore();
+
+    // cell text
+    let cx = left;
+    doc.save();
+    cols.forEach((c) => {
+      const pad = 10;
+      const tx = cx + pad;
+      const ty = y + 12;
+      const tw = c.w - pad * 2;
+
+      if (c.key === "category") {
+        doc.font("Helvetica").fontSize(10.5).fillColor(PALETTE.ink);
+        doc.text(clampText(r.category, 60), tx, ty, { width: tw });
+      } else if (c.key === "prob" || c.key === "impact") {
+        doc.font("Helvetica-Bold").fontSize(10.5).fillColor(PALETTE.ink);
+        doc.text(clampText(r[c.key], 40), tx, ty + 18, {
+          width: tw,
+          align: "center",
+        });
+      } else if (c.key === "score") {
+        doc.font("Helvetica-Bold").fontSize(14).fillColor("#111827");
+        doc.text(String(r.scoreNum), tx, ty + 32, { width: tw, align: "center" });
+      } else {
+        doc.font("Helvetica").fontSize(10.2).fillColor(PALETTE.ink);
+        doc.text(clampText(r[c.key], 260), tx, ty, { width: tw, lineGap: 3 });
+      }
+
+      cx += c.w;
+    });
+    doc.restore();
+
+    y += rowH;
+  });
+
+  doc.y = y + 14;
+}
+
+/* =========================
+   EXEC / RISK MODEL TEXT
+========================= */
 
 function whatThisMeansFor(level) {
   if (level === "High") {
@@ -297,6 +671,154 @@ function whatThisMeansFor(level) {
     return "This snapshot shows some risk-relevant signals and/or missing indicators that are commonly expected on customer-facing websites. It does not prove non-compliance, but it suggests potential gaps worth reviewing.";
   }
   return "This snapshot shows relatively few risk-relevant signals based on what was detectable at the time of scanning. It does not guarantee compliance, but fewer obvious gaps were detected on the scanned surface.";
+}
+
+/**
+ * Preferred: map structured findings[] (from scan.js) into table rows.
+ * findings[] are deterministic and evidence-backed; this does not affect integrity hashing.
+ */
+function rowsFromFindings(findings) {
+  const safe = safeArr(findings);
+  if (!safe.length) return [];
+
+  return safe.map((f) => {
+    const pVal = num(f?.probability?.value, 1);
+    const iVal = num(f?.impact?.value, 1);
+    const scoreNum = num(f?.score, pVal * iVal);
+
+    const pLabel = f?.probability?.label || "Possible";
+    const iLabel = f?.impact?.label || "Moderate";
+
+    return {
+      category: clampText(f?.category || "General", 60),
+      desc: clampText(f?.description || "", 260),
+      prob: clampText(`${pLabel} (${pVal})`, 40),
+      impact: clampText(`${iLabel} (${iVal})`, 40),
+      scoreNum,
+      timing: clampText(f?.timing || "At scan time and during public access.", 260),
+      trigger: clampText(f?.trigger || "Detected signals indicate a potential exposure.", 260),
+      response: clampText(f?.mitigation || "Review and remediate as appropriate.", 260),
+    };
+  });
+}
+
+/**
+ * Fallback: legacy deterministic register (kept so the PDF still works if findings[] missing)
+ */
+function buildRiskRegister(meta, coverage, signals) {
+  const trackers = safeArr(signals?.trackingScripts);
+  const vendors = safeArr(signals?.consent?.vendors);
+
+  const totalImages = num(signals?.accessibility?.images?.total);
+  const missingAlt = num(signals?.accessibility?.images?.missingAlt);
+
+  const rows = [];
+
+  {
+    const missing =
+      (!signals?.policies?.privacy ? 1 : 0) +
+      (!signals?.policies?.terms ? 1 : 0) +
+      (!signals?.policies?.cookies ? 1 : 0);
+
+    const prob = missing === 0 ? 1 : missing === 1 ? 3 : 4;
+    const impact = missing >= 2 ? 4 : 3;
+    const score = prob * impact;
+
+    rows.push({
+      category: "Compliance",
+      desc:
+        "If required policy pages are missing or not discoverable, the organisation may face increased exposure and customer trust risk.",
+      prob: prob >= 4 ? "Likely (4)" : prob >= 3 ? "Possible (3)" : "Unlikely (1)",
+      impact: impact >= 4 ? "Major (4)" : "Moderate (3)",
+      scoreNum: score,
+      timing: "Risk is present throughout the public lifecycle of the site.",
+      trigger: "Policies are missing, not linked, or inaccessible on standard public paths.",
+      response:
+        "Publish and link policy pages from the footer/homepage. Ensure versions are current and match actual data practices.",
+    });
+  }
+
+  {
+    const hasTracking = trackers.length > 0 || vendors.length > 0;
+    const prob = hasTracking ? 4 : 2;
+    const impact = hasTracking ? 4 : 2;
+    const score = prob * impact;
+
+    rows.push({
+      category: "Tracking",
+      desc:
+        "If tracking or cookie vendors are present without appropriate consent controls, regulatory and reputational exposure may increase.",
+      prob: prob >= 4 ? "Likely (4)" : prob >= 3 ? "Possible (3)" : "Unlikely (2)",
+      impact: impact >= 4 ? "Major (4)" : "Minor (2)",
+      scoreNum: score,
+      timing: "Risk is present throughout marketing and tag deployments.",
+      trigger: "Third-party scripts or consent vendor markers are detected on scanned pages.",
+      response:
+        "Review tag inventory. Validate consent flow for target regions. Ensure vendor disclosure matches deployed scripts.",
+    });
+  }
+
+  {
+    const forms = num(signals?.forms?.detected);
+    const personalSignals = num(signals?.forms?.personalDataSignals);
+    const prob = forms > 0 ? (personalSignals > 0 ? 4 : 3) : 1;
+    const impact = forms > 0 ? 4 : 1;
+    const score = prob * impact;
+
+    rows.push({
+      category: "Data Capture",
+      desc:
+        "If forms collect personal data, inadequate transparency, retention, or access controls can increase operational and compliance risk.",
+      prob: prob >= 4 ? "Likely (4)" : prob >= 3 ? "Possible (3)" : "Unlikely (1)",
+      impact: impact >= 4 ? "Major (4)" : "Minor (1)",
+      scoreNum: score,
+      timing: "Risk is present whenever forms are live and receiving submissions.",
+      trigger: "Forms are detected and personal-data field signals are observed (heuristic).",
+      response:
+        "Audit form fields for minimum necessary data. Confirm storage, access controls, and retention. Align privacy disclosures.",
+    });
+  }
+
+  {
+    const ratio = totalImages > 0 ? missingAlt / totalImages : 0;
+    const prob = ratio > 0.3 ? 4 : ratio > 0 ? 3 : 1;
+    const impact = ratio > 0.3 ? 3 : ratio > 0 ? 2 : 1;
+    const score = prob * impact;
+
+    rows.push({
+      category: "Accessibility",
+      desc:
+        "Missing alt text on meaningful images may reduce accessibility and increase risk for public-facing pages, depending on jurisdiction and audience.",
+      prob: prob >= 4 ? "Likely (4)" : prob >= 3 ? "Possible (3)" : "Unlikely (1)",
+      impact: impact >= 3 ? "Moderate (3)" : impact === 2 ? "Minor (2)" : "Low (1)",
+      scoreNum: score,
+      timing: "Risk is present on affected pages where images lack descriptions.",
+      trigger: "Alt text is missing for a portion of detected images (heuristic).",
+      response:
+        "Add alt text to meaningful images on key pages. Prioritise conversion and policy pages first.",
+    });
+  }
+
+  {
+    const prob = signals?.contact?.detected ? 1 : 3;
+    const impact = signals?.contact?.detected ? 1 : 2;
+    const score = prob * impact;
+
+    rows.push({
+      category: "Trust",
+      desc:
+        "If visitors cannot easily find contact or business identity details, trust and conversion may be negatively affected.",
+      prob: prob >= 3 ? "Possible (3)" : "Unlikely (1)",
+      impact: impact >= 2 ? "Minor (2)" : "Low (1)",
+      scoreNum: score,
+      timing: "Risk is present on landing and checkout journeys.",
+      trigger: "Contact/identity markers are not detected on scanned surface (heuristic).",
+      response:
+        "Ensure a visible Contact page and footer details (email/phone/address where applicable).",
+    });
+  }
+
+  return rows;
 }
 
 /* =========================
@@ -330,156 +852,93 @@ export async function generateReport(data, outputPath) {
 
       const verifyUrl = `${base}/verify/${integrityHash}`;
 
+      // Precompute shared signal views (avoid scope bugs across pages)
+      const trackers = safeArr(signals?.trackingScripts);
+      const vendors = safeArr(signals?.consent?.vendors);
+      const totalImages = num(signals?.accessibility?.images?.total);
+      const imagesMissingAlt = num(signals?.accessibility?.images?.missingAlt);
+
+      // Risk register rows: prefer findings[] if present
+      const findings = safeArr(data?.findings || data?.meta?.findings);
+      const rowsFromStructured = rowsFromFindings(findings);
+      const riskRows =
+        rowsFromStructured.length > 0
+          ? rowsFromStructured
+          : buildRiskRegister(meta, coverage, signals);
+
       const doc = new PDFDocument({
         margin: 54,
         size: "A4",
         info: {
           Title: "Website Risk Snapshot",
           Author: "WebsiteRiskCheck.com",
-          Subject:
-            "Point-in-time website snapshot report (observable signals only).",
+          Subject: "Point-in-time website snapshot report (observable signals only).",
         },
       });
 
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      doc.on("pageAdded", () => addHeader(doc, data));
+      // page number tracking
+      doc._wrcPageNo = 1;
+
+      // Safety hook if doc.addPage() happens inside helpers
+      doc.on("pageAdded", () => {
+        // If we are beyond cover, render header
+        if ((doc._wrcPageNo || 1) >= 2) addHeader(doc, data);
+      });
 
       /* ======================================================
-         PAGE 1 — COVER
+         PAGE 1 — COVER (consulting template style)
       ====================================================== */
 
-      const left = doc.page.margins.left;
-      const width =
-        doc.page.width - doc.page.margins.left - doc.page.margins.right;
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(12)
-        .fillColor("#111827")
-        .text("WebsiteRiskCheck.com", left, 60, { width, align: "left" });
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(28)
-        .fillColor("#111827")
-        .text("Website Risk Snapshot", left, 110, {
-          width,
-          align: "left",
-        });
-
-      doc
-        .font("Helvetica")
-        .fontSize(12)
-        .fillColor("#374151")
-        .text("Point-in-time observable signal assessment", {
-          width,
-          align: "left",
-        });
-
-      const tone =
-        risk.level === "Low" ? "green" : risk.level === "Medium" ? "amber" : "red";
-
-      badge(doc, `Risk level: ${risk.level}`, tone, left, 200);
-
-      doc.y = 250;
-
-      doc
-        .font("Helvetica-Bold")
-        .fontSize(11)
-        .fillColor("#111827")
-        .text("Website", left, doc.y, { width: 100 });
-      doc
-        .font("Helvetica")
-        .fillColor("#374151")
-        .text(`${meta.hostname || meta.url}`, left + 100, doc.y, {
-          width: width - 100,
-        });
-
-      doc.moveDown(0.8);
-
-      doc
-        .font("Helvetica-Bold")
-        .fillColor("#111827")
-        .text("Timestamp (UTC)", left, doc.y, { width: 120 });
-      doc
-        .font("Helvetica")
-        .fillColor("#374151")
-        .text(`${iso(meta.scannedAt)}`, left + 120, doc.y, {
-          width: width - 120,
-        });
-
-      doc.moveDown(0.8);
-
-      doc
-        .font("Helvetica-Bold")
-        .fillColor("#111827")
-        .text("Report ID", left, doc.y, { width: 120 });
-      doc
-        .font("Helvetica")
-        .fillColor("#374151")
-        .text(`${meta.scanId}`, left + 120, doc.y, { width: width - 120 });
-
-      doc.moveDown(0.8);
-
-      doc
-        .font("Helvetica-Bold")
-        .fillColor("#111827")
-        .text("Integrity hash", left, doc.y, { width: 120 });
-      doc
-        .font("Helvetica")
-        .fillColor("#374151")
-        .text(`${integrityHash.slice(0, 24)}…`, left + 120, doc.y, {
-          width: width - 120,
-        });
-
-      doc.moveDown(1.4);
-
-      subTitle(doc, "Scan scope (coverage)");
-      const coverageNotes = safeArr(coverage?.notes).length
-        ? coverage.notes
-        : [
-            "Homepage + standard policy/contact paths only (max 6 pages).",
-            "Public, unauthenticated HTML only.",
-            "No behavioural simulation.",
-          ];
-      bulletList(doc, coverageNotes);
-
-      doc.moveDown(1.2);
-
-      doc
-        .font("Helvetica")
-        .fontSize(10)
-        .fillColor("#6B7280")
-        .text(
-          "This document records observable signals only. It does not certify compliance and does not constitute legal advice. Results apply only at the recorded timestamp.",
-          { width, lineGap: 3 }
-        );
-
+      drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
+
+      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
-         PAGE 2 — EXECUTIVE SUMMARY
+         PAGE 2 — EXECUTIVE SUMMARY + RISK REGISTER TABLE
       ====================================================== */
 
       addHeader(doc, data);
       sectionTitle(doc, "Executive summary");
 
-      badge(doc, `Risk level: ${risk.level}`, tone, left, doc.y);
-      doc.moveDown(1.4);
+      const tone = toneForRisk(risk.level);
+      badge(doc, `Risk level: ${risk.level}`, tone, doc.page.margins.left, doc.y);
+      doc.moveDown(1.2);
 
       bodyText(doc, whatThisMeansFor(risk.level));
       hr(doc);
 
+      subTitle(doc, "Risk register");
+      bodyText(
+        doc,
+        "A structured view of key detectable risks based on scope-locked signals. Probability/impact are indicative only and not legal conclusions."
+      );
+      doc.moveDown(0.6);
+
+      drawRiskRegister_v2(doc, riskRows);
+
+      // Small note (keeps it consultancy-grade, not verbose)
+      doc
+        .font("Helvetica")
+        .fontSize(9.2)
+        .fillColor(PALETTE.muted)
+        .text(
+          "Note: Scores reflect probability×impact for the register entries above and are independent of the overall risk score.",
+          doc.page.margins.left,
+          doc.y,
+          {
+            width: doc.page.width - doc.page.margins.left - doc.page.margins.right,
+            lineGap: 2,
+          }
+        );
+
+      hr(doc);
+
       subTitle(doc, "Key findings (detectable signals)");
-
-      const trackers = safeArr(signals?.trackingScripts);
-      const vendors = safeArr(signals?.consent?.vendors);
-
-      const totalImages = num(signals?.accessibility?.images?.total);
-      const imagesMissingAlt = num(signals?.accessibility?.images?.missingAlt);
 
       const keyFindings = [];
 
@@ -530,9 +989,7 @@ export async function generateReport(data, outputPath) {
           signals?.forms?.personalDataSignals
         )} (heuristic)`
       );
-      keyFindings.push(
-        `Images missing alt text: ${imagesMissingAlt} of ${totalImages}`
-      );
+      keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
       keyFindings.push(
         `Contact/identity signals: ${
           signals?.contact?.detected ? "Detected" : "Not detected"
@@ -546,10 +1003,12 @@ export async function generateReport(data, outputPath) {
       bulletList(doc, safeArr(risk.reasons).slice(0, 10));
 
       addFooter(doc, meta, integrityHash);
+
+      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
-         PAGE 3+ — FINDINGS BY CATEGORY
+         PAGE 3 — FINDINGS BY CATEGORY
       ====================================================== */
 
       addHeader(doc, data);
@@ -633,6 +1092,8 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       addFooter(doc, meta, integrityHash);
+
+      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
@@ -658,6 +1119,8 @@ export async function generateReport(data, outputPath) {
       ]);
 
       addFooter(doc, meta, integrityHash);
+
+      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
@@ -700,6 +1163,8 @@ export async function generateReport(data, outputPath) {
       ]);
 
       addFooter(doc, meta, integrityHash);
+
+      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
@@ -720,7 +1185,7 @@ export async function generateReport(data, outputPath) {
       doc
         .font("Helvetica")
         .fontSize(9.8)
-        .fillColor("#111827")
+        .fillColor(PALETTE.ink)
         .text(integrityHash, { lineGap: 2 });
 
       doc.moveDown(0.8);
@@ -728,8 +1193,8 @@ export async function generateReport(data, outputPath) {
       subTitle(doc, "Verify this report");
       doc
         .font("Helvetica")
-        .fontSize(10.5)
-        .fillColor("#1F2937")
+        .fontSize(10.8)
+        .fillColor(PALETTE.body)
         .text(verifyUrl);
 
       doc.moveDown(0.8);
@@ -752,7 +1217,15 @@ export async function generateReport(data, outputPath) {
 
       const qrDataUrl = await QRCode.toDataURL(verifyUrl);
       ensureSpace(doc, 220);
-      doc.image(qrDataUrl, doc.page.margins.left, doc.y, { width: 130 });
+
+      const qx = doc.page.margins.left;
+      const qy = doc.y;
+
+      doc.save();
+      doc.roundedRect(qx, qy, 170, 170, 14).fill("#FFFFFF").stroke(PALETTE.line);
+      doc.restore();
+
+      doc.image(qrDataUrl, qx + 20, qy + 20, { width: 130 });
 
       addFooter(doc, meta, integrityHash);
 

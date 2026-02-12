@@ -3,44 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sample Report — Website Risk Check</title>
-  <meta name="description" content="See an example of the premium, verifiable PDF report you receive after checkout." />
+  <title>Sample Verified Report — Website Risk Check</title>
+  <meta name="description" content="View a real example of the sealed, verifiable PDF report delivered after checkout." />
   <meta name="theme-color" content="#0f172a" />
-  <link rel="stylesheet" href="/style.css?v=12" />
+
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg?v=1" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <!-- IMPORTANT: keep version consistent across all pages -->
+  <link rel="stylesheet" href="/style.css?v=13" />
 </head>
 
 <body class="isSampleReport">
   <div class="bg" aria-hidden="true"></div>
 
+  <!-- =========================================
+       SAMPLE CONSTANTS (replace once you seal a real report)
+       - Put the PDF at: /public/assets/sample-report.pdf
+       - Put the real hash here: 64 hex chars
+  ========================================== -->
+  <script>
+    window.__WRC_SAMPLE__ = {
+      target: "example-retail-site.co.uk",
+      risk: "Medium",
+      reportId: "SAMPLE-001",
+      capturedUtc: "12 Feb 2026 — 14:22 UTC",
+      // ✅ Replace with the REAL hash from a sealed report
+      hash: "9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db",
+      // ✅ Put the PDF at /public/assets/sample-report.pdf
+      pdf: "/report.pdf"
+    };
+  </script>
+
   <nav class="nav">
     <div class="container navInner">
-    <a class="brand" href="/" aria-label="Website Risk Check">
-      <img class="brandLogo" src="/favicon.svg?v=1" alt="">
-      <span class="brandText">Website Risk Check</span>
-    </a>
+      <a class="brand" href="/" aria-label="Website Risk Check">
+        <img class="brandLogo" src="/favicon.svg?v=1" alt="" />
+        <span class="brandText">Website Risk Check</span>
+      </a>
 
       <div class="navCtas">
-        <a class="navBtn" href="/sample-report" aria-current="page">Sample report</a>
+        <a class="navBtn isActive" href="/sample-report" aria-current="page">Sample report</a>
         <a class="navBtn" href="/#scan">Run a scan</a>
       </div>
     </div>
   </nav>
 
-  <!-- Sticky actions (feels like a document viewer) -->
-  <div class="srSticky">
+  <!-- Sticky viewer bar -->
+  <div class="srSticky" role="region" aria-label="Sample report actions">
     <div class="container srStickyInner">
       <div class="srStickyLeft">
-        <div class="srStickyKicker">Sample report</div>
-        <div class="srStickyMeta">
-          <span class="srPillTiny">Target: example-retail-site.co.uk</span>
-          <span class="srPillTiny">Risk: Medium</span>
-          <span class="srPillTiny mono">ID: yDPieAth</span>
+        <div class="srStickyKicker">Sample verified report</div>
+        <div class="srStickyMeta" id="srStickyMeta">
+          <span class="srPillTiny" id="srTargetPill">Target: —</span>
+          <span class="srPillTiny" id="srRiskPill">Risk: —</span>
+          <span class="srPillTiny mono" id="srIdPill">Report ID: —</span>
         </div>
       </div>
 
       <div class="srStickyActions">
-        <a class="btnPrimary" href="/r/yDPieAth" target="_blank" rel="noopener">Download sample PDF</a>
-        <a class="navBtn" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">Verify integrity</a>
+        <a class="btnPrimary" id="srPdfBtn" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
+        <a class="btnGhost" id="srVerifyBtn" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification</a>
+        <a class="btnGhost" href="#verify">How verification works</a>
       </div>
     </div>
   </div>
@@ -49,19 +76,19 @@
     <section class="container">
       <div class="srShell">
 
-        <!-- Top intro -->
-        <header class="srTopPro">
-          <div>
-            <div class="srKicker">Sample demonstration</div>
-            <h1 class="srTitlePro">This is the deliverable your client sees.</h1>
+        <!-- Intro -->
+        <header class="srIntro">
+          <div class="srIntroLeft">
+            <div class="srKicker">What your client receives</div>
+            <h1 class="srTitlePro">A sealed, timestamped report — delivered as a PDF.</h1>
             <p class="srSubPro">
-              The PDF is the product: timestamped, sealed, and independently verifiable.
-              This page previews the structure and presentation of the full report.
+              This is a real example of the structure and presentation: the paid product is the PDF download plus a public verification link.
             </p>
+
             <div class="srProofRow">
               <div class="srProofChip">
-                <div class="srProofTop">Immutable</div>
-                <div class="srProofBottom">Sealed at generation</div>
+                <div class="srProofTop">PDF deliverable</div>
+                <div class="srProofBottom">Client-ready format</div>
               </div>
               <div class="srProofChip">
                 <div class="srProofTop">Timestamped</div>
@@ -74,34 +101,33 @@
             </div>
           </div>
 
-          <div class="srTopAside">
+          <aside class="srIntroRight">
             <div class="srAsideCard">
               <div class="srMiniTitle">Quick actions</div>
               <div class="srAsideBtns">
-                <a class="btnPrimary btnWide" href="/r/yDPieAth" target="_blank" rel="noopener">Download sample PDF</a>
-                <a class="btnGhost btnWide" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">Open verification</a>
+                <a class="btnPrimary btnWide" id="srPdfBtn2" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
+                <a class="btnGhost btnWide" id="srVerifyBtn2" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification page</a>
+                <a class="btnGhost btnWide" href="/#scan">Run a scan</a>
               </div>
               <div class="srAsideFine">
                 Not legal advice. Not certification. Not monitoring.
               </div>
             </div>
-          </div>
+          </aside>
         </header>
 
-        <!-- Two-column: TOC + document -->
+        <!-- Two-column: TOC + report preview -->
         <div class="srLayout">
-          <!-- TOC -->
-          <aside class="srToc">
+          <aside class="srToc" aria-label="Report contents">
             <div class="srTocCard">
-              <div class="srMiniTitle">Report contents</div>
+              <div class="srMiniTitle">Contents</div>
               <nav class="srTocNav">
                 <a href="#cover">Cover</a>
                 <a href="#exec">Executive summary</a>
-                <a href="#coverage">Coverage & limitations</a>
-                <a href="#findings">Detailed findings</a>
-                <a href="#evidence">Evidence excerpts</a>
-                <a href="#method">Methodology</a>
-                <a href="#integrity">Integrity & verification</a>
+                <a href="#register">Risk register</a>
+                <a href="#coverage">Coverage</a>
+                <a href="#findings">Findings</a>
+                <a href="#verify" id="verifyLink">Verification</a>
               </nav>
 
               <div class="srDivider"></div>
@@ -110,177 +136,180 @@
               <div class="srKeyPairs">
                 <div class="srPair">
                   <div class="srPairK">Target</div>
-                  <div class="srPairV">example-retail-site.co.uk</div>
+                  <div class="srPairV" id="srTargetKV">—</div>
                 </div>
                 <div class="srPair">
                   <div class="srPairK">Captured</div>
-                  <div class="srPairV">12 Feb 2026 — 14:22 UTC</div>
+                  <div class="srPairV" id="srCapturedKV">—</div>
                 </div>
                 <div class="srPair">
                   <div class="srPairK">Scope</div>
-                  <div class="srPairV">Up to 6 pages (same-origin)</div>
+                  <div class="srPairV">Up to 6 pages</div>
                 </div>
                 <div class="srPair">
-                  <div class="srPairK">Report ID</div>
-                  <div class="srPairV mono">yDPieAth</div>
+                  <div class="srPairK">Overall risk</div>
+                  <div class="srPairV"><span class="srBadge srBadgeMedium" id="srRiskBadge">Medium</span></div>
                 </div>
               </div>
             </div>
           </aside>
 
-          <!-- Document preview -->
-          <div class="srDocPro">
+          <div class="srDocPro" aria-label="Sample report preview">
             <div class="srRibbon">SAMPLE</div>
 
             <!-- COVER -->
             <section class="srPagePro" id="cover">
-              <div class="srCoverPro">
-                <div class="srCoverTitlePro">Website Risk &amp; Compliance Snapshot</div>
-                <div class="srCoverSubPro">
-                  Client-ready documentation of observable compliance and risk signals (point-in-time).
-                </div>
+              <div class="srCoverTitlePro">Website Risk &amp; Compliance Snapshot</div>
+              <div class="srCoverSubPro">
+                Point-in-time documentation of observable compliance and risk signals (scope-locked).
+              </div>
 
-                <div class="srMetaGridPro">
-                  <div class="srMetaItemPro">
-                    <div class="srMetaLabel">Target</div>
-                    <div class="srMetaValue">example-retail-site.co.uk</div>
-                  </div>
-                  <div class="srMetaItemPro">
-                    <div class="srMetaLabel">Captured (UTC)</div>
-                    <div class="srMetaValue">12 Feb 2026 — 14:22</div>
-                  </div>
-                  <div class="srMetaItemPro">
-                    <div class="srMetaLabel">Risk classification</div>
-                    <div class="srMetaValue">
-                      <span class="srRiskBadge srRiskMedium">Medium</span>
-                    </div>
-                  </div>
-                  <div class="srMetaItemPro">
-                    <div class="srMetaLabel">Report ID</div>
-                    <div class="srMetaValue mono">yDPieAth</div>
-                  </div>
+              <div class="srMetaGridPro">
+                <div class="srMetaItemPro">
+                  <div class="srMetaLabel">Target</div>
+                  <div class="srMetaValue" id="srTargetCover">—</div>
                 </div>
-
-                <div class="srHashBlockPro">
-                  <div class="srMetaLabel">Integrity hash (SHA-256)</div>
-                  <div class="srHash mono">
-                    9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db
-                  </div>
-                  <div class="srHashHint">
-                    Verify via: <span class="mono">/verify/9249d48e82…</span>
-                  </div>
+                <div class="srMetaItemPro">
+                  <div class="srMetaLabel">Captured (UTC)</div>
+                  <div class="srMetaValue" id="srCapturedCover">—</div>
                 </div>
+                <div class="srMetaItemPro">
+                  <div class="srMetaLabel">Overall risk</div>
+                  <div class="srMetaValue"><span class="srBadge srBadgeMedium" id="srRiskCover">Medium</span></div>
+                </div>
+                <div class="srMetaItemPro">
+                  <div class="srMetaLabel">Report ID</div>
+                  <div class="srMetaValue mono" id="srReportIdCover">—</div>
+                </div>
+              </div>
 
-                <div class="srCoverFootPro">
-                  <div class="srSmallNote">
-                    This is documentation only. Not legal advice, certification, or continuous monitoring.
-                    Findings are limited to scanned scope and observable signals during capture.
-                  </div>
+              <div class="srCallout">
+                <div class="srCalloutTitle">What this is</div>
+                <div class="srCalloutBody">
+                  Documentation only — not legal advice, certification, or monitoring.
+                  Findings are limited to scanned scope and observable signals during capture.
                 </div>
               </div>
             </section>
 
-            <!-- EXEC SUMMARY -->
+            <!-- EXEC -->
             <section class="srPagePro" id="exec">
               <div class="srSectionHead">
                 <div class="srSectionTitle">Executive summary</div>
-                <div class="srRiskBadge srRiskMedium">Overall risk: Medium</div>
+                <div class="srBadge srBadgeMedium" id="srExecRiskBadge">Overall: Medium</div>
               </div>
 
-              <div class="srExecutivePro">
-                <p>
-                  This snapshot indicates a <strong>medium overall compliance and risk exposure</strong> based on observed signals
-                  at time of capture. Primary drivers include <strong>policy discoverability gaps</strong> and evidence of
-                  <strong>third-party tracking</strong> without clearly detected consent gating.
-                </p>
-              </div>
+              <p class="srBodyText">
+                This sample indicates <strong>medium overall exposure</strong> based on observable signals at capture time.
+                Primary drivers include <strong>cookie/consent uncertainty</strong> and <strong>policy discoverability gaps</strong>.
+              </p>
 
-              <div class="srScoreRow">
-                <div class="srScoreCard">
-                  <div class="srMiniTitle">Risk drivers</div>
-                  <ul class="srBullets">
-                    <li>Consent gating signals unclear for non-essential cookies</li>
-                    <li>Incomplete policy paths / discoverability issues</li>
-                    <li>Third-party vendor visibility not clearly disclosed</li>
-                  </ul>
-                </div>
-
-                <div class="srScoreCard">
-                  <div class="srMiniTitle">At-a-glance classification</div>
-                  <div class="srGridPro">
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Privacy &amp; policies</div>
-                        <div class="srTag srTagMedium">Partial</div>
-                      </div>
-                      <div class="srTileBody">Gaps across standard privacy/cookie policy endpoints.</div>
-                    </div>
-
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Cookie &amp; consent</div>
-                        <div class="srTag srTagHigh">Incomplete</div>
-                      </div>
-                      <div class="srTileBody">Tracking signals detected without clear opt-in gating.</div>
-                    </div>
-
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Tracking vendors</div>
-                        <div class="srTag srTagMedium">Present</div>
-                      </div>
-                      <div class="srTileBody">Common analytics/marketing scripts observed.</div>
-                    </div>
-
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Forms &amp; data capture</div>
-                        <div class="srTag srTagMedium">Present</div>
-                      </div>
-                      <div class="srTileBody">Forms detected; personal-data field heuristics triggered.</div>
-                    </div>
-
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Accessibility</div>
-                        <div class="srTag srTagLow">Limited</div>
-                      </div>
-                      <div class="srTileBody">No major blockers within scope; improvements noted.</div>
-                    </div>
-
-                    <div class="srTilePro">
-                      <div class="srTileTop">
-                        <div class="srTileTitle">Contact &amp; transparency</div>
-                        <div class="srTag srTagMedium">Partial</div>
-                      </div>
-                      <div class="srTileBody">Some identity signals present; gaps remain.</div>
-                    </div>
+              <div class="srGridPro">
+                <div class="srTilePro">
+                  <div class="srTileTop">
+                    <div class="srTileTitle">Cookie &amp; consent</div>
+                    <div class="srTag srTagHigh">High</div>
                   </div>
+                  <div class="srTileBody">Tracking signals detected without clear opt-in gating.</div>
+                </div>
+
+                <div class="srTilePro">
+                  <div class="srTileTop">
+                    <div class="srTileTitle">Privacy &amp; policies</div>
+                    <div class="srTag srTagMedium">Medium</div>
+                  </div>
+                  <div class="srTileBody">Policy paths inconsistent / incomplete in scope.</div>
+                </div>
+
+                <div class="srTilePro">
+                  <div class="srTileTop">
+                    <div class="srTileTitle">Tracking vendors</div>
+                    <div class="srTag srTagMedium">Medium</div>
+                  </div>
+                  <div class="srTileBody">Common analytics/marketing scripts observed.</div>
+                </div>
+
+                <div class="srTilePro">
+                  <div class="srTileTop">
+                    <div class="srTileTitle">Contact &amp; transparency</div>
+                    <div class="srTag srTagLow">Low</div>
+                  </div>
+                  <div class="srTileBody">Some identity signals present; improvements possible.</div>
                 </div>
               </div>
+            </section>
 
-              <div class="srDivider"></div>
+            <!-- RISK REGISTER -->
+            <section class="srPagePro" id="register">
+              <div class="srSectionHead">
+                <div class="srSectionTitle">Risk register (sample)</div>
+                <div class="srPill">Client-friendly</div>
+              </div>
 
-              <div class="srKeyFindings">
-                <div class="srMiniTitle">Priority findings</div>
-                <ol class="srList">
-                  <li><strong>Consent gating unclear</strong> for non-essential cookies and tracking scripts.</li>
-                  <li><strong>Policy discoverability gaps</strong> across standard privacy/cookie endpoints.</li>
-                  <li><strong>Vendor disclosure clarity</strong> may be insufficient for audit-grade transparency.</li>
-                </ol>
+              <div class="srTableWrap" role="region" aria-label="Risk register table">
+                <table class="srTable">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th>Risk</th>
+                      <th>Likelihood</th>
+                      <th>Impact</th>
+                      <th class="isScore">Score</th>
+                      <th>When it matters</th>
+                      <th>Trigger</th>
+                      <th>Recommended action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Cookie &amp; consent</strong></td>
+                      <td>Non-essential scripts appear active without clear opt-in gating.</td>
+                      <td>Possible</td>
+                      <td>High</td>
+                      <td class="isScore scoreHigh">15</td>
+                      <td>At first page load</td>
+                      <td>No consent banner / no deferral signals</td>
+                      <td>Implement a CMP and ensure non-essential scripts load only after opt-in.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Policies</strong></td>
+                      <td>Privacy/cookie policy discoverability inconsistent across common paths.</td>
+                      <td>Possible</td>
+                      <td>Medium</td>
+                      <td class="isScore scoreMed">9</td>
+                      <td>During audits / complaints</td>
+                      <td>Missing / broken policy links</td>
+                      <td>Publish clear privacy + cookie policies; link in the footer site-wide; include vendor disclosure.</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Data capture</strong></td>
+                      <td>Forms capture personal data; disclosures may be insufficient.</td>
+                      <td>Possible</td>
+                      <td>Medium</td>
+                      <td class="isScore scoreMed">8</td>
+                      <td>When collecting leads / checkout</td>
+                      <td>Email/phone fields detected</td>
+                      <td>Add just-in-time notices near forms; link to privacy policy; clarify purpose and retention.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="srSmallNote">
+                The PDF includes full scope logs, timestamp, and a public verification link.
               </div>
             </section>
 
             <!-- COVERAGE -->
             <section class="srPagePro" id="coverage">
               <div class="srSectionHead">
-                <div class="srSectionTitle">Coverage &amp; limitations</div>
-                <div class="srPill">Important</div>
+                <div class="srSectionTitle">Coverage</div>
+                <div class="srPill">Scope-locked</div>
               </div>
 
               <div class="srTwoCol">
                 <div class="srPanel">
-                  <div class="srMiniTitle">Pages checked</div>
+                  <div class="srMiniTitle">Pages checked (example)</div>
                   <div class="srCoverageList">
                     <div class="srPath mono">/</div>
                     <div class="srPath mono">/privacy</div>
@@ -289,18 +318,15 @@
                     <div class="srPath mono">/terms</div>
                     <div class="srPath mono">/contact</div>
                   </div>
-                  <div class="srAsideFine" style="margin-top:10px;">
-                    Example paths shown for preview. Real reports include the exact checked/failed pages.
-                  </div>
                 </div>
 
                 <div class="srPanel">
-                  <div class="srMiniTitle">What this means</div>
+                  <div class="srMiniTitle">Limitations</div>
                   <ul class="srBullets">
-                    <li>Same-origin only; external domains are not crawled.</li>
-                    <li>Public unauthenticated pages only.</li>
-                    <li>No behavioural simulation; limited to observable signals.</li>
-                    <li>Some compliance issues may exist outside scanned scope.</li>
+                    <li>Same-origin only (no external crawling)</li>
+                    <li>Public pages only (no login areas)</li>
+                    <li>No behavioural simulation</li>
+                    <li>Some issues may exist outside scanned scope</li>
                   </ul>
                 </div>
               </div>
@@ -309,178 +335,89 @@
             <!-- FINDINGS -->
             <section class="srPagePro" id="findings">
               <div class="srSectionHead">
-                <div class="srSectionTitle">Detailed findings</div>
-                <div class="srPill">Extract</div>
+                <div class="srSectionTitle">Findings (extract)</div>
+                <div class="srPill">Example</div>
               </div>
 
               <div class="srFinding">
                 <div class="srFindingHead">
                   <div>
                     <div class="srFindingTitle">Cookie &amp; consent</div>
-                    <div class="srFindingSub">Observed tracking signals without clearly detected opt-in gating.</div>
+                    <div class="srFindingSub">Tracking signals detected without clear opt-in gating.</div>
                   </div>
-                  <div class="srRiskBadge srRiskHigh">Category risk: High</div>
+                  <div class="srBadge srBadgeHigh">High</div>
                 </div>
 
                 <div class="srFindingGrid">
                   <div class="srFindingBlock">
-                    <div class="srMiniTitle">Snapshot result</div>
-                    <p>
-                      Non-essential scripts were observed during capture. No clear consent banner markup or deferred script
-                      activation behaviour was detected within the scanned scope.
+                    <div class="srMiniTitle">What we saw</div>
+                    <p class="srBodyText">
+                      Non-essential scripts were observed during capture. No clear consent gating indicators were detected within scanned scope.
                     </p>
                   </div>
 
                   <div class="srFindingBlock">
-                    <div class="srMiniTitle">Observed signals</div>
-                    <ul class="srBullets">
-                      <li>Analytics vendor detected (e.g., Google Analytics)</li>
-                      <li>Marketing pixel detected (e.g., Meta Pixel)</li>
-                      <li>No CMP / consent framework markup detected</li>
-                      <li>No evidence of script deferral until opt-in</li>
-                    </ul>
-                  </div>
-
-                  <div class="srFindingBlock">
-                    <div class="srMiniTitle">Risk context</div>
-                    <p>
-                      Under UK GDPR and PECR, non-essential cookies and similar identifiers generally require prior consent
-                      before activation, alongside clear disclosure of purpose and vendors.
-                    </p>
-                  </div>
-
-                  <div class="srFindingBlock">
-                    <div class="srMiniTitle">Recommended next steps</div>
+                    <div class="srMiniTitle">Recommended action</div>
                     <ol class="srList">
-                      <li>Implement a consent management platform (CMP) with opt-in controls.</li>
-                      <li>Ensure non-essential scripts activate only after consent.</li>
-                      <li>Publish an accessible cookie policy detailing categories and vendors.</li>
+                      <li>Add a CMP with opt-in categories.</li>
+                      <li>Defer non-essential scripts until consent.</li>
+                      <li>Update cookie policy with vendors + purposes.</li>
                     </ol>
                   </div>
                 </div>
               </div>
             </section>
 
-            <!-- EVIDENCE -->
-            <section class="srPagePro" id="evidence">
+            <!-- VERIFICATION -->
+            <section class="srPagePro" id="verify">
               <div class="srSectionHead">
-                <div class="srSectionTitle">Evidence excerpts</div>
-                <div class="srPill">Why this is defensible</div>
+                <div class="srSectionTitle">Verification</div>
+                <div class="srPill">Public</div>
               </div>
 
-              <div class="srEvidenceGrid">
-                <div class="srEvidenceCard">
-                  <div class="srMiniTitle">Detected scripts</div>
-                  <div class="srCodeBox mono">
-                    https://www.googletagmanager.com/gtag/js<br/>
-                    https://connect.facebook.net/en_US/fbevents.js<br/>
-                    (additional signals omitted in sample)
-                  </div>
-                </div>
-
-                <div class="srEvidenceCard">
-                  <div class="srMiniTitle">Consent signal heuristics</div>
-                  <div class="srQuote">
-                    No consent framework markup detected in scanned DOM.<br/>
-                    No deferred loading pattern observed for non-essential scripts.
-                  </div>
-                </div>
-
-                <div class="srEvidenceCard">
-                  <div class="srMiniTitle">Policy endpoints checked</div>
-                  <div class="srCodeBox mono">
-                    /privacy, /privacy-policy, /cookies, /terms<br/>
-                    (exact coverage appears in real reports)
-                  </div>
-                </div>
-
-                <div class="srEvidenceCard">
-                  <div class="srMiniTitle">Accessibility signal sample</div>
-                  <div class="srQuote">
-                    Images missing alt text detected (heuristic).<br/>
-                    No critical blockers observed within scanned scope.
-                  </div>
+              <div class="srCallout">
+                <div class="srCalloutTitle">Simple explanation</div>
+                <div class="srCalloutBody">
+                  Each paid report has a cryptographic verification code (printed inside the PDF). That code links to a public verification page.
+                  If the PDF is modified after generation, verification fails.
                 </div>
               </div>
 
-              <div class="srDivider"></div>
+              <div class="srPanel" style="margin-top:14px;">
+                <div class="srMiniTitle">Verification link</div>
+                <div class="srSmallNote" style="margin-top:8px;">
+                  This is the public page that confirms the report exists on record and matches its original fingerprint.
+                </div>
 
-              <div class="srSmallNote">
-                Real paid reports include structured coverage logs, failed pages, and category-level evidence derived from captured HTML.
+                <div class="monoBox" id="srVerifyUrlBox" style="margin-top:12px;">
+                  /verify/<span id="srHashInline">…</span>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                  <a class="btnPrimary" id="srVerifyBtn3" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification page</a>
+                  <a class="btnGhost" id="srPdfBtn3" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open PDF (shows code)</a>
+                </div>
+
+                <div class="srSmallNote" style="margin-top:10px;">
+                  Verification confirms integrity only. It does not certify compliance and is not legal advice.
+                </div>
               </div>
+
+              <details class="srAdvanced" style="margin-top:14px;">
+                <summary>Advanced (for auditors): show verification code</summary>
+                <div class="srAdvancedBody">
+                  <div class="srMetaLabel">Verification code (SHA-256)</div>
+                  <div class="srHashSmall mono" id="srHashFull">…</div>
+                  <div class="srSmallNote">
+                    This code is derived from objective scan fields only (URL/hostname, timestamp, coverage, detectable signals). Layout and wording do not affect it.
+                  </div>
+                </div>
+              </details>
             </section>
 
-            <!-- METHODOLOGY -->
-            <section class="srPagePro" id="method">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Methodology &amp; limitations</div>
-                <div class="srPill">Important</div>
-              </div>
-
-              <div class="srTwoCol">
-                <div class="srPanel">
-                  <div class="srMiniTitle">Scope &amp; capture rules</div>
-                  <ul class="srBullets">
-                    <li>Scope-locked crawl: same-origin only</li>
-                    <li>Public, unauthenticated pages</li>
-                    <li>Homepage + common policy/contact paths</li>
-                    <li>Maximum pages scanned: <strong>6</strong></li>
-                    <li>Time-boxed requests; failures recorded</li>
-                  </ul>
-                </div>
-
-                <div class="srPanel">
-                  <div class="srMiniTitle">What this report is / is not</div>
-                  <ul class="srBullets">
-                    <li><strong>Point-in-time snapshot</strong> of observable signals</li>
-                    <li><strong>Not legal advice</strong> and not a certification</li>
-                    <li><strong>Not monitoring</strong> and does not guarantee compliance</li>
-                    <li>Some issues may exist outside scanned scope</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <!-- INTEGRITY -->
-            <section class="srPagePro" id="integrity">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Integrity &amp; verification</div>
-                <div class="srRiskBadge">Tamper detection</div>
-              </div>
-
-              <div class="srIntegrity">
-                <p>
-                  Reports are sealed at generation time. The integrity hash is derived from objective report fields and stored
-                  server-side. Any modification to sealed content will break verification.
-                </p>
-
-                <div class="srHashRow">
-                  <div class="srHashSmall mono">
-                    9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db
-                  </div>
-                  <a class="navBtn" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">
-                    Open verification
-                  </a>
-                </div>
-
-                <div class="srDivider"></div>
-
-                <div class="srVerifyCallout">
-                  <div>
-                    <div class="srVerifyTitle">Public verification link</div>
-                    <div class="srVerifySub mono">/verify/9249d48e82bfb13a…</div>
-                  </div>
-                  <a class="btnPrimary" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">
-                    Verify now
-                  </a>
-                </div>
-              </div>
-            </section>
-
-            <!-- Footer -->
             <div class="srDocFooter">
-              <div class="srFooterLeft">Website Risk Check — Sample report preview</div>
-              <div class="srFooterRight mono">Report ID: yDPieAth</div>
+              <div>Website Risk Check — Sample report preview</div>
+              <div class="mono">Report ID: <span id="srFooterId">—</span></div>
             </div>
           </div>
         </div>
@@ -489,8 +426,8 @@
         <div class="srBottomCta">
           <div class="srBottomCard">
             <div>
-              <div class="srBottomTitle">Generate a sealed report for your own client.</div>
-              <div class="srBottomSub">Run a free preview scan, then unlock the immutable PDF + verification link.</div>
+              <div class="srBottomTitle">Generate a sealed report for your client.</div>
+              <div class="srBottomSub">Run a free preview scan, then unlock the PDF + verification link.</div>
             </div>
             <a class="btnPrimary" href="/#scan">Run a scan</a>
           </div>
@@ -499,5 +436,72 @@
       </div>
     </section>
   </main>
+
+  <script>
+    (function () {
+      const s = window.__WRC_SAMPLE__ || {};
+      const target = String(s.target || "—");
+      const risk = String(s.risk || "—");
+      const reportId = String(s.reportId || "—");
+      const capturedUtc = String(s.capturedUtc || "—");
+      const hash = String(s.hash || "").toLowerCase();
+      const pdf = String(s.pdf || "/assets/sample-report.pdf");
+
+      const isHash = /^[a-f0-9]{64}$/.test(hash);
+
+      // Pills
+      const tPill = document.getElementById("srTargetPill");
+      const rPill = document.getElementById("srRiskPill");
+      const idPill = document.getElementById("srIdPill");
+      if (tPill) tPill.textContent = `Target: ${target}`;
+      if (rPill) rPill.textContent = `Risk: ${risk}`;
+      if (idPill) idPill.textContent = `Report ID: ${reportId}`;
+
+      // Key-value
+      const tKV = document.getElementById("srTargetKV");
+      const cKV = document.getElementById("srCapturedKV");
+      if (tKV) tKV.textContent = target;
+      if (cKV) cKV.textContent = capturedUtc;
+
+      // Cover
+      const tC = document.getElementById("srTargetCover");
+      const cC = document.getElementById("srCapturedCover");
+      const idC = document.getElementById("srReportIdCover");
+      if (tC) tC.textContent = target;
+      if (cC) cC.textContent = capturedUtc;
+      if (idC) idC.textContent = reportId;
+
+      // Exec badge
+      const ex = document.getElementById("srExecRiskBadge");
+      if (ex) ex.textContent = `Overall: ${risk}`;
+
+      // Footer ID
+      const fId = document.getElementById("srFooterId");
+      if (fId) fId.textContent = reportId;
+
+      // PDF buttons
+      ["srPdfBtn", "srPdfBtn2", "srPdfBtn3"].forEach((id) => {
+        const a = document.getElementById(id);
+        if (a) a.href = pdf;
+      });
+
+      // Verify URL wiring
+      const verifyHref = isHash ? `/verify/${hash}` : "/verify/";
+      ["srVerifyBtn", "srVerifyBtn2", "srVerifyBtn3"].forEach((id) => {
+        const a = document.getElementById(id);
+        if (a) a.href = verifyHref;
+      });
+
+      const hashInline = document.getElementById("srHashInline");
+      const hashFull = document.getElementById("srHashFull");
+      if (hashInline) hashInline.textContent = isHash ? hash.slice(0, 16) + "…" : "—";
+      if (hashFull) hashFull.textContent = isHash ? hash : "—";
+
+      const box = document.getElementById("srVerifyUrlBox");
+      if (box && isHash) {
+        box.textContent = verifyHref;
+      }
+    })();
+  </script>
 </body>
 </html>

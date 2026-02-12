@@ -14,11 +14,17 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://websiteriskcheck.com/sample-report" />
 
-  <!-- Your global site CSS (v12 system) -->
-  <link rel="stylesheet" href="/style.css?v=12" />
+  <!-- Favicons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg?v=1" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
 
-  <!-- Page-specific (bump versions to kill cache) -->
-  <link rel="stylesheet" href="/sample-report.css?v=2" />
+  <!-- Your global site CSS (keep in sync with server ASSET_VERSION) -->
+  <link rel="stylesheet" href="/style.css?v=13" />
+
+  <!-- Page-specific -->
+  <link rel="stylesheet" href="/sample-report.css?v=3" />
 </head>
 <body>
   <!-- Keep your existing header/nav pattern -->
@@ -131,7 +137,7 @@
             <div class="flipError" id="errorState" hidden>
               <div class="flipErrorTitle">Couldn’t load the sample PDF.</div>
               <div class="flipErrorSub">
-                The interactive preview failed (blocked worker/CSP, CDN, or file path). You can still open the PDF directly.
+                The interactive preview failed (blocked worker/CSP, script, or file path). You can still open the PDF directly.
               </div>
               <div class="flipErrorActions">
                 <a class="btnPrimary" id="directPdfLink" href="#" target="_blank" rel="noopener">Open sample PDF</a>
@@ -205,10 +211,15 @@
     </section>
   </main>
 
-  <!-- PDF.js (LOCAL — avoids CSP/worker blocking) -->
+  <!-- PDF.js (LOCAL — avoids CSP/CDN/worker blocking) -->
   <script src="/vendor/pdfjs/pdf.min.js?v=1"></script>
 
-  <!-- Bump to kill cache -->
+  <!-- IMPORTANT: worker file must exist at /vendor/pdfjs/pdf.worker.min.js
+       sample-report.js should set:
+       pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.js";
+  -->
+
+  <!-- Page logic -->
   <script src="/sample-report.js?v=3"></script>
 </body>
 </html>

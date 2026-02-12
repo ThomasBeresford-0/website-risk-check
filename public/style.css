@@ -1602,12 +1602,40 @@ button,input{ font-family:inherit; }
    SAMPLE REPORT — PREMIUM ARTIFACT (v12)
    ========================= */
 
+.isSampleReport .page{ padding:28px 0 84px; }
+
 .srShell{ max-width:1180px; margin:0 auto; }
+
+/* missing helper classes (these were causing “unstyled / dev” vibes) */
+.navCtas{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.srKicker{
+  font-size:12px;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+  color:#3c4b63;
+  font-weight:800;
+  margin-bottom:12px;
+}
+.srSmallNote{
+  margin-top:14px;
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.65;
+}
+
+/* Risk + tags (you referenced these in HTML but didn’t style them) */
+.srRiskLow{ border-color:rgba(22,163,74,.25) !important; }
+.srRiskMedium{ border-color:rgba(217,119,6,.28) !important; }
+.srRiskHigh{ border-color:rgba(220,38,38,.28) !important; }
+
+.srTagLow{ border-color:rgba(22,163,74,.25) !important; }
+.srTagMedium{ border-color:rgba(217,119,6,.28) !important; }
+.srTagHigh{ border-color:rgba(220,38,38,.28) !important; }
 
 /* Sticky viewer bar */
 .srSticky{
   position:sticky;
-  top:70px; /* below your sticky nav */
+  top:70px;
   z-index:50;
   border-bottom:1px solid rgba(15,23,42,.10);
   background:rgba(246,247,251,.82);
@@ -1654,9 +1682,9 @@ button,input{ font-family:inherit; }
 
 .srTitlePro{
   margin:6px 0 8px;
-  font-size:40px;
-  letter-spacing:-.7px;
-  line-height:1.12;
+  font-size:42px;
+  letter-spacing:-.8px;
+  line-height:1.08;
 }
 
 .srSubPro{
@@ -1705,10 +1733,7 @@ button,input{ font-family:inherit; }
   align-items:start;
 }
 
-.srToc{
-  position:sticky;
-  top:140px; /* nav + sticky bar */
-}
+.srToc{ position:sticky; top:140px; }
 
 .srTocCard{
   background:rgba(255,255,255,.86);
@@ -1749,40 +1774,33 @@ button,input{ font-family:inherit; }
 }
 .srPairV{ font-weight:800; color:var(--text); }
 
-/* Make the “doc shell” NOT look like one big UI card */
-.isSampleReport .srDocPro{
+/* Document shell */
+.srDocPro{
   position:relative;
-  background:transparent;
-  border:none;
-  box-shadow:none;
-  border-radius:0;
-  overflow:visible;
+  border-radius:var(--r-lg);
+  border:1px solid rgba(15,23,42,.12);
+  background:rgba(255,255,255,.92);
+  box-shadow:var(--shadow);
+  overflow:hidden;
 }
 
-/* Keep SAMPLE visible like a viewer badge */
-.isSampleReport .srRibbon{
-  position: sticky;
-  top: 140px; /* below nav + sticky bar */
-  z-index: 5;
-  margin: 0 0 10px auto;
-  width: fit-content;
-  right: auto;
-  left: auto;
-  background: rgba(255,255,255,.92);
+.srRibbon{
+  position:absolute;
+  top:18px;
+  right:18px;
+  font-size:12px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  border:1px solid rgba(15,23,42,.18);
+  border-radius:999px;
+  padding:8px 12px;
+  background:rgba(255,255,255,.86);
 }
 
-
-/* Each section becomes a “paper page” */
-.isSampleReport .srPagePro{
-  max-width: 900px;
-  margin: 0 auto 18px;
-  padding: 34px 34px;
-  background: #fff;
-  border: 1px solid rgba(15,23,42,.10);
-  border-radius: 20px;
-  box-shadow: 0 30px 80px rgba(15,23,42,.10);
+.srPagePro{
+  padding:26px 26px;
+  border-bottom:1px solid rgba(15,23,42,.08);
 }
-
 
 .srCoverTitlePro{
   font-size:28px;
@@ -1844,7 +1862,7 @@ button,input{ font-family:inherit; }
   word-break:break-all;
 }
 
-.srHashHint{ margin-top:10px; font-size:13px; color:var(--muted); }
+.srHashHint{ margin-top:10px; font-size:13px; color:var(--muted); line-height:1.6; }
 
 .srSectionHead{
   display:flex;
@@ -2045,22 +2063,7 @@ button,input{ font-family:inherit; }
   flex:1 1 520px;
 }
 
-.srVerifyCallout{
-  margin-top:12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:14px;
-  border-radius:14px;
-  border:1px solid rgba(15,23,42,.10);
-  background:rgba(241,245,249,.92);
-  box-shadow:var(--shadowSoft);
-}
-
-.srVerifyTitle{ font-weight:900; letter-spacing:-.1px; }
-.srVerifySub{ margin-top:4px; font-size:13px; color:var(--muted); }
-
+/* Footer + CTA */
 .srDocFooter{
   display:flex;
   justify-content:space-between;
@@ -2086,11 +2089,11 @@ button,input{ font-family:inherit; }
 .srBottomTitle{ font-weight:900; letter-spacing:-.1px; }
 .srBottomSub{ margin-top:6px; color:var(--muted); line-height:1.6; font-size:14px; }
 
+/* Responsive */
 @media (max-width: 1000px){
   .srTopPro{ grid-template-columns:1fr; }
   .srLayout{ grid-template-columns:1fr; }
   .srToc{ position:relative; top:auto; }
-  .srSticky{ top:70px; }
   .srScoreRow{ grid-template-columns:1fr; }
   .srGridPro{ grid-template-columns:1fr; }
   .srMetaGridPro{ grid-template-columns:1fr; }
@@ -2103,4 +2106,3 @@ button,input{ font-family:inherit; }
   .srTitlePro{ font-size:32px; }
   .srStickyInner{ flex-direction:column; align-items:flex-start; }
 }
-

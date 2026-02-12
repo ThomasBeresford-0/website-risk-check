@@ -102,8 +102,79 @@ app.disable("x-powered-by");
 app.use(cors());
 app.use(express.json({ limit: "30kb" }));
 
-// Serve /public (includes /assets/sample-report.pdf if you add it there)
-app.use(express.static(path.join(__dirname, "../public"), { etag: true }));
+// Serve /public
+const PUBLIC_DIR = path.join(__dirname, "../public");
+app.use(express.static(PUBLIC_DIR, { etag: true }));
+
+/* =========================
+   HARD-GUARANTEE: SAMPLE PDF + LOCAL PDF.JS FILES
+   (removes all ambiguity; fixes "Cannot GET /public.pdf")
+========================= */
+
+app.get("/public.pdf", (_req, res) => {
+  const p = path.join(PUBLIC_DIR, "public.pdf");
+  if (!fs.existsSync(p)) return res.status(404).send("Missing public/public.pdf on server");
+  return res.sendFile(p);
+});
+
+app.get("/report.pdf", (_req, res) => {
+  const p = path.join(PUBLIC_DIR, "report.pdf");
+  if (!fs.existsSync(p)) return res.status(404).send("Missing public/report.pdf on server");
+  return res.sendFile(p);
+});
+
+app.get("/vendor/pdfjs/pdf.min.js", (_req, res) => {
+  const p = path.join(PUBLIC_DIR, "vendor/pdfjs/pdf.min.js");
+  if (!fs.existsSync(p)) return res.status(404).send("Missing public/vendor/pdfjs/pdf.min.js");
+  return res.sendFile(p);
+});
+
+app.get("/vendor/pdfjs/pdf.worker.min.js", (_req, res) => {
+  const p = path.join(PUBLIC_DIR, "vendor/pdfjs/pdf.worker.min.js");
+  if (!fs.existsSync(p)) return res.status(404).send("Missing public/vendor/pdfjs/pdf.worker.min.js");
+  return res.sendFile(p);
+});
+
+/* =========================
+   DEBUG: ASSET CHECK (safe, no secrets)
+   Hit /__assets to see what Render actually has.
+========================= */
+
+app.get("/__assets", (_req, res) => {
+  try {
+    const exists = (rel) => fs.existsSync(path.join(PUBLIC_DIR, rel));
+    const size = (rel) => {
+      try {
+        return fs.statSync(path.join(PUBLIC_DIR, rel)).size;
+      } catch {
+        return 0;
+      }
+    };
+
+    return res.json({
+      ok: true,
+      publicDir: PUBLIC_DIR,
+      files: {
+        "public.pdf": { exists: exists("public.pdf"), bytes: size("public.pdf") },
+        "report.pdf": { exists: exists("report.pdf"), bytes: size("report.pdf") },
+        "vendor/pdfjs/pdf.min.js": {
+          exists: exists("vendor/pdfjs/pdf.min.js"),
+          bytes: size("vendor/pdfjs/pdf.min.js"),
+        },
+        "vendor/pdfjs/pdf.worker.min.js": {
+          exists: exists("vendor/pdfjs/pdf.worker.min.js"),
+          bytes: size("vendor/pdfjs/pdf.worker.min.js"),
+        },
+        "sample-report.html": {
+          exists: exists("sample-report.html"),
+          bytes: size("sample-report.html"),
+        },
+      },
+    });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: "asset_check_failed" });
+  }
+});
 
 /* =========================
    HEALTH
@@ -233,7 +304,6 @@ app.post("/preview-scan", async (req, res) => {
       },
       signals: scan.signals,
       risk: scan.risk,
-      // ✅ NEW: pass-through deterministic findings
       findings: Array.isArray(scan.findings) ? scan.findings : [],
       findingsText: Array.isArray(scan.findingsText) ? scan.findingsText : [],
     };
@@ -256,7 +326,6 @@ app.post("/preview-scan", async (req, res) => {
 
       https: !!scan.meta?.https,
       fetchOk: Array.isArray(checkedPages) && checkedPages.length > 0,
-      // try to reflect real status if available
       fetchStatus: Number(scan.coverage?.fetchStatus || 200),
 
       riskLevel: scan.risk?.level || "Medium",
@@ -285,9 +354,6 @@ app.post("/preview-scan", async (req, res) => {
       scanCoverageNotes: cap(structured.coverage.notes, 10),
     };
 
-    // ✅ For backwards compatibility with public/app.js:
-    // - keep `findings` as strings (what the UI expects)
-    // - ALSO return `findingsStructured` so you can upgrade UI later without breaking anything
     const findingsText =
       Array.isArray(scan.findingsText) && scan.findingsText.length
         ? scan.findingsText.slice(0, 12)
@@ -296,8 +362,8 @@ app.post("/preview-scan", async (req, res) => {
     return res.json({
       ...structured,
       ...flat,
-      findings: findingsText, // strings (UI)
-      findingsStructured: structured.findings, // objects (PDF + future UI)
+      findings: findingsText,
+      findingsStructured: structured.findings,
     });
   } catch (e) {
     console.error("preview-scan error:", e);
@@ -352,11 +418,9 @@ app.get("/download-report", async (req, res) => {
 
     const sessionFile = path.join(SESSION_DIR, `${session_id}.json`);
 
-    // Idempotent redirect if we’ve already sealed a report for this session
     if (fs.existsSync(sessionFile)) {
       const existing = safeReadJson(sessionFile);
       if (existing?.token) return res.redirect(`/r/${existing.token}`);
-      // If corrupted, fall through and regenerate mapping safely (but do not overwrite a paid report)
     }
 
     const session = await stripe.checkout.sessions.retrieve(session_id);
@@ -371,34 +435,27 @@ app.get("/download-report", async (req, res) => {
     const token = generateUniqueToken();
     const { pdfPath, jsonPath } = tokenPaths(token);
 
-    // Create report to a temp path first
     const tmpPdf = `${pdfPath}.tmp-${crypto.randomBytes(6).toString("hex")}`;
     const scanData = await scanWebsite(url);
 
-    // Generate PDF (report.js computes integrity hash internally, based on objective model)
     const { integrityHash } = await generateReport(
       { ...scanData, shareToken: token },
       tmpPdf
     );
 
-    // Build sealed JSON
     const sealed = {
       token,
       createdAt: Date.now(),
-      integrityHash, // convenience lookup (still verified by recompute on /verify)
+      integrityHash,
       scanData: {
         ...scanData,
         integrityHash,
       },
     };
 
-    // Write JSON atomically
     writeFileAtomic(jsonPath, JSON.stringify(sealed, null, 2), "utf8");
-
-    // Rename PDF into place atomically
     fs.renameSync(tmpPdf, pdfPath);
 
-    // Store session->token mapping atomically
     writeFileAtomic(
       sessionFile,
       JSON.stringify({ token, createdAt: Date.now() }),
@@ -436,8 +493,6 @@ app.get("/verify/:hash", (req, res) => {
     return res.send(renderVerifyPage({ valid: false }));
   }
 
-  // For now: simple scan of stored JSONs (fine at your current scale).
-  // If you want to scale later: build an index file hash -> token.
   const files = fs.readdirSync(REPORT_DIR).filter((f) => f.endsWith(".json"));
 
   for (const file of files) {
@@ -446,7 +501,6 @@ app.get("/verify/:hash", (req, res) => {
 
     const scan = parsed.scanData;
 
-    // ✅ REAL verification: recompute hash from objective fields
     let recomputed = "";
     try {
       recomputed = computeIntegrityHash(scan);
@@ -640,5 +694,5 @@ app.get("/sample-report", (_req, res) => {
 ========================= */
 
 app.listen(PORT, () => {
-  console.log(`Website Risk Check running on port ${PORT}`);
+console.log(`Website Risk Check running on port ${PORT}`);
 });

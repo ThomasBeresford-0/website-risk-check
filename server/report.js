@@ -3,7 +3,7 @@
 // BOUTIQUE UPGRADE: consultancy cover + risk register table styling (matches provided references)
 // ✅ Uses deterministic structured findings[] (from scan.js) when present
 // ✅ Falls back to legacy deterministic register builder if findings[] missing
-// ⚠️ Integrity hashing inputs are preserved (NO layout entropy)
+// ⚠️ Integrity hashing inputs are preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
 import fs from "fs";
@@ -28,7 +28,6 @@ const PALETTE = {
 
   // Risk table vibe
   navy: "#021942", // dark navy header
-  navy2: "#0A2A63",
   grid: "#2B57C6", // blue-ish grid line like screenshot
   rowA: "#F3F4F6", // light row
   rowB: "#EEF2F7", // alternate row
@@ -44,7 +43,9 @@ const PALETTE = {
 
 function iso(ts) {
   try {
-    return new Date(ts).toISOString();
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return new Date().toISOString();
+    return d.toISOString();
   } catch {
     return new Date().toISOString();
   }
@@ -325,7 +326,10 @@ function addFooter(doc, meta, integrityHash) {
   const bottomY = doc.page.height - 40;
 
   const base = process.env.BASE_URL || "";
-  const verifyUrl = `${base}/verify/${integrityHash}`;
+  const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
+
+  const scanId = meta?.scanId ? String(meta.scanId) : "—";
+  const ts = meta?.scannedAt ? iso(meta.scannedAt) : iso(Date.now());
 
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
@@ -337,14 +341,10 @@ function addFooter(doc, meta, integrityHash) {
     .font("Helvetica")
     .fontSize(8)
     .fillColor(PALETTE.muted)
-    .text(
-      `WebsiteRiskCheck.com • Report ID: ${meta.scanId} • Timestamp (UTC): ${iso(
-        meta.scannedAt
-      )}`,
-      left,
-      bottomY,
-      { width, align: "center" }
-    )
+    .text(`WebsiteRiskCheck.com • Report ID: ${scanId} • Timestamp (UTC): ${ts}`, left, bottomY, {
+      width,
+      align: "center",
+    })
     .text(`Verify: ${verifyUrl}`, left, bottomY + 10, { width, align: "center" });
 
   doc.restore();
@@ -524,7 +524,19 @@ function drawRiskRegister_v2(doc, rows) {
   const tableW = right - left;
 
   const headerH = 34;
-  const rowH = 120;
+  const minRowH = 120;
+
+  // Build cols with safe remainder (prevents negative widths on narrow pages)
+  const fixed =
+    110 + // category
+    170 + // desc
+    105 + // prob
+    95 + // impact
+    95 + // score
+    150 + // timing
+    150; // trigger
+
+  const responseW = Math.max(170, tableW - fixed);
 
   const cols = [
     { key: "category", w: 110, label: "Risk\nCategory" },
@@ -534,11 +546,7 @@ function drawRiskRegister_v2(doc, rows) {
     { key: "score", w: 95, label: "Risk Impact\nScore" },
     { key: "timing", w: 150, label: "Timing of\nRisk" },
     { key: "trigger", w: 150, label: "Risk\nTrigger" },
-    {
-      key: "response",
-      w: tableW - (110 + 170 + 105 + 95 + 95 + 150 + 150),
-      label: "Mitigation\nResponse",
-    },
+    { key: "response", w: responseW, label: "Mitigation\nResponse" },
   ];
 
   const startY = doc.y;
@@ -581,11 +589,41 @@ function drawRiskRegister_v2(doc, rows) {
     .stroke();
   doc.restore();
 
+  // Deterministic dynamic row height: computed from text content only
+  function calcRowHeight(r) {
+    // measure using the same fonts we render with
+    const pads = 10 * 2;
+    const yPad = 12 + 12; // top/bottom visual padding
+    const heights = [];
+
+    cols.forEach((c) => {
+      const tw = c.w - pads;
+
+      if (c.key === "prob" || c.key === "impact") {
+        doc.font("Helvetica-Bold").fontSize(10.5);
+        heights.push(doc.heightOfString(String(r[c.key] ?? ""), { width: tw }) + yPad);
+      } else if (c.key === "score") {
+        doc.font("Helvetica-Bold").fontSize(14);
+        heights.push(14 + yPad + 28);
+      } else if (c.key === "category") {
+        doc.font("Helvetica").fontSize(10.5);
+        heights.push(doc.heightOfString(String(r.category ?? ""), { width: tw }) + yPad);
+      } else {
+        doc.font("Helvetica").fontSize(10.2);
+        heights.push(doc.heightOfString(String(r[c.key] ?? ""), { width: tw, lineGap: 3 }) + yPad);
+      }
+    });
+
+    const h = Math.max(minRowH, ...heights);
+    return Math.min(190, Math.max(minRowH, h)); // clamp so table stays readable
+  }
+
   // Rows
   let y = startY + headerH;
 
   rows.forEach((r, idx) => {
-    ensureSpace(doc, rowH + 40);
+    const rowH = calcRowHeight(r);
+    ensureSpace(doc, rowH + 60);
 
     const bg = idx % 2 === 0 ? PALETTE.rowA : PALETTE.rowB;
 
@@ -637,10 +675,7 @@ function drawRiskRegister_v2(doc, rows) {
         doc.text(clampText(r.category, 60), tx, ty, { width: tw });
       } else if (c.key === "prob" || c.key === "impact") {
         doc.font("Helvetica-Bold").fontSize(10.5).fillColor(PALETTE.ink);
-        doc.text(clampText(r[c.key], 40), tx, ty + 18, {
-          width: tw,
-          align: "center",
-        });
+        doc.text(clampText(r[c.key], 40), tx, ty + 18, { width: tw, align: "center" });
       } else if (c.key === "score") {
         doc.font("Helvetica-Bold").fontSize(14).fillColor("#111827");
         doc.text(String(r.scoreNum), tx, ty + 32, { width: tw, align: "center" });
@@ -846,11 +881,9 @@ export async function generateReport(data, outputPath) {
       data.riskScore = risk.score;
       data.riskReasons = safeArr(risk.reasons);
 
-      if (data.meta) {
-        data.meta.integrityHash = integrityHash;
-      }
+      if (data.meta) data.meta.integrityHash = integrityHash;
 
-      const verifyUrl = `${base}/verify/${integrityHash}`;
+      const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
 
       // Precompute shared signal views (avoid scope bugs across pages)
       const trackers = safeArr(signals?.trackingScripts);
@@ -879,30 +912,27 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      // page number tracking
+      // Page number tracking (FIXED: no manual increments / no drift)
       doc._wrcPageNo = 1;
 
-      // Safety hook if doc.addPage() happens inside helpers
       doc.on("pageAdded", () => {
-        // If we are beyond cover, render header
-        if ((doc._wrcPageNo || 1) >= 2) addHeader(doc, data);
+        doc._wrcPageNo = (doc._wrcPageNo || 1) + 1;
+        // Render header on all pages except the cover (page 1)
+        if (doc._wrcPageNo >= 2) addHeader(doc, data);
       });
 
       /* ======================================================
          PAGE 1 — COVER (consulting template style)
       ====================================================== */
-
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
          PAGE 2 — EXECUTIVE SUMMARY + RISK REGISTER TABLE
       ====================================================== */
-
-      addHeader(doc, data);
+      // (header is auto-added by pageAdded handler)
       sectionTitle(doc, "Executive summary");
 
       const tone = toneForRisk(risk.level);
@@ -921,7 +951,6 @@ export async function generateReport(data, outputPath) {
 
       drawRiskRegister_v2(doc, riskRows);
 
-      // Small note (keeps it consultancy-grade, not verbose)
       doc
         .font("Helvetica")
         .fontSize(9.2)
@@ -952,9 +981,7 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(
         `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
       );
-      keyFindings.push(
-        `Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`
-      );
+      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
       keyFindings.push(
         `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
       );
@@ -967,33 +994,25 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(
         `Tracking scripts: ${
           trackers.length
-            ? `Detected (${trackers.slice(0, 4).join(", ")}${
-                trackers.length > 4 ? "…" : ""
-              })`
+            ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
             : "None detected"
         }`
       );
       keyFindings.push(
         `Cookie vendor signals: ${
           vendors.length
-            ? `Detected (${vendors.slice(0, 4).join(", ")}${
-                vendors.length > 4 ? "…" : ""
-              })`
+            ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
             : "None detected"
         }`
       );
 
       keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
       keyFindings.push(
-        `Potential personal-data field signals: ${num(
-          signals?.forms?.personalDataSignals
-        )} (heuristic)`
+        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
       );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
       keyFindings.push(
-        `Contact/identity signals: ${
-          signals?.contact?.detected ? "Detected" : "Not detected"
-        }`
+        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
       );
 
       bulletList(doc, keyFindings.slice(0, 12));
@@ -1004,14 +1023,11 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
          PAGE 3 — FINDINGS BY CATEGORY
       ====================================================== */
-
-      addHeader(doc, data);
       sectionTitle(doc, "Findings by category");
 
       subTitle(doc, "Connection");
@@ -1058,9 +1074,7 @@ export async function generateReport(data, outputPath) {
       subTitle(doc, "Forms & data capture (heuristic)");
       bulletList(doc, [
         `Forms detected: ${num(signals?.forms?.detected)}`,
-        `Potential personal-data field signals: ${num(
-          signals?.forms?.personalDataSignals
-        )}`,
+        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)}`,
       ]);
       bodyText(
         doc,
@@ -1093,14 +1107,11 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
          COMMON NEXT STEPS (NON-PRESCRIPTIVE)
       ====================================================== */
-
-      addHeader(doc, data);
       sectionTitle(doc, "Common next steps (non-prescriptive)");
 
       bodyText(
@@ -1120,14 +1131,11 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
          METHODOLOGY & LIMITATIONS
       ====================================================== */
-
-      addHeader(doc, data);
       sectionTitle(doc, "Methodology & limitations");
 
       subTitle(doc, "Methodology (this scan)");
@@ -1164,14 +1172,11 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      doc._wrcPageNo += 1;
       doc.addPage();
 
       /* ======================================================
          VERIFICATION
       ====================================================== */
-
-      addHeader(doc, data);
       sectionTitle(doc, "Report verification");
 
       bodyText(

@@ -8,9 +8,10 @@
 // - Canonicalization MUST match what report.js feeds in (buildIntegrityInput).
 //
 // KEY FIXES:
-// ✅ Canonicalize scannedAt consistently (string) for both legacy + structured + already-normalized inputs
-// ✅ Canonicalize ordering for sets that may vary (vendors, trackingScripts, accessibility notes)
+// ✅ Canonicalize scannedAt consistently (ISO string) for legacy + structured + already-normalized inputs
+// ✅ Canonicalize ordering for sets that may vary (vendors, trackingScripts, accessibility notes, coverage notes)
 // ✅ Canonicalize page lists order (by url, then status) so fetch ordering never changes hashes
+// ✅ Include hashVersion so you can evolve the schema safely later
 
 import crypto from "crypto";
 
@@ -33,15 +34,28 @@ function bool(v) {
 
 function sortStrings(arr) {
   return safeArr(arr)
-    .map((s) => str(s))
+    .map((s) => str(s).trim())
     .filter((s) => s.length > 0)
     .sort((a, b) => a.localeCompare(b));
+}
+
+// Always normalize timestamps to ISO when parseable.
+// This prevents ms-number vs ISO-string vs other formats from drifting the hash.
+function isoTs(v) {
+  if (typeof v === "number" && Number.isFinite(v)) {
+    return new Date(v).toISOString();
+  }
+  const s = str(v, "").trim();
+  if (!s) return "";
+  const t = Date.parse(s);
+  if (Number.isFinite(t)) return new Date(t).toISOString();
+  return s; // fallback (keeps verification possible rather than throwing)
 }
 
 function normalizePages(arr) {
   return safeArr(arr)
     .map((p) => ({
-      url: str(p?.url),
+      url: str(p?.url).trim(),
       status: num(p?.status, 0),
     }))
     .filter((p) => p.url.length > 0)
@@ -83,14 +97,14 @@ function toCanonical(scan) {
     url: str(metaSrc?.url),
     hostname: str(metaSrc?.hostname),
     scanId: str(metaSrc?.scanId),
-    // ✅ canonicalize scannedAt to STRING always (prevents ms-number vs string hash drift)
-    scannedAt: str(metaSrc?.scannedAt),
+    scannedAt: isoTs(metaSrc?.scannedAt),
     https: bool(metaSrc?.https),
   };
 
   // ----- coverage -----
   const coverageSrc = looksStructured ? scan.coverage : scan;
-  const notes = looksStructured
+
+  const notesRaw = looksStructured
     ? safeArr(coverageSrc?.notes).map((s) => str(s))
     : safeArr(scan?.scanCoverageNotes).map((s) => str(s));
 
@@ -103,7 +117,7 @@ function toCanonical(scan) {
     : normalizePages(scan?.failedPages);
 
   const coverage = {
-    notes,
+    notes: sortStrings(notesRaw),
     checkedPages,
     failedPages,
   };
@@ -130,8 +144,7 @@ function toCanonical(scan) {
 
   // Tracking scripts
   const trackingScripts = looksStructured
-    ? // structured: signals.trackingScripts
-      safeArr(signalsSrc?.trackingScripts)
+    ? safeArr(signalsSrc?.trackingScripts)
     : safeArr(scan?.trackingScriptsDetected);
 
   // Forms
@@ -166,17 +179,14 @@ function toCanonical(scan) {
     },
     consent: {
       bannerDetected: bool(consent?.bannerDetected),
-      // ✅ canonicalize vendor order
       vendors: sortStrings(consent?.vendors),
     },
-    // ✅ canonicalize tracking order
     trackingScripts: sortStrings(trackingScripts),
     forms: {
       detected: num(forms?.detected, 0),
       personalDataSignals: num(forms?.personalDataSignals, 0),
     },
     accessibility: {
-      // ✅ canonicalize notes order (set-derived notes may vary)
       notes: sortStrings(accessibility?.notes),
       images: {
         total: num(accessibility?.images?.total, 0),
@@ -184,13 +194,13 @@ function toCanonical(scan) {
       },
     },
     contact: {
-      // structured: contact.detected
       detected: bool(contact?.detected),
     },
   };
 
   // Objective facts only (explicit)
   return {
+    hashVersion: 1,
     meta,
     coverage,
     signals,

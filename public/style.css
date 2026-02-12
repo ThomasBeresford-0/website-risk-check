@@ -99,6 +99,12 @@ button,input{ font-family:inherit; }
   color:var(--muted);
 }
 
+.navCtas{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
 .navLinks a{ transition:color .16s ease; }
 .navLinks a:hover{ color:var(--ink); }
 
@@ -1743,33 +1749,40 @@ button,input{ font-family:inherit; }
 }
 .srPairV{ font-weight:800; color:var(--text); }
 
-/* Document shell */
-.srDocPro{
+/* Make the “doc shell” NOT look like one big UI card */
+.isSampleReport .srDocPro{
   position:relative;
-  border-radius:var(--r-lg);
-  border:1px solid rgba(15,23,42,.12);
-  background:rgba(255,255,255,.92);
-  box-shadow:var(--shadow);
-  overflow:hidden;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  border-radius:0;
+  overflow:visible;
 }
 
-.srRibbon{
-  position:absolute;
-  top:18px;
-  right:18px;
-  font-size:12px;
-  letter-spacing:.22em;
-  text-transform:uppercase;
-  border:1px solid rgba(15,23,42,.18);
-  border-radius:999px;
-  padding:8px 12px;
-  background:rgba(255,255,255,.86);
+/* Keep SAMPLE visible like a viewer badge */
+.isSampleReport .srRibbon{
+  position: sticky;
+  top: 140px; /* below nav + sticky bar */
+  z-index: 5;
+  margin: 0 0 10px auto;
+  width: fit-content;
+  right: auto;
+  left: auto;
+  background: rgba(255,255,255,.92);
 }
 
-.srPagePro{
-  padding:26px 26px;
-  border-bottom:1px solid rgba(15,23,42,.08);
+
+/* Each section becomes a “paper page” */
+.isSampleReport .srPagePro{
+  max-width: 900px;
+  margin: 0 auto 18px;
+  padding: 34px 34px;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  box-shadow: 0 30px 80px rgba(15,23,42,.10);
 }
+
 
 .srCoverTitlePro{
   font-size:28px;

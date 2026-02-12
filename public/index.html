@@ -3,16 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website Risk Check — Client-ready compliance & risk report</title>
+  <title>Website Risk Check — Verifiable website compliance & risk documentation</title>
 
   <meta
     name="description"
-    content="Client-ready website compliance & risk reports for agencies and consultants. Free structured preview. One-time payment for a timestamped PDF with share link and public verification."
+    content="Client-ready website compliance & risk documentation for agencies and consultants. Generate a timestamped, immutable PDF with permanent share link and public cryptographic verification."
   />
 
   <meta name="theme-color" content="#0f172a" />
 
-  <!-- Favicons -->
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -21,320 +20,302 @@
   <link rel="stylesheet" href="/style.css?v=12" />
 </head>
 
-
 <body>
-  <div class="bg" aria-hidden="true"></div>
+<div class="bg" aria-hidden="true"></div>
 
-  <nav class="nav">
-    <div class="container navInner">
-      <a class="brand" href="/" aria-label="Website Risk Check">
-        <img class="brandLogo" src="/favicon.svg?v=1" alt="" />
-        <span class="brandText">Website Risk Check</span>
-      </a>
+<nav class="nav">
+  <div class="container navInner">
+    <a class="brand" href="/">
+      <img class="brandLogo" src="/favicon.svg?v=1" alt="">
+      <span class="brandText">Website Risk Check</span>
+    </a>
 
-      <div class="navLinks" aria-label="Primary navigation">
-        <a href="#agencies">For Agencies</a>
-        <a href="#report">The Report</a>
-        <a href="#how">How it works</a>
-        <a href="#faq">FAQ</a>
+    <div class="navLinks">
+      <a href="#agencies">For Agencies</a>
+      <a href="#report">The Report</a>
+      <a href="#verification">Verification</a>
+      <a href="#methodology">Methodology</a>
+      <a href="#faq">FAQ</a>
+    </div>
+
+    <div class="navCtas">
+      <a class="navBtn" href="#scan">Run a scan</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<header class="hero" id="scan">
+  <div class="container heroGrid">
+
+    <div class="heroLeft">
+      <div class="kicker">
+        Independent documentation service for agencies & consultants
       </div>
 
-      <div class="navCtas">
-        <a class="navBtn" href="#scan">Run a scan</a>
+      <h1 class="heroTitle">
+        Verifiable website compliance & risk documentation.
+      </h1>
+
+      <p class="heroSub">
+        Generate a fixed, timestamped PDF snapshot of observable compliance and risk signals.
+        Includes a permanent share link and public integrity verification.
+      </p>
+
+      <div class="heroProof">
+        <div class="proofItem">
+          <div class="proofTop">Immutable</div>
+          <div class="proofBottom">Sealed at generation</div>
+        </div>
+        <div class="proofItem">
+          <div class="proofTop">Timestamped</div>
+          <div class="proofBottom">UTC record</div>
+        </div>
+        <div class="proofItem">
+          <div class="proofTop">Cryptographically verifiable</div>
+          <div class="proofBottom">Public integrity check</div>
+        </div>
+      </div>
+
+      <div class="heroFine">
+        Point-in-time documentation only. Not legal advice, certification, or monitoring.
       </div>
     </div>
-  </nav>
 
-  <main>
-
-    <!-- HERO -->
-    <header class="hero" id="scan">
-      <div class="container heroGrid">
-
-        <div class="heroLeft">
-          <div class="kicker">
-            Boutique documentation service for agencies & consultants
-          </div>
-
-          <h1 class="heroTitle">
-            Client-ready website compliance & risk reports — generated in minutes.
-          </h1>
-
-          <p class="heroSub">
-            Produce a fixed, timestamped PDF you can attach to proposals, audits, and handovers.
-            Includes a permanent share link and a public verification page for integrity checking.
-          </p>
-
-          <div class="heroProof">
-            <div class="proofItem">
-              <div class="proofTop">One-time payment</div>
-              <div class="proofBottom">No subscription</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofTop">Timestamped PDF</div>
-              <div class="proofBottom">Filed & shareable</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofTop">Verification page</div>
-              <div class="proofBottom">Integrity check</div>
-            </div>
-          </div>
-
-          <div class="heroFine">
-            Snapshot of observable website signals at scan-time. Not legal advice or certification.
-          </div>
+    <!-- SCAN PANEL -->
+    <aside class="panel">
+      <div class="panelHead">
+        <div>
+          <div class="panelTitle">Free structured preview</div>
+          <div class="panelSub">No account required</div>
         </div>
 
-        <!-- SCAN PANEL -->
-        <aside class="panel">
-          <div class="panelHead">
-            <div>
-              <div class="panelTitle">Free structured preview</div>
-              <div class="panelSub">No account required</div>
-            </div>
-
-            <div class="panelPrice">
-              <div class="panelPriceTop">Full report</div>
-              <div class="panelPriceVal">£99</div>
-            </div>
-          </div>
-
-          <!-- REQUIRED BY app.js -->
-          <form id="check-form" class="panelForm">
-            <label class="srOnly" for="url-input">Website URL</label>
-            <input id="url-input" type="url" placeholder="https://example.com" required autocomplete="url" />
-            <button id="scanBtn" type="submit" class="btnPrimary">Generate preview</button>
-          </form>
-
-          <!-- REQUIRED BY app.js -->
-          <div id="preview" class="preview">
-            <div class="previewHead">
-              <div class="previewTitle">Preview findings</div>
-              <div class="previewHint">Full report includes structured breakdown</div>
-            </div>
-
-            <!-- REQUIRED BY app.js -->
-            <ul id="findings" class="findings"></ul>
-
-            <div class="ctaStack">
-              <!-- REQUIRED BY app.js -->
-              <button id="pay-button" type="button" class="btnPrimary btnWide">
-                Issue full report (£99)
-              </button>
-
-              <!-- REQUIRED BY app.js -->
-              <button id="threepack-button" type="button" class="btnGhost btnWide">
-                3 reports (£199)
-              </button>
-
-              <div class="stripeNote">
-                Secure checkout via Stripe · One-time payment
-              </div>
-            </div>
-          </div>
-
-          <div class="panelFoot">
-            By scanning you confirm you have permission to assess this website.
-          </div>
-        </aside>
-
-      </div>
-    </header>
-
-    <!-- AUTHORITY STRIP -->
-    <section class="strip" aria-label="Service highlights">
-      <div class="container stripInner">
-        <div class="stripItem">
-          <div class="stripK">Deliverable</div>
-          <div class="stripV">Client-ready PDF report</div>
-        </div>
-        <div class="stripItem">
-          <div class="stripK">Use-case</div>
-          <div class="stripV">Audits · proposals · handovers</div>
-        </div>
-        <div class="stripItem">
-          <div class="stripK">Integrity</div>
-          <div class="stripV">Public verification page</div>
-        </div>
-        <div class="stripItem">
-          <div class="stripK">Commercial</div>
-          <div class="stripV">Built for agencies & consultants</div>
+        <div class="panelPrice">
+          <div class="panelPriceTop">Full report</div>
+          <div class="panelPriceVal">£99</div>
         </div>
       </div>
-    </section>
 
-    <!-- FOR AGENCIES -->
-    <section class="section" id="agencies">
-      <div class="container">
+      <form id="check-form" class="panelForm">
+        <input id="url-input" type="url" placeholder="https://example.com" required />
+        <button id="scanBtn" type="submit" class="btnPrimary">
+          Generate preview
+        </button>
+      </form>
 
-        <div class="sectionHead">
-          <h2>Designed for billable client work</h2>
-          <p>
-            Agencies don’t need another “tool”. They need an output that looks professional in front of a client.
-            Use this report as evidence for remediation work, compliance conversations, and project scoping.
-          </p>
+      <div id="preview" class="preview">
+        <div class="previewHead">
+          <div class="previewTitle">Preview findings</div>
+          <div class="previewHint">Full report includes structured breakdown</div>
         </div>
 
-        <div class="cards3">
-          <article class="card">
-            <h3>Pre-project audit</h3>
-            <p>Document the site’s current risk posture before any work begins.</p>
-            <div class="cardMeta">Useful for: scoping, proposals</div>
-          </article>
+        <ul id="findings" class="findings"></ul>
 
-          <article class="card">
-            <h3>Compliance review</h3>
-            <p>Capture consent, policy, tracking and data-capture signals as evidence.</p>
-            <div class="cardMeta">Useful for: GDPR conversations</div>
-          </article>
+        <div class="ctaStack">
+          <button id="pay-button" type="button" class="btnPrimary btnWide">
+            Issue full report (£99)
+          </button>
 
-          <article class="card">
-            <h3>Due diligence snapshot</h3>
-            <p>Record a point-in-time view before a handover, sale, or partnership.</p>
-            <div class="cardMeta">Useful for: documentation trails</div>
-          </article>
-        </div>
+          <button id="threepack-button" type="button" class="btnGhost btnWide">
+            3 reports (£199)
+          </button>
 
-        <div class="roiCallout">
-          <div class="roiTitle">Agency economics</div>
-          <div class="roiText">
-            Many agencies bill <strong>£500–£2,000</strong> for structured audits.
-            Generate a professional report for <strong>£99</strong> (or <strong>£199</strong> for three).
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- THE REPORT -->
-    <section class="section sectionAlt" id="report">
-      <div class="container">
-
-        <div class="sectionHead">
-          <h2>The report: structured, fileable, verifiable</h2>
-          <p>
-            A clean audit-style PDF designed to be shared with stakeholders.
-            Includes coverage notes and limitations so it reads professionally.
-          </p>
-        </div>
-
-        <div class="reportGrid">
-          <div class="reportCard">
-            <div class="rcTop">Executive summary</div>
-            <div class="rcBody">High-level risk level with concise rationale and coverage notes.</div>
-          </div>
-          <div class="reportCard">
-            <div class="rcTop">Findings by category</div>
-            <div class="rcBody">Cookies/tracking, consent indicators, policies, forms/data capture, accessibility notes.</div>
-          </div>
-          <div class="reportCard">
-            <div class="rcTop">Methodology & limitations</div>
-            <div class="rcBody">What was checked, scope boundaries, and why results are evidence-based.</div>
-          </div>
-          <div class="reportCard">
-            <div class="rcTop">Share link + verification</div>
-            <div class="rcBody">Permanent link to view later, plus public integrity verification for tamper checks.</div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- HOW IT WORKS -->
-    <section class="section" id="how">
-      <div class="container">
-
-        <div class="sectionHead">
-          <h2>How it works</h2>
-          <p>Fast, predictable, and designed for client workflows.</p>
-        </div>
-
-        <ol class="steps">
-          <li class="step">
-            <div class="stepNum">1</div>
-            <div class="stepBody">
-              <div class="stepTitle">Run a free preview</div>
-              <div class="stepText">Get structured findings quickly, without creating an account.</div>
-            </div>
-          </li>
-          <li class="step">
-            <div class="stepNum">2</div>
-            <div class="stepBody">
-              <div class="stepTitle">Issue the full report</div>
-              <div class="stepText">One-time payment unlocks a timestamped PDF + share link + verification page.</div>
-            </div>
-          </li>
-          <li class="step">
-            <div class="stepNum">3</div>
-            <div class="stepBody">
-              <div class="stepTitle">Send to stakeholders</div>
-              <div class="stepText">Share the permanent link or attach the PDF to proposals, audits, and handovers.</div>
-            </div>
-          </li>
-        </ol>
-
-        <div class="finalCta">
-          <div>
-            <div class="finalTitle">Ready to generate a client-ready report?</div>
-            <div class="finalSub">Run a free preview now. Upgrade only if you want the full deliverable.</div>
-          </div>
-          <a class="finalBtn" href="#scan">Run a scan</a>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="section sectionAlt" id="faq">
-      <div class="container narrow">
-
-        <div class="sectionHead">
-          <h2>FAQ</h2>
-          <p>Short, direct answers that reduce purchase hesitation.</p>
-        </div>
-
-        <div class="faq">
-          <details class="qa">
-            <summary>Is this legal advice or a compliance certificate?</summary>
-            <div class="qaBody">
-              No. It’s a point-in-time documentation snapshot of observable website signals. It does not guarantee compliance.
-            </div>
-          </details>
-
-          <details class="qa">
-            <summary>Do you monitor the website over time?</summary>
-            <div class="qaBody">
-              No. This is a one-time snapshot. No subscription. No monitoring.
-            </div>
-          </details>
-
-          <details class="qa">
-            <summary>Can I use this for client work?</summary>
-            <div class="qaBody">
-              Yes — the report is designed to be client-ready and shareable, with professional coverage notes and limitations.
-            </div>
-          </details>
-        </div>
-
-      </div>
-    </section>
-
-    <footer class="footer">
-      <div class="container footerInner">
-        <div class="footerLeft">
-          <div class="footerBrand">Website Risk Check</div>
-          <div class="footerTag">Client-ready website compliance & risk documentation.</div>
-        </div>
-        <div class="footerRight">
-          <div class="footerFine">
-            Point-in-time snapshot only. Not legal advice, certification, compliance guarantees, or monitoring.
+          <div class="stripeNote">
+            Secure checkout via Stripe · One-time payment · No subscription
           </div>
         </div>
       </div>
-    </footer>
 
-  </main>
+      <div class="panelFoot">
+        You confirm you have permission to assess this website.
+      </div>
+    </aside>
 
-  <script src="app.js?v=3" defer></script>
+  </div>
+</header>
+
+<!-- POSITIONING -->
+<section class="strip">
+  <div class="container stripInner">
+    <div class="stripItem">
+      <div class="stripK">Deliverable</div>
+      <div class="stripV">Client-ready audit PDF</div>
+    </div>
+    <div class="stripItem">
+      <div class="stripK">Primary use</div>
+      <div class="stripV">Evidence for remediation & compliance work</div>
+    </div>
+    <div class="stripItem">
+      <div class="stripK">Integrity</div>
+      <div class="stripV">Public verification endpoint</div>
+    </div>
+    <div class="stripItem">
+      <div class="stripK">Commercial</div>
+      <div class="stripV">Built for billable client engagements</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOR AGENCIES -->
+<section class="section" id="agencies">
+  <div class="container">
+
+    <div class="sectionHead">
+      <h2>Designed for billable client work</h2>
+      <p>
+        This is not a dashboard tool. It is a documentation artifact.
+        Use it to formalise risk discussions, justify remediation scope,
+        and attach structured evidence to proposals or audits.
+      </p>
+    </div>
+
+    <div class="cards3">
+      <article class="card">
+        <h3>Pre-project audit</h3>
+        <p>Document baseline risk posture before work begins.</p>
+      </article>
+
+      <article class="card">
+        <h3>Compliance conversation starter</h3>
+        <p>Evidence-based signal summary for GDPR / consent discussions.</p>
+      </article>
+
+      <article class="card">
+        <h3>Due diligence snapshot</h3>
+        <p>Time-stamped record before sale, migration, or handover.</p>
+      </article>
+    </div>
+
+    <div class="roiCallout">
+      Agencies commonly bill <strong>£500–£2,000+</strong> for structured audits.
+      Generate a professional baseline document for <strong>£99</strong>.
+    </div>
+
+  </div>
+</section>
+
+<!-- REPORT STRUCTURE -->
+<section class="section sectionAlt" id="report">
+  <div class="container">
+    <div class="sectionHead">
+      <h2>What the report contains</h2>
+      <p>Structured, defensible, and fileable.</p>
+    </div>
+
+    <div class="reportGrid">
+      <div class="reportCard">
+        <div class="rcTop">Executive summary</div>
+        <div class="rcBody">
+          Risk level classification with concise reasoning and coverage notes.
+        </div>
+      </div>
+      <div class="reportCard">
+        <div class="rcTop">Signal categories</div>
+        <div class="rcBody">
+          Policies, consent indicators, tracking scripts, forms/data capture, accessibility notes.
+        </div>
+      </div>
+      <div class="reportCard">
+        <div class="rcTop">Coverage & limitations</div>
+        <div class="rcBody">
+          Explicit scope boundaries so the document reads professionally.
+        </div>
+      </div>
+      <div class="reportCard">
+        <div class="rcTop">Verification section</div>
+        <div class="rcBody">
+          Integrity hash + public verification URL for tamper detection.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERIFICATION AUTHORITY -->
+<section class="section" id="verification">
+  <div class="container narrow">
+    <div class="sectionHead">
+      <h2>Cryptographic verification</h2>
+      <p>
+        Every report is sealed at generation time.  
+        A unique SHA-256 integrity hash is embedded in the PDF and stored server-side.
+      </p>
+    </div>
+
+    <div class="card">
+      Anyone can verify the report’s integrity via:
+      <br><br>
+      <strong>/verify/&lt;hash&gt;</strong>
+      <br><br>
+      If the file is altered, verification fails.
+    </div>
+  </div>
+</section>
+
+<!-- METHODOLOGY -->
+<section class="section sectionAlt" id="methodology">
+  <div class="container narrow">
+    <div class="sectionHead">
+      <h2>Methodology</h2>
+    </div>
+
+    <div class="card">
+      <ul>
+        <li>Scope-locked crawl (homepage + standard policy/contact paths)</li>
+        <li>Public, unauthenticated HTML only</li>
+        <li>No behavioural simulation</li>
+        <li>No guarantees of compliance</li>
+        <li>Point-in-time observable signal aggregation</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container narrow">
+    <div class="sectionHead">
+      <h2>FAQ</h2>
+    </div>
+
+    <details class="qa">
+      <summary>Is this legal advice?</summary>
+      <div class="qaBody">
+        No. This is documentation of observable signals only.
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Is this a compliance certificate?</summary>
+      <div class="qaBody">
+        No. It does not certify compliance.
+      </div>
+    </details>
+
+    <details class="qa">
+      <summary>Do you monitor websites?</summary>
+      <div class="qaBody">
+        No. This is a one-time snapshot.
+      </div>
+    </details>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footerInner">
+    <div>
+      <div class="footerBrand">Website Risk Check</div>
+      <div class="footerTag">
+        Independent website compliance & risk documentation.
+      </div>
+    </div>
+  </div>
+</footer>
+
+</main>
+
+<script src="app.js?v=3" defer></script>
 </body>
 </html>

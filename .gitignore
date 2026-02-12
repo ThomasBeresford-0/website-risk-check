@@ -9,3 +9,4 @@ node_modules/
 
 # PDFs
 public/*.pdf
+!public/sample-report.pdf

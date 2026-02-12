@@ -586,6 +586,14 @@ function renderVerifyPage(data) {
 }
 
 /* =========================
+   SAMPLE REPORT PAGE
+========================= */
+
+app.get("/sample-report", (req, res) => {
+  return res.sendFile(path.join(__dirname, "../public", "sample-report.html"));
+});
+
+/* =========================
    START
 ========================= */
 

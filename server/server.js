@@ -377,6 +377,26 @@ app.post("/preview-scan", async (req, res) => {
   }
 });
 
+app.get("/__generate-sample", async (_req, res) => {
+  try {
+    const sampleUrl = "https://example.com";
+    const scanData = await scanWebsite(sampleUrl);
+
+    const outputPath = path.join(PUBLIC_DIR, "report.pdf");
+
+    await generateReport(
+      { ...scanData, shareToken: "SAMPLE001" },
+      outputPath
+    );
+
+    res.send("Sample report generated.");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Failed to generate sample.");
+  }
+});
+
+
 /* =========================
    STRIPE CHECKOUT (£99)
 ========================= */

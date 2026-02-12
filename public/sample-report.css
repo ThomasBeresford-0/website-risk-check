@@ -1,0 +1,558 @@
+/* public/sample-report.css */
+/* Boutique showcase page: the PDF is the product.
+   v2 — tighter hierarchy, heavier “artifact” weight, cleaner rhythm.
+*/
+
+/* =========================
+   Layout + type rhythm
+========================= */
+
+.srWrap{
+  padding: 34px 0 76px;
+}
+
+.srHero{
+  display:grid;
+  grid-template-columns: 1.08fr .92fr;
+  gap: 26px;
+  align-items:start;
+  margin-top: 18px;
+}
+
+@media (max-width: 980px){
+  .srHero{
+    grid-template-columns:1fr;
+    gap: 18px;
+  }
+}
+
+/* Left column */
+
+.srEyebrow{
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.srTitle{
+  margin: 0 0 12px;
+  font-size: 44px;
+  line-height: 1.03;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+
+@media (max-width: 520px){
+  .srTitle{ font-size: 34px; }
+}
+
+.srLead{
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.62;
+  max-width: 62ch;
+}
+
+/* Optional help block (added in updated HTML) */
+.srMiniHelp{
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.62);
+}
+.srMiniHelpT{
+  font-weight: 850;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.srMiniHelpList{
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* =========================
+   Buttons (more “product”)
+========================= */
+
+.srCtas{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin: 12px 0 14px;
+}
+
+.btnPrimary, .btnSoft, .btnGhost{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 750;
+  text-decoration:none;
+  border: 1px solid var(--border);
+  transition: transform .06s ease, box-shadow .12s ease, background .12s ease;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btnPrimary{
+  background: var(--ink);
+  color: #fff;
+  border-color: rgba(15,23,42,.12);
+  box-shadow: 0 10px 22px rgba(15,23,42,.10);
+}
+
+.btnSoft{
+  background: rgba(15,23,42,.045);
+  color: var(--text);
+}
+
+.btnGhost{
+  background: transparent;
+  color: var(--text);
+}
+
+.btnPrimary:hover, .btnSoft:hover, .btnGhost:hover{
+  transform: translateY(-1px);
+}
+
+.btnPrimary:active, .btnSoft:active, .btnGhost:active{
+  transform: translateY(0);
+}
+
+/* Slight focus ring (uses your tokens if present) */
+.btnPrimary:focus-visible, .btnSoft:focus-visible, .btnGhost:focus-visible,
+.iconBtn:focus-visible, .miniBtn:focus-visible{
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* =========================
+   Fact chips
+========================= */
+
+.srFacts{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.srFact{
+  background: rgba(255,255,255,.75);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 11px 12px;
+}
+
+.srFactK{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.srFactV{
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 850;
+  margin-top: 4px;
+}
+
+.srNote{
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.62);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* =========================
+   Flipbook shell (make it feel like a report on a desk)
+========================= */
+
+.flipShell{
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 26px 80px rgba(15,23,42,.14);
+  overflow:hidden;
+}
+
+/* Subtle “desk” edge */
+.flipShell::before{
+  content:"";
+  display:block;
+  height: 1px;
+  background: rgba(15,23,42,.06);
+}
+
+.flipTopBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+}
+
+.flipLabel{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  color: var(--muted);
+  font-weight: 750;
+  font-size: 13px;
+}
+
+.flipLabel .dot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background: rgba(15,23,42,.32);
+  display:inline-block;
+}
+
+.flipControls{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.iconBtn{
+  width: 38px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.045);
+  font-weight: 900;
+  cursor:pointer;
+  transition: transform .06s ease, background .12s ease;
+}
+
+.iconBtn:hover{
+  transform: translateY(-1px);
+}
+
+.iconBtn:active{
+  transform: translateY(0);
+}
+
+.iconBtn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pageReadout{
+  font-weight: 850;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.pageReadout .muted{
+  color: var(--muted);
+  font-weight: 750;
+}
+
+/* Stage: darker contrast so white “paper” pops */
+.flipStage{
+  position:relative;
+  height: 540px;
+  background:
+    radial-gradient(120% 90% at 50% 10%, rgba(15,23,42,.05), transparent 60%),
+    linear-gradient(180deg, rgba(15,23,42,.03), rgba(15,23,42,.045));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  perspective: 1200px;
+}
+
+@media (max-width: 980px){
+  .flipStage{ height: 540px; }
+}
+
+@media (max-width: 520px){
+  .flipStage{ height: 470px; }
+}
+
+/* The “paper” */
+.flipPage{
+  position:absolute;
+  width: 86%;
+  height: 88%;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.12);
+  box-shadow:
+    0 26px 70px rgba(15,23,42,.18),
+    0 1px 0 rgba(255,255,255,.7) inset;
+  overflow:hidden;
+  transform-style: preserve-3d;
+}
+
+/* A tiny “spine” hint */
+.flipPage::after{
+  content:"";
+  position:absolute;
+  top:0; bottom:0;
+  left:0;
+  width: 10px;
+  background: linear-gradient(90deg, rgba(15,23,42,.08), transparent);
+  opacity:.22;
+  pointer-events:none;
+}
+
+.flipPage canvas{
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.flipShadow{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(120% 100% at 95% 50%, rgba(15,23,42,.14), transparent 55%),
+    radial-gradient(120% 100% at 0% 50%, rgba(15,23,42,.08), transparent 50%);
+  opacity:.28;
+}
+
+.flipPage.isBack{
+  transform: rotateY(180deg);
+  opacity: 0;
+}
+
+/* Turning animation */
+.flipStage.isTurning .flipPage.isFront{
+  animation: turnFront .6s ease-in-out forwards;
+  transform-origin: 100% 50%;
+}
+.flipStage.isTurning .flipPage.isBack{
+  animation: turnBack .6s ease-in-out forwards;
+  transform-origin: 0% 50%;
+  opacity: 1;
+}
+
+@keyframes turnFront{
+  0%{ transform: rotateY(0deg); filter: none; }
+  100%{ transform: rotateY(-180deg); filter: brightness(.98); }
+}
+@keyframes turnBack{
+  0%{ transform: rotateY(180deg); filter: brightness(.98); }
+  100%{ transform: rotateY(0deg); filter: none; }
+}
+
+/* Loading / Error overlays */
+.flipLoading, .flipError{
+  position:absolute;
+  inset:0;
+  display:flex;
+  gap: 14px;
+  align-items:center;
+  justify-content:center;
+  padding: 18px;
+  color: var(--muted);
+  text-align:left;
+  backdrop-filter: blur(2px);
+  background: rgba(255,255,255,.50);
+}
+
+.spinner{
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(15,23,42,.18);
+  border-top-color: rgba(15,23,42,.60);
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+.flipLoadingTitle{
+  font-weight: 900;
+  color: var(--text);
+}
+.flipLoadingSub{
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.flipError{
+  flex-direction:column;
+  text-align:center;
+}
+.flipErrorTitle{
+  font-weight: 950;
+  color: var(--text);
+}
+.flipErrorSub{
+  font-size: 13px;
+  max-width: 46ch;
+}
+.flipErrorActions{
+  margin-top: 10px;
+}
+
+/* Footer */
+.flipFooter{
+  display:flex;
+  justify-content:space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,.92);
+}
+
+.flipHint{
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.flipZoom{
+  display:flex;
+  gap: 8px;
+}
+
+.miniBtn{
+  width: 36px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.045);
+  font-weight: 950;
+  cursor:pointer;
+  transition: transform .06s ease, background .12s ease;
+}
+
+.miniBtn:hover{
+  transform: translateY(-1px);
+}
+.miniBtn:active{
+  transform: translateY(0);
+}
+
+/* =========================
+   Proof panel + below CTAs
+========================= */
+
+.srProof{
+  margin-top: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.70);
+  padding: 10px 12px;
+}
+
+.srProofRow{
+  display:flex;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 7px 0;
+}
+
+.srProofK{
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.srProofV code{
+  font-size: 12px;
+}
+
+.srBelowCtas{
+  margin-top: 10px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================
+   Sections
+========================= */
+
+.srSection{
+  margin-top: 30px;
+}
+
+.srH2{
+  font-size: 20px;
+  margin: 0 0 12px;
+  letter-spacing: -.01em;
+}
+
+/* Cards grid */
+.srGrid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 980px){
+  .srGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px){
+  .srGrid{ grid-template-columns: 1fr; }
+}
+
+.srCard{
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255,255,255,.78);
+  padding: 14px;
+  box-shadow: 0 12px 26px rgba(15,23,42,.06);
+}
+
+.srCardT{
+  font-weight: 900;
+  letter-spacing: -.01em;
+}
+
+.srCardP{
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* Callout */
+.srCallout{
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(255,255,255,.84);
+  padding: 16px;
+  box-shadow: 0 18px 44px rgba(15,23,42,.08);
+}
+
+.srCalloutT{
+  font-weight: 950;
+  font-size: 16px;
+  letter-spacing: -.01em;
+}
+
+.srCalloutP{
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.srCalloutA{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  flex-wrap:wrap;
+}

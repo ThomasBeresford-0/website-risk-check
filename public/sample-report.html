@@ -1,507 +1,223 @@
-<!DOCTYPE html>
+<!-- public/sample-report.html -->
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sample Verified Report — Website Risk Check</title>
-  <meta name="description" content="View a real example of the sealed, verifiable PDF report delivered after checkout." />
-  <meta name="theme-color" content="#0f172a" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sample report — what clients receive (PDF) | Website Risk Check</title>
+  <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
+  <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
 
-  <!-- Favicons -->
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" href="/favicon.svg?v=1" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
+  <!-- Social -->
+  <meta property="og:title" content="Sample verified report — Website Risk Check" />
+  <meta property="og:description" content="Preview the paid deliverable: a sealed, timestamped PDF with public verification." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://websiteriskcheck.com/sample-report" />
 
-  <!-- IMPORTANT: keep version consistent across all pages -->
-  <link rel="stylesheet" href="/style.css?v=13" />
+  <!-- Your global site CSS (v12 system) -->
+  <link rel="stylesheet" href="/style.css?v=12" />
+
+  <!-- Page-specific (bump versions to kill cache) -->
+  <link rel="stylesheet" href="/sample-report.css?v=2" />
 </head>
-
-<body class="isSampleReport">
-  <div class="bg" aria-hidden="true"></div>
-
-  <!-- =========================================
-       SAMPLE CONSTANTS (replace once you seal a real report)
-       - Put the PDF at: /public/assets/sample-report.pdf
-       - Put the real hash here: 64 hex chars
-  ========================================== -->
-  <script>
-    window.__WRC_SAMPLE__ = {
-      target: "example-retail-site.co.uk",
-      risk: "Medium",
-      reportId: "SAMPLE-001",
-      capturedUtc: "12 Feb 2026 — 14:22 UTC",
-      // ✅ Replace with the REAL hash from a sealed report
-      hash: "9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db",
-      // ✅ Put the PDF at /public/assets/sample-report.pdf
-      pdf: "/report.pdf"
-    };
-  </script>
-
-  <nav class="nav">
-    <div class="container navInner">
-      <a class="brand" href="/" aria-label="Website Risk Check">
-        <img class="brandLogo" src="/favicon.svg?v=1" alt="" />
-        <span class="brandText">Website Risk Check</span>
+<body>
+  <!-- Keep your existing header/nav pattern -->
+  <header class="topbar">
+    <div class="container topbarInner">
+      <a class="brand" href="/" aria-label="Website Risk Check home">
+        <span class="brandMark" aria-hidden="true">🛡️</span>
+        <span class="brandName">Website Risk Check</span>
       </a>
 
-      <div class="navCtas">
-        <a class="navBtn isActive" href="/sample-report" aria-current="page">Sample report</a>
-        <a class="navBtn" href="/#scan">Run a scan</a>
-      </div>
+      <nav class="topbarNav" aria-label="Primary navigation">
+        <a class="pillBtn isActive" href="/sample-report" aria-current="page">Sample report</a>
+        <a class="pillBtn" href="/">Run a scan</a>
+      </nav>
     </div>
-  </nav>
+  </header>
 
-  <!-- Sticky viewer bar -->
-  <div class="srSticky" role="region" aria-label="Sample report actions">
-    <div class="container srStickyInner">
-      <div class="srStickyLeft">
-        <div class="srStickyKicker">Sample verified report</div>
-        <div class="srStickyMeta" id="srStickyMeta">
-          <span class="srPillTiny" id="srTargetPill">Target: —</span>
-          <span class="srPillTiny" id="srRiskPill">Risk: —</span>
-          <span class="srPillTiny mono" id="srIdPill">Report ID: —</span>
+  <main class="container srWrap">
+    <!-- HERO / SHOWCASE -->
+    <section class="srHero" aria-label="Sample report showcase">
+      <div class="srHeroLeft">
+        <div class="srEyebrow">Sample verified report</div>
+
+        <h1 class="srTitle">This is the PDF your client gets after payment.</h1>
+
+        <p class="srLead">
+          A point-in-time snapshot that’s sealed, timestamped, and verifiable. This page is a showcase — the report itself is
+          the PDF, not a wall of HTML text.
+        </p>
+
+        <div class="srCtas" role="group" aria-label="Primary actions">
+          <a class="btnPrimary" id="openPdfBtn" href="#" role="button">Open sample PDF</a>
+          <a class="btnSoft" id="openVerifyBtn" href="#" role="button">Open verification</a>
+          <a class="btnGhost" href="/" role="button">Run a scan</a>
+        </div>
+
+        <div class="srFacts" aria-label="Key facts">
+          <div class="srFact">
+            <div class="srFactK">Deliverable</div>
+            <div class="srFactV">Client-ready PDF</div>
+          </div>
+          <div class="srFact">
+            <div class="srFactK">Timestamp</div>
+            <div class="srFactV">Captured in UTC</div>
+          </div>
+          <div class="srFact">
+            <div class="srFactK">Scope</div>
+            <div class="srFactV">Up to 6 pages</div>
+          </div>
+          <div class="srFact">
+            <div class="srFactK">Verification</div>
+            <div class="srFactV">Public integrity check</div>
+          </div>
+        </div>
+
+        <div class="srNote" role="note">
+          Informational snapshot only — not legal advice, certification, or monitoring. Findings are limited to scanned scope
+          and observable signals during capture.
+        </div>
+
+        <!-- NEW: quick “how to use” so it feels intentional -->
+        <div class="srMiniHelp">
+          <div class="srMiniHelpT">How to preview</div>
+          <ul class="srMiniHelpList">
+            <li>Click the page to turn, or use ← → keys.</li>
+            <li>Open the PDF to see the verification code inside the report.</li>
+            <li>Open verification to confirm the report fingerprint matches.</li>
+          </ul>
         </div>
       </div>
 
-      <div class="srStickyActions">
-        <a class="btnPrimary" id="srPdfBtn" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
-        <a class="btnGhost" id="srVerifyBtn" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification</a>
-        <a class="btnGhost" href="#verify">How verification works</a>
+      <!-- FLIPBOOK VIEWER -->
+      <div class="srHeroRight">
+        <div class="flipShell" aria-label="Sample report flipbook">
+          <div class="flipTopBar">
+            <div class="flipLabel">
+              <span class="dot" aria-hidden="true"></span>
+              <span>Sample PDF (interactive preview)</span>
+            </div>
+
+            <div class="flipControls" role="group" aria-label="Flipbook controls">
+              <button class="iconBtn" id="prevBtn" type="button" title="Previous page" aria-label="Previous page">←</button>
+              <div class="pageReadout" aria-live="polite">
+                <span id="pageNum">–</span>
+                <span class="muted" aria-hidden="true">/</span>
+                <span id="pageCount">–</span>
+              </div>
+              <button class="iconBtn" id="nextBtn" type="button" title="Next page" aria-label="Next page">→</button>
+            </div>
+          </div>
+
+          <div class="flipStage" id="flipStage" aria-label="PDF page preview">
+            <!-- Front “page” -->
+            <div class="flipPage isFront" id="frontPage">
+              <canvas id="frontCanvas"></canvas>
+              <div class="flipShadow" aria-hidden="true"></div>
+            </div>
+
+            <!-- Back “page” used for flip animation -->
+            <div class="flipPage isBack" id="backPage" aria-hidden="true">
+              <canvas id="backCanvas"></canvas>
+              <div class="flipShadow" aria-hidden="true"></div>
+            </div>
+
+            <!-- Loading state -->
+            <div class="flipLoading" id="loadingState">
+              <div class="spinner" aria-hidden="true"></div>
+              <div>
+                <div class="flipLoadingTitle">Loading sample PDF…</div>
+                <div class="flipLoadingSub">Rendering pages for a true preview.</div>
+              </div>
+            </div>
+
+            <!-- Error state -->
+            <div class="flipError" id="errorState" hidden>
+              <div class="flipErrorTitle">Couldn’t load the sample PDF.</div>
+              <div class="flipErrorSub">
+                The interactive preview failed (blocked script/CSP, CDN, or file path). You can still open the PDF directly.
+              </div>
+              <div class="flipErrorActions">
+                <a class="btnPrimary" id="directPdfLink" href="#" target="_blank" rel="noopener">Open sample PDF</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="flipFooter">
+            <div class="flipHint">Tip: use ← → keys. Click the page to turn.</div>
+            <div class="flipZoom" role="group" aria-label="Zoom controls">
+              <button class="miniBtn" id="zoomOutBtn" type="button" aria-label="Zoom out">–</button>
+              <button class="miniBtn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Proof links (real, grounded) -->
+        <div class="srProof" aria-label="Verification details">
+          <div class="srProofRow">
+            <div class="srProofK">Verification link</div>
+            <div class="srProofV"><code id="verifyPath">/verify/…</code></div>
+          </div>
+          <div class="srProofRow">
+            <div class="srProofK">Report ID</div>
+            <div class="srProofV"><code id="reportId">SAMPLE-001</code></div>
+          </div>
+        </div>
+
+        <!-- NEW: reassurance + single CTA row (keeps it premium, not cluttered) -->
+        <div class="srBelowCtas" role="group" aria-label="Secondary actions">
+          <a class="btnSoft" id="openVerifyBtn2" href="#" role="button">Open verification page</a>
+          <a class="btnGhost" id="openPdfBtn2" href="#" role="button">Open PDF (shows code)</a>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <main class="page">
-    <section class="container">
-      <div class="srShell">
-
-        <!-- Intro -->
-        <header class="srIntro">
-          <div class="srIntroLeft">
-            <div class="srKicker">What your client receives</div>
-            <h1 class="srTitlePro">A sealed, timestamped report — delivered as a PDF.</h1>
-            <p class="srSubPro">
-              This is a real example of the structure and presentation: the paid product is the PDF download plus a public verification link.
-            </p>
-
-            <div class="srProofRow">
-              <div class="srProofChip">
-                <div class="srProofTop">PDF deliverable</div>
-                <div class="srProofBottom">Client-ready format</div>
-              </div>
-              <div class="srProofChip">
-                <div class="srProofTop">Timestamped</div>
-                <div class="srProofBottom">UTC capture record</div>
-              </div>
-              <div class="srProofChip">
-                <div class="srProofTop">Verifiable</div>
-                <div class="srProofBottom">Public integrity check</div>
-              </div>
-            </div>
-          </div>
-
-          <aside class="srIntroRight">
-            <div class="srAsideCard">
-              <div class="srMiniTitle">Quick actions</div>
-              <div class="srAsideBtns">
-                <a class="btnPrimary btnWide" id="srPdfBtn2" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
-                <a class="btnGhost btnWide" id="srVerifyBtn2" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification page</a>
-                <a class="btnGhost btnWide" href="/#scan">Run a scan</a>
-              </div>
-              <div class="srAsideFine">
-                Not legal advice. Not certification. Not monitoring.
-              </div>
-            </div>
-          </aside>
-        </header>
-
-        <!-- Two-column: TOC + report preview -->
-        <div class="srLayout">
-          <aside class="srToc" aria-label="Report contents">
-            <div class="srTocCard">
-              <div class="srMiniTitle">Contents</div>
-              <nav class="srTocNav">
-                <a href="#cover">Cover</a>
-                <a href="#exec">Executive summary</a>
-                <a href="#register">Risk register</a>
-                <a href="#coverage">Coverage</a>
-                <a href="#findings">Findings</a>
-                <a href="#verify" id="verifyLink">Verification</a>
-              </nav>
-
-              <div class="srDivider"></div>
-
-              <div class="srMiniTitle">Key details</div>
-              <div class="srKeyPairs">
-                <div class="srPair">
-                  <div class="srPairK">Target</div>
-                  <div class="srPairV" id="srTargetKV">—</div>
-                </div>
-                <div class="srPair">
-                  <div class="srPairK">Captured</div>
-                  <div class="srPairV" id="srCapturedKV">—</div>
-                </div>
-                <div class="srPair">
-                  <div class="srPairK">Scope</div>
-                  <div class="srPairV">Up to 6 pages</div>
-                </div>
-                <div class="srPair">
-                  <div class="srPairK">Overall risk</div>
-                  <div class="srPairV"><span class="srBadge srBadgeMedium" id="srRiskBadge">Medium</span></div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <div class="srDocPro" aria-label="Sample report preview">
-            <div class="srRibbon">SAMPLE</div>
-
-            <!-- COVER -->
-            <section class="srPagePro" id="cover">
-              <div class="srCoverTitlePro">Website Risk &amp; Compliance Snapshot</div>
-              <div class="srCoverSubPro">
-                Point-in-time documentation of observable compliance and risk signals (scope-locked).
-              </div>
-
-              <div class="srMetaGridPro">
-                <div class="srMetaItemPro">
-                  <div class="srMetaLabel">Target</div>
-                  <div class="srMetaValue" id="srTargetCover">—</div>
-                </div>
-                <div class="srMetaItemPro">
-                  <div class="srMetaLabel">Captured (UTC)</div>
-                  <div class="srMetaValue" id="srCapturedCover">—</div>
-                </div>
-                <div class="srMetaItemPro">
-                  <div class="srMetaLabel">Overall risk</div>
-                  <div class="srMetaValue"><span class="srBadge srBadgeMedium" id="srRiskCover">Medium</span></div>
-                </div>
-                <div class="srMetaItemPro">
-                  <div class="srMetaLabel">Report ID</div>
-                  <div class="srMetaValue mono" id="srReportIdCover">—</div>
-                </div>
-              </div>
-
-              <div class="srCallout">
-                <div class="srCalloutTitle">What this is</div>
-                <div class="srCalloutBody">
-                  Documentation only — not legal advice, certification, or monitoring.
-                  Findings are limited to scanned scope and observable signals during capture.
-                </div>
-              </div>
-            </section>
-
-            <!-- EXEC -->
-            <section class="srPagePro" id="exec">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Executive summary</div>
-                <div class="srBadge srBadgeMedium" id="srExecRiskBadge">Overall: Medium</div>
-              </div>
-
-              <p class="srBodyText">
-                This sample indicates <strong>medium overall exposure</strong> based on observable signals at capture time.
-                Primary drivers include <strong>cookie/consent uncertainty</strong> and <strong>policy discoverability gaps</strong>.
-              </p>
-
-              <div class="srGridPro">
-                <div class="srTilePro">
-                  <div class="srTileTop">
-                    <div class="srTileTitle">Cookie &amp; consent</div>
-                    <div class="srTag srTagHigh">High</div>
-                  </div>
-                  <div class="srTileBody">Tracking signals detected without clear opt-in gating.</div>
-                </div>
-
-                <div class="srTilePro">
-                  <div class="srTileTop">
-                    <div class="srTileTitle">Privacy &amp; policies</div>
-                    <div class="srTag srTagMedium">Medium</div>
-                  </div>
-                  <div class="srTileBody">Policy paths inconsistent / incomplete in scope.</div>
-                </div>
-
-                <div class="srTilePro">
-                  <div class="srTileTop">
-                    <div class="srTileTitle">Tracking vendors</div>
-                    <div class="srTag srTagMedium">Medium</div>
-                  </div>
-                  <div class="srTileBody">Common analytics/marketing scripts observed.</div>
-                </div>
-
-                <div class="srTilePro">
-                  <div class="srTileTop">
-                    <div class="srTileTitle">Contact &amp; transparency</div>
-                    <div class="srTag srTagLow">Low</div>
-                  </div>
-                  <div class="srTileBody">Some identity signals present; improvements possible.</div>
-                </div>
-              </div>
-            </section>
-
-            <!-- RISK REGISTER -->
-            <section class="srPagePro" id="register">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Risk register (sample)</div>
-                <div class="srPill">Client-friendly</div>
-              </div>
-
-              <div class="srTableWrap" role="region" aria-label="Risk register table">
-                <table class="srTable">
-                  <thead>
-                    <tr>
-                      <th>Category</th>
-                      <th>Risk</th>
-                      <th>Likelihood</th>
-                      <th>Impact</th>
-                      <th class="isScore">Score</th>
-                      <th>When it matters</th>
-                      <th>Trigger</th>
-                      <th>Recommended action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>Cookie &amp; consent</strong></td>
-                      <td>Non-essential scripts appear active without clear opt-in gating.</td>
-                      <td>Possible</td>
-                      <td>High</td>
-                      <td class="isScore scoreHigh">15</td>
-                      <td>At first page load</td>
-                      <td>No consent banner / no deferral signals</td>
-                      <td>Implement a CMP and ensure non-essential scripts load only after opt-in.</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Policies</strong></td>
-                      <td>Privacy/cookie policy discoverability inconsistent across common paths.</td>
-                      <td>Possible</td>
-                      <td>Medium</td>
-                      <td class="isScore scoreMed">9</td>
-                      <td>During audits / complaints</td>
-                      <td>Missing / broken policy links</td>
-                      <td>Publish clear privacy + cookie policies; link in the footer site-wide; include vendor disclosure.</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Data capture</strong></td>
-                      <td>Forms capture personal data; disclosures may be insufficient.</td>
-                      <td>Possible</td>
-                      <td>Medium</td>
-                      <td class="isScore scoreMed">8</td>
-                      <td>When collecting leads / checkout</td>
-                      <td>Email/phone fields detected</td>
-                      <td>Add just-in-time notices near forms; link to privacy policy; clarify purpose and retention.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="srSmallNote">
-                The PDF includes full scope logs, timestamp, and a public verification link.
-              </div>
-            </section>
-
-            <!-- COVERAGE -->
-            <section class="srPagePro" id="coverage">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Coverage</div>
-                <div class="srPill">Scope-locked</div>
-              </div>
-
-              <div class="srTwoCol">
-                <div class="srPanel">
-                  <div class="srMiniTitle">Pages checked (example)</div>
-                  <div class="srCoverageList">
-                    <div class="srPath mono">/</div>
-                    <div class="srPath mono">/privacy</div>
-                    <div class="srPath mono">/privacy-policy</div>
-                    <div class="srPath mono">/cookies</div>
-                    <div class="srPath mono">/terms</div>
-                    <div class="srPath mono">/contact</div>
-                  </div>
-                </div>
-
-                <div class="srPanel">
-                  <div class="srMiniTitle">Limitations</div>
-                  <ul class="srBullets">
-                    <li>Same-origin only (no external crawling)</li>
-                    <li>Public pages only (no login areas)</li>
-                    <li>No behavioural simulation</li>
-                    <li>Some issues may exist outside scanned scope</li>
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            <!-- FINDINGS -->
-            <section class="srPagePro" id="findings">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Findings (extract)</div>
-                <div class="srPill">Example</div>
-              </div>
-
-              <div class="srFinding">
-                <div class="srFindingHead">
-                  <div>
-                    <div class="srFindingTitle">Cookie &amp; consent</div>
-                    <div class="srFindingSub">Tracking signals detected without clear opt-in gating.</div>
-                  </div>
-                  <div class="srBadge srBadgeHigh">High</div>
-                </div>
-
-                <div class="srFindingGrid">
-                  <div class="srFindingBlock">
-                    <div class="srMiniTitle">What we saw</div>
-                    <p class="srBodyText">
-                      Non-essential scripts were observed during capture. No clear consent gating indicators were detected within scanned scope.
-                    </p>
-                  </div>
-
-                  <div class="srFindingBlock">
-                    <div class="srMiniTitle">Recommended action</div>
-                    <ol class="srList">
-                      <li>Add a CMP with opt-in categories.</li>
-                      <li>Defer non-essential scripts until consent.</li>
-                      <li>Update cookie policy with vendors + purposes.</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- VERIFICATION -->
-            <section class="srPagePro" id="verify">
-              <div class="srSectionHead">
-                <div class="srSectionTitle">Verification</div>
-                <div class="srPill">Public</div>
-              </div>
-
-              <div class="srCallout">
-                <div class="srCalloutTitle">Simple explanation</div>
-                <div class="srCalloutBody">
-                  Each paid report has a cryptographic verification code (printed inside the PDF). That code links to a public verification page.
-                  If the PDF is modified after generation, verification fails.
-                </div>
-              </div>
-
-              <div class="srPanel" style="margin-top:14px;">
-                <div class="srMiniTitle">Verification link</div>
-                <div class="srSmallNote" style="margin-top:8px;">
-                  This is the public page that confirms the report exists on record and matches its original fingerprint.
-                </div>
-
-                <div class="monoBox" id="srVerifyUrlBox" style="margin-top:12px;">
-                  /verify/<span id="srHashInline">…</span>
-                </div>
-
-                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
-                  <a class="btnPrimary" id="srVerifyBtn3" href="/verify/0000000000000000000000000000000000000000000000000000000000000000">Open verification page</a>
-                  <a class="btnGhost" id="srPdfBtn3" href="/assets/sample-report.pdf" target="_blank" rel="noopener">Open PDF (shows code)</a>
-                </div>
-
-                <div class="srSmallNote" style="margin-top:10px;">
-                  Verification confirms integrity only. It does not certify compliance and is not legal advice.
-                </div>
-              </div>
-
-              <details class="srAdvanced" style="margin-top:14px;">
-                <summary>Advanced (for auditors): show verification code</summary>
-                <div class="srAdvancedBody">
-                  <div class="srMetaLabel">Verification code (SHA-256)</div>
-                  <div class="srHashSmall mono" id="srHashFull">…</div>
-                  <div class="srSmallNote">
-                    This code is derived from objective scan fields only (URL/hostname, timestamp, coverage, detectable signals). Layout and wording do not affect it.
-                  </div>
-                </div>
-              </details>
-            </section>
-
-            <div class="srDocFooter">
-              <div>Website Risk Check — Sample report preview</div>
-              <div class="mono">Report ID: <span id="srFooterId">—</span></div>
-            </div>
-          </div>
+    <!-- “WHAT THEY GET” (DESIGNED, NOT A DUMP) -->
+    <section class="srSection" aria-label="What clients receive">
+      <h2 class="srH2">What your client receives</h2>
+      <div class="srGrid">
+        <div class="srCard">
+          <div class="srCardT">Executive summary</div>
+          <div class="srCardP">A calm, client-facing overview: risk level, key drivers, and next steps.</div>
         </div>
-
-        <!-- Bottom CTA -->
-        <div class="srBottomCta">
-          <div class="srBottomCard">
-            <div>
-              <div class="srBottomTitle">Generate a sealed report for your client.</div>
-              <div class="srBottomSub">Run a free preview scan, then unlock the PDF + verification link.</div>
-            </div>
-            <a class="btnPrimary" href="/#scan">Run a scan</a>
-          </div>
+        <div class="srCard">
+          <div class="srCardT">Risk register</div>
+          <div class="srCardP">A structured table with category, likelihood, impact, triggers, and recommendations.</div>
         </div>
+        <div class="srCard">
+          <div class="srCardT">Coverage snapshot</div>
+          <div class="srCardP">Exactly which pages were checked (scope-locked), plus limitations and failures.</div>
+        </div>
+        <div class="srCard">
+          <div class="srCardT">Verification</div>
+          <div class="srCardP">A fingerprint + QR that links to a public integrity check page.</div>
+        </div>
+      </div>
+    </section>
 
+    <!-- Verification explanation (tight + productised) -->
+    <section class="srSection" aria-label="Verification explanation">
+      <div class="srCallout">
+        <div class="srCalloutT">Why verification matters</div>
+        <div class="srCalloutP">
+          If the PDF is altered after generation, verification fails. This confirms integrity only — it does not certify
+          compliance or legality.
+        </div>
+        <div class="srCalloutA">
+          <a class="btnSoft" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">
+            View verification
+          </a>
+          <a class="btnGhost" href="/" role="button">Run a scan</a>
+        </div>
       </div>
     </section>
   </main>
 
-  <script>
-    (function () {
-      const s = window.__WRC_SAMPLE__ || {};
-      const target = String(s.target || "—");
-      const risk = String(s.risk || "—");
-      const reportId = String(s.reportId || "—");
-      const capturedUtc = String(s.capturedUtc || "—");
-      const hash = String(s.hash || "").toLowerCase();
-      const pdf = String(s.pdf || "/assets/sample-report.pdf");
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 
-      const isHash = /^[a-f0-9]{64}$/.test(hash);
-
-      // Pills
-      const tPill = document.getElementById("srTargetPill");
-      const rPill = document.getElementById("srRiskPill");
-      const idPill = document.getElementById("srIdPill");
-      if (tPill) tPill.textContent = `Target: ${target}`;
-      if (rPill) rPill.textContent = `Risk: ${risk}`;
-      if (idPill) idPill.textContent = `Report ID: ${reportId}`;
-
-      // Key-value
-      const tKV = document.getElementById("srTargetKV");
-      const cKV = document.getElementById("srCapturedKV");
-      if (tKV) tKV.textContent = target;
-      if (cKV) cKV.textContent = capturedUtc;
-
-      // Cover
-      const tC = document.getElementById("srTargetCover");
-      const cC = document.getElementById("srCapturedCover");
-      const idC = document.getElementById("srReportIdCover");
-      if (tC) tC.textContent = target;
-      if (cC) cC.textContent = capturedUtc;
-      if (idC) idC.textContent = reportId;
-
-      // Exec badge
-      const ex = document.getElementById("srExecRiskBadge");
-      if (ex) ex.textContent = `Overall: ${risk}`;
-
-      // Footer ID
-      const fId = document.getElementById("srFooterId");
-      if (fId) fId.textContent = reportId;
-
-      // PDF buttons
-      ["srPdfBtn", "srPdfBtn2", "srPdfBtn3"].forEach((id) => {
-        const a = document.getElementById(id);
-        if (a) a.href = pdf;
-      });
-
-      // Verify URL wiring
-      const verifyHref = isHash ? `/verify/${hash}` : "/verify/";
-      ["srVerifyBtn", "srVerifyBtn2", "srVerifyBtn3"].forEach((id) => {
-        const a = document.getElementById(id);
-        if (a) a.href = verifyHref;
-      });
-
-      const hashInline = document.getElementById("srHashInline");
-      const hashFull = document.getElementById("srHashFull");
-      if (hashInline) hashInline.textContent = isHash ? hash.slice(0, 16) + "…" : "—";
-      if (hashFull) hashFull.textContent = isHash ? hash : "—";
-
-      const box = document.getElementById("srVerifyUrlBox");
-      if (box && isHash) {
-        box.textContent = verifyHref;
-      }
-    })();
-  </script>
+  <!-- Bump to kill cache -->
+  <script src="/sample-report.js?v=2"></script>
 </body>
 </html>

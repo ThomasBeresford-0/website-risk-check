@@ -1,34 +1,27 @@
 // public/sample-report.js
 // Boutique showcase: flipbook-style PDF preview (PDF.js) + hard-linked verification.
-// Uses your existing files in /public (no extra assets required).
+// Uses LOCAL PDF.js + LOCAL worker to avoid CSP/worker blocking.
 
 (() => {
   /* =========================
-     CONFIG — UPDATE THESE ONLY
+     CONFIG
   ========================= */
 
-  // ✅ You already have these in /public:
-  // - public/public.pdf
-  // - public/report.pdf
-  // Pick ONE as the showcase PDF:
+  // Choose the showcase PDF (you have both in /public)
   const SAMPLE_PDF_URL = "/public.pdf"; // or "/report.pdf"
 
-  // ✅ Your real verification hash (from your screenshots)
   const SAMPLE_VERIFY_PATH =
     "/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db";
 
   const REPORT_ID = "SAMPLE-001";
 
-  // Flip animation duration (keep in sync with CSS .isTurning animation)
   const TURN_MS = 610;
 
-  // Render quality / zoom
   const SCALE_DEFAULT = 1.1;
   const SCALE_MIN = 0.85;
   const SCALE_MAX = 1.85;
   const SCALE_STEP = 0.1;
 
-  // DevicePixelRatio clamp (avoid huge canvases on 3x screens)
   const DPR_MAX = 2;
 
   /* =========================
@@ -59,7 +52,6 @@
   const errorState = document.getElementById("errorState");
   const directPdfLink = document.getElementById("directPdfLink");
 
-  // Guard: if this page isn't using the flipbook markup, don't throw.
   const required = [
     flipStage,
     frontCanvas,
@@ -94,20 +86,21 @@
   bindLink(directPdfLink, SAMPLE_PDF_URL);
 
   /* =========================
-     PDF.js bootstrap
+     PDF.js bootstrap (LOCAL)
   ========================= */
 
   const pdfjsLib = window.pdfjsLib;
   if (!pdfjsLib) {
-    // CDN blocked / offline / script failed
     loadingState.hidden = true;
     errorState.hidden = false;
     return;
   }
 
-  // Worker (CDN)
+  // LOCAL worker (put the files here):
+  // public/vendor/pdfjs/pdf.min.js
+  // public/vendor/pdfjs/pdf.worker.min.js
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
+    "/vendor/pdfjs/pdf.worker.min.js?v=1";
 
   /* =========================
      State
@@ -118,11 +111,7 @@
   let totalPages = 0;
   let scale = SCALE_DEFAULT;
 
-  // Track which canvas is “front”
-  // We render the NEXT page on the hidden canvas, then flip, then swap.
   let frontIsA = true;
-
-  // Prevent spam-clicking while turning
   let isTurning = false;
 
   /* =========================
@@ -164,13 +153,11 @@
   async function renderPageToCanvas(n, canvas) {
     const page = await pdfDoc.getPage(n);
 
-    // Base viewport at CSS pixel scale
     const viewport = page.getViewport({ scale });
 
     const dpr = fitCanvas(canvas, viewport);
     const ctx = canvas.getContext("2d", { alpha: false });
 
-    // Clear / reset transforms
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -198,8 +185,8 @@
     const to = clamp(n, 1, totalPages);
     if (to === pageNum) return;
 
-    // Render the destination page on the hidden canvas first
     const back = getBackCanvas();
+
     try {
       isTurning = true;
       lockButtons();
@@ -208,7 +195,6 @@
 
       if (animate) {
         flipStage.classList.add("isTurning");
-        // After the animation, swap “front” canvas identity
         window.setTimeout(() => {
           flipStage.classList.remove("isTurning");
           frontIsA = !frontIsA;
@@ -218,7 +204,6 @@
           lockButtons();
         }, TURN_MS);
       } else {
-        // Instant jump: render to the visible canvas, no flip
         const front = getFrontCanvas();
         await renderPageToCanvas(to, front);
         pageNum = to;
@@ -251,32 +236,31 @@
       totalPages = pdfDoc.numPages || 0;
       pageNum = 1;
 
-      // Render page 1 into the visible canvas
       await renderPageToCanvas(pageNum, getFrontCanvas());
 
       setReadout();
       loadingState.hidden = true;
       lockButtons();
 
-      // Click-to-turn (simple premium interaction)
       flipStage.addEventListener("click", () => {
         if (isTurning) return;
         if (pageNum < totalPages) goTo(pageNum + 1, { animate: true });
         else if (pageNum > 1) goTo(pageNum - 1, { animate: true });
       });
 
-      // Buttons
-      prevBtn.addEventListener("click", () => goTo(pageNum - 1, { animate: true }));
-      nextBtn.addEventListener("click", () => goTo(pageNum + 1, { animate: true }));
+      prevBtn.addEventListener("click", () =>
+        goTo(pageNum - 1, { animate: true })
+      );
+      nextBtn.addEventListener("click", () =>
+        goTo(pageNum + 1, { animate: true })
+      );
 
-      // Keyboard
       window.addEventListener("keydown", (ev) => {
         if (isTurning) return;
         if (ev.key === "ArrowLeft") goTo(pageNum - 1, { animate: true });
         if (ev.key === "ArrowRight") goTo(pageNum + 1, { animate: true });
       });
 
-      // Zoom
       if (zoomInBtn) {
         zoomInBtn.addEventListener("click", async () => {
           if (!pdfDoc || isTurning) return;
@@ -284,6 +268,7 @@
           await renderPageToCanvas(pageNum, getFrontCanvas());
         });
       }
+
       if (zoomOutBtn) {
         zoomOutBtn.addEventListener("click", async () => {
           if (!pdfDoc || isTurning) return;
@@ -292,7 +277,6 @@
         });
       }
 
-      // Resize → rerender current page for crispness
       let t = null;
       window.addEventListener("resize", () => {
         clearTimeout(t);

@@ -79,7 +79,6 @@
           and observable signals during capture.
         </div>
 
-        <!-- NEW: quick “how to use” so it feels intentional -->
         <div class="srMiniHelp">
           <div class="srMiniHelpT">How to preview</div>
           <ul class="srMiniHelpList">
@@ -111,19 +110,16 @@
           </div>
 
           <div class="flipStage" id="flipStage" aria-label="PDF page preview">
-            <!-- Front “page” -->
             <div class="flipPage isFront" id="frontPage">
               <canvas id="frontCanvas"></canvas>
               <div class="flipShadow" aria-hidden="true"></div>
             </div>
 
-            <!-- Back “page” used for flip animation -->
             <div class="flipPage isBack" id="backPage" aria-hidden="true">
               <canvas id="backCanvas"></canvas>
               <div class="flipShadow" aria-hidden="true"></div>
             </div>
 
-            <!-- Loading state -->
             <div class="flipLoading" id="loadingState">
               <div class="spinner" aria-hidden="true"></div>
               <div>
@@ -132,11 +128,10 @@
               </div>
             </div>
 
-            <!-- Error state -->
             <div class="flipError" id="errorState" hidden>
               <div class="flipErrorTitle">Couldn’t load the sample PDF.</div>
               <div class="flipErrorSub">
-                The interactive preview failed (blocked script/CSP, CDN, or file path). You can still open the PDF directly.
+                The interactive preview failed (blocked worker/CSP, CDN, or file path). You can still open the PDF directly.
               </div>
               <div class="flipErrorActions">
                 <a class="btnPrimary" id="directPdfLink" href="#" target="_blank" rel="noopener">Open sample PDF</a>
@@ -153,7 +148,6 @@
           </div>
         </div>
 
-        <!-- Proof links (real, grounded) -->
         <div class="srProof" aria-label="Verification details">
           <div class="srProofRow">
             <div class="srProofK">Verification link</div>
@@ -165,7 +159,6 @@
           </div>
         </div>
 
-        <!-- NEW: reassurance + single CTA row (keeps it premium, not cluttered) -->
         <div class="srBelowCtas" role="group" aria-label="Secondary actions">
           <a class="btnSoft" id="openVerifyBtn2" href="#" role="button">Open verification page</a>
           <a class="btnGhost" id="openPdfBtn2" href="#" role="button">Open PDF (shows code)</a>
@@ -173,7 +166,6 @@
       </div>
     </section>
 
-    <!-- “WHAT THEY GET” (DESIGNED, NOT A DUMP) -->
     <section class="srSection" aria-label="What clients receive">
       <h2 class="srH2">What your client receives</h2>
       <div class="srGrid">
@@ -196,7 +188,6 @@
       </div>
     </section>
 
-    <!-- Verification explanation (tight + productised) -->
     <section class="srSection" aria-label="Verification explanation">
       <div class="srCallout">
         <div class="srCalloutT">Why verification matters</div>
@@ -214,10 +205,10 @@
     </section>
   </main>
 
-  <!-- PDF.js (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
+  <!-- PDF.js (LOCAL — avoids CSP/worker blocking) -->
+  <script src="/vendor/pdfjs/pdf.min.js?v=1"></script>
 
   <!-- Bump to kill cache -->
-  <script src="/sample-report.js?v=2"></script>
+  <script src="/sample-report.js?v=3"></script>
 </body>
 </html>

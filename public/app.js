@@ -1,7 +1,9 @@
 // public/app.js
-// FULL RAMBO — elite preview renderer + locked conversion flow (single + 3-pack)
-// UPDATED: consumes structured /preview-scan payload { ok, meta, coverage, signals, risk }
-// Still backwards-compatible with legacy flat preview payloads.
+// FULL RAMBO — elite audit-style preview renderer + locked conversion flow (single + 3-pack)
+// ✅ Consumes structured /preview-scan payload { ok, meta, coverage, signals, risk }
+// ✅ Backwards-compatible with legacy flat payloads.
+// ✅ No inline styles — relies on style.css classes.
+// ✅ Renders: risk badge, drivers, evidence cards, coverage log, limitations.
 
 function getSid() {
   const key = "wrc_sid";
@@ -32,14 +34,14 @@ async function track(name, props = {}) {
 ========================= */
 
 function safeStr(v) {
-  return typeof v === "string" ? v : "";
+  return typeof v === "string" ? v : v == null ? "" : String(v);
 }
 
 function safeArr(v) {
   return Array.isArray(v) ? v : [];
 }
 
-function truncate(str, max = 80) {
+function truncate(str, max = 90) {
   const s = safeStr(str);
   if (s.length <= max) return s;
   return s.slice(0, max - 1) + "…";
@@ -60,10 +62,13 @@ function hostnameOf(url) {
   }
 }
 
-function fmtHttpStatus(st) {
-  const n = Number(st);
-  if (!Number.isFinite(n) || n <= 0) return "unknown";
-  return String(n);
+function pathOf(url) {
+  try {
+    const u = new URL(url);
+    return u.pathname || "/";
+  } catch {
+    return safeStr(url) || "/";
+  }
 }
 
 function bool(v) {
@@ -73,6 +78,15 @@ function bool(v) {
 function num(v, fallback = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function escapeHtml(s = "") {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 /* =========================
@@ -85,43 +99,29 @@ function ensureNotice(previewEl) {
 
   el = document.createElement("div");
   el.id = "wrcNotice";
+  el.className = "wrcNotice";
   el.style.display = "none";
-  el.style.margin = "12px 0 0";
-  el.style.padding = "12px 14px";
-  el.style.borderRadius = "14px";
-  el.style.border = "1px solid #e5e7eb";
-  el.style.background = "#f8fafc";
-  el.style.color = "#0f172a";
-  el.style.fontSize = "13px";
-  el.style.lineHeight = "1.45";
-
   previewEl.insertBefore(el, previewEl.firstChild);
   return el;
 }
 
 function showNotice(previewEl, tone, title, msg) {
   const el = ensureNotice(previewEl);
-
-  const tones = {
-    info: { bg: "#eff6ff", br: "#bfdbfe", fg: "#1d4ed8", dot: "#2563eb" },
-    warn: { bg: "#fffbeb", br: "#fde68a", fg: "#92400e", dot: "#d97706" },
-    err: { bg: "#fef2f2", br: "#fecaca", fg: "#991b1b", dot: "#dc2626" },
-    ok: { bg: "#ecfdf5", br: "#a7f3d0", fg: "#065f46", dot: "#16a34a" },
-  };
-
-  const t = tones[tone] || tones.info;
-
   el.style.display = "block";
-  el.style.background = t.bg;
-  el.style.borderColor = t.br;
-  el.style.color = "#0f172a";
+
+  const t = safeStr(tone || "info").toLowerCase();
+  el.classList.remove("isInfo", "isWarn", "isErr", "isOk");
+  if (t === "warn") el.classList.add("isWarn");
+  else if (t === "err") el.classList.add("isErr");
+  else if (t === "ok") el.classList.add("isOk");
+  else el.classList.add("isInfo");
 
   el.innerHTML = `
-    <div style="display:flex;gap:10px;align-items:flex-start;">
-      <span aria-hidden="true" style="width:10px;height:10px;border-radius:999px;background:${t.dot};margin-top:4px;flex:0 0 auto;"></span>
-      <div>
-        <div style="font-weight:800;color:${t.fg};">${safeStr(title) || "Notice"}</div>
-        <div style="margin-top:4px;color:#0f172a;">${safeStr(msg) || ""}</div>
+    <div class="wrcNoticeInner">
+      <span class="wrcNoticeDot" aria-hidden="true"></span>
+      <div class="wrcNoticeBody">
+        <div class="wrcNoticeTitle">${escapeHtml(title || "Notice")}</div>
+        <div class="wrcNoticeText">${escapeHtml(msg || "")}</div>
       </div>
     </div>
   `;
@@ -132,6 +132,7 @@ function hideNotice(previewEl) {
   if (!el) return;
   el.style.display = "none";
   el.innerHTML = "";
+  el.classList.remove("isInfo", "isWarn", "isErr", "isOk");
 }
 
 /* =========================
@@ -139,7 +140,7 @@ function hideNotice(previewEl) {
 ========================= */
 
 // Accepts either structured {ok, meta, coverage, signals, risk} or legacy flat payload.
-// Returns a single "view model" that the UI renderer already understands.
+// Returns a single "view model" used by the UI.
 function normalizePreviewPayload(data, fallbackUrl) {
   // Structured response (new)
   if (data && data.ok === true && data.meta && data.signals) {
@@ -149,16 +150,26 @@ function normalizePreviewPayload(data, fallbackUrl) {
     const risk = data.risk || {};
 
     return {
+      // meta
       url: safeStr(meta.url) || safeStr(fallbackUrl),
-      hostname: safeStr(meta.hostname),
+      hostname: safeStr(meta.hostname) || hostnameOf(safeStr(meta.url) || safeStr(fallbackUrl)),
       scannedAt: safeStr(meta.scannedAt),
-      riskLevel: safeStr(risk.level) || "Medium",
-
+      scanId: safeStr(meta.scanId),
       https: bool(meta.https),
-      // Derive fetchOk from checkedPages for structured model
-      fetchOk: safeArr(cov.checkedPages).length > 0,
-      fetchStatus: 0, // not required in structured preview; keep for UI compatibility
 
+      // risk
+      riskLevel: safeStr(risk.level) || "Medium",
+      riskScore: num(risk.score, 0),
+      riskReasons: safeArr(risk.reasons).map((s) => safeStr(s)).filter(Boolean),
+
+      // coverage
+      checkedPages: safeArr(cov.checkedPages),
+      failedPages: safeArr(cov.failedPages),
+      scanCoverageNotes: safeArr(cov.notes).map((s) => safeStr(s)).filter(Boolean),
+      fetchOk: safeArr(cov.checkedPages).length > 0,
+      fetchStatus: num(cov.fetchStatus, 0),
+
+      // signals (compat fields)
       hasPrivacyPolicy: bool(sig?.policies?.privacy),
       hasTerms: bool(sig?.policies?.terms),
       hasCookiePolicy: bool(sig?.policies?.cookies),
@@ -176,22 +187,24 @@ function normalizePreviewPayload(data, fallbackUrl) {
       accessibilityNotes: safeArr(sig?.accessibility?.notes),
       contactInfoPresent: bool(sig?.contact?.detected),
 
-      checkedPages: safeArr(cov.checkedPages),
-      failedPages: safeArr(cov.failedPages),
-
-      // Optional: keep coverage notes for future UI
-      scanCoverageNotes: safeArr(cov.notes),
+      // extra
+      _structured: true,
     };
   }
 
   // Legacy response (old)
+  const url = safeStr(data?.url) || safeStr(fallbackUrl);
   return {
-    url: safeStr(data?.url) || safeStr(fallbackUrl),
-    hostname: safeStr(data?.hostname),
+    url,
+    hostname: safeStr(data?.hostname) || hostnameOf(url),
     scannedAt: safeStr(data?.scannedAt),
-    riskLevel: safeStr(data?.riskLevel) || "Medium",
+    scanId: safeStr(data?.scanId),
+    https: typeof data?.https === "boolean" ? data.https : url.startsWith("https://"),
 
-    https: typeof data?.https === "boolean" ? data.https : safeStr(fallbackUrl).startsWith("https://"),
+    riskLevel: safeStr(data?.riskLevel) || "Medium",
+    riskScore: num(data?.riskScore, 0),
+    riskReasons: safeArr(data?.riskReasons).map((s) => safeStr(s)).filter(Boolean),
+
     fetchOk: typeof data?.fetchOk === "boolean" ? data.fetchOk : true,
     fetchStatus: num(data?.fetchStatus, 0),
 
@@ -216,8 +229,14 @@ function normalizePreviewPayload(data, fallbackUrl) {
     failedPages: safeArr(data?.failedPages),
 
     scanCoverageNotes: safeArr(data?.scanCoverageNotes),
+
+    _structured: false,
   };
 }
+
+/* =========================
+   AUDIT FINDINGS LIST (CLIENT-FACING)
+========================= */
 
 function buildFindingsFromScan(scan) {
   const findings = [];
@@ -231,13 +250,9 @@ function buildFindingsFromScan(scan) {
   if (failed) covBits.push(`${failed} failed`);
   findings.push(`Coverage: ${covBits.join(" • ") || "—"}`);
 
-  findings.push(
-    scan.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected"
-  );
+  findings.push(scan.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected");
   findings.push(scan.hasTerms ? "Terms: detected" : "Terms: not detected");
-  findings.push(
-    scan.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected"
-  );
+  findings.push(scan.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected");
 
   findings.push(
     scan.hasCookieBanner
@@ -262,9 +277,7 @@ function buildFindingsFromScan(scan) {
 
   if (scan.formsDetected > 0) {
     findings.push(`Forms detected: ${scan.formsDetected}`);
-    findings.push(
-      `Potential personal-data field signals: ${scan.formsPersonalDataSignals} (heuristic)`
-    );
+    findings.push(`Potential personal-data field signals: ${scan.formsPersonalDataSignals} (heuristic)`);
   } else {
     findings.push("Forms detected: none");
   }
@@ -276,20 +289,16 @@ function buildFindingsFromScan(scan) {
   }
 
   if (safeArr(scan.accessibilityNotes).length) {
-    findings.push(`Accessibility note: ${scan.accessibilityNotes[0]}`);
+    findings.push(`Accessibility note: ${truncate(scan.accessibilityNotes[0], 90)}`);
   }
 
-  findings.push(
-    scan.contactInfoPresent
-      ? "Contact/identity signals: detected"
-      : "Contact/identity signals: not detected"
-  );
+  findings.push(scan.contactInfoPresent ? "Contact/identity signals: detected" : "Contact/identity signals: not detected");
 
   return findings.slice(0, 12);
 }
 
 /* =========================
-   PREMIUM PREVIEW RENDERER
+   PREMIUM AUDIT PREVIEW SHELL
 ========================= */
 
 function ensurePreviewShell(previewEl, findingsEl) {
@@ -297,50 +306,60 @@ function ensurePreviewShell(previewEl, findingsEl) {
 
   const shell = document.createElement("div");
   shell.setAttribute("data-wrc-shell", "1");
+  shell.className = "wrcShell";
 
   shell.innerHTML = `
-    <div class="wrcSummary" style="margin: 10px 0 14px;">
-      <div class="wrcSummaryTop" style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-        <div>
-          <div class="wrcKicker" style="font-size:12px;color:#64748b;font-weight:700;letter-spacing:0.02em;text-transform:uppercase;">
-            Snapshot preview
-          </div>
-          <div class="wrcTitle" style="margin-top:6px;font-size:16px;font-weight:800;color:#0f172a;">
-            Detected signals (point-in-time)
-          </div>
-          <div class="wrcSub" style="margin-top:6px;font-size:13px;color:#64748b;line-height:1.45;">
-            This preview shows a subset of what’s detectable. The paid report includes coverage notes, plain-English explanations, limitations and verification.
+    <section class="wrcPreviewHead" aria-label="Preview summary">
+      <div class="wrcPreviewTop">
+        <div class="wrcPreviewLeft">
+          <div class="wrcKicker">Snapshot preview</div>
+          <div class="wrcTitle">Detected signals (point-in-time)</div>
+          <div class="wrcSub">
+            This is a free preview of what’s observable in a scope-locked scan. The paid report includes the full risk register,
+            coverage log, limitations, and a public verification link.
           </div>
         </div>
 
-        <div class="wrcBadges" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <span id="wrcRiskBadge"
-            style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
-                   background:#f1f5f9;border:1px solid #e5e7eb;color:#0f172a;font-size:13px;font-weight:800;">
-            Risk: —
-          </span>
-          <span id="wrcScopeBadge"
-            style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
-                   background:#ffffff;border:1px solid #e5e7eb;color:#0f172a;font-size:13px;font-weight:700;">
-            Coverage: —
-          </span>
+        <div class="wrcPreviewRight" aria-label="Preview badges">
+          <div id="wrcRiskBadge" class="wrcBadgePill">Risk: —</div>
+          <div id="wrcScopeBadge" class="wrcBadgePill isSoft">Coverage: —</div>
         </div>
       </div>
 
-      <div id="wrcGrid"
-        style="margin-top:14px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+      <div class="wrcMetaRow" aria-label="Scan metadata">
+        <div class="wrcMetaItem">
+          <div class="wrcMetaK">Target</div>
+          <div id="wrcMetaTarget" class="wrcMetaV mono">—</div>
+        </div>
+        <div class="wrcMetaItem">
+          <div class="wrcMetaK">Captured (UTC)</div>
+          <div id="wrcMetaTime" class="wrcMetaV mono">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrcSection" aria-label="Risk drivers">
+      <div class="wrcSectionTop">
+        <div class="wrcSectionTitle">Primary drivers</div>
+        <div class="wrcSectionHint">Plain-English reasons behind the overall risk level.</div>
+      </div>
+      <div id="wrcDrivers" class="wrcDrivers"></div>
+    </section>
+
+    <section class="wrcSection" aria-label="Evidence snapshot">
+      <div class="wrcSectionTop">
+        <div class="wrcSectionTitle">Evidence snapshot</div>
+        <div class="wrcSectionHint">Selected detectable signals from the scanned surface.</div>
       </div>
 
-      <div id="wrcCoverage"
-        style="margin-top:14px;padding:12px 14px;border-radius:14px;border:1px solid #e5e7eb;background:#f8fafc;">
-      </div>
+      <div id="wrcGrid" class="wrcGrid" aria-label="Evidence cards"></div>
 
-      <div id="wrcConfidence"
-        style="margin-top:10px;font-size:12.5px;color:#64748b;line-height:1.45;">
-      </div>
+      <div id="wrcCoverage" class="wrcCoverage" aria-label="Coverage summary"></div>
 
-      <div style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px;"></div>
-    </div>
+      <div id="wrcConfidence" class="wrcConfidence" aria-label="Limitations"></div>
+    </section>
+
+    <div class="wrcDivider"></div>
   `;
 
   findingsEl.parentNode.insertBefore(shell, findingsEl);
@@ -351,36 +370,21 @@ function setRiskBadge(previewEl, level) {
   if (!el) return;
 
   const v = safeStr(level).toLowerCase();
-  let bg = "#f1f5f9";
-  let br = "#e5e7eb";
-  let fg = "#0f172a";
-  let dot = "#94a3b8";
+  el.classList.remove("isLow", "isMedium", "isHigh");
   let label = "—";
 
   if (v === "low") {
-    bg = "#ecfdf5";
-    br = "#a7f3d0";
-    fg = "#065f46";
-    dot = "#16a34a";
+    el.classList.add("isLow");
     label = "Low";
   } else if (v === "medium") {
-    bg = "#fffbeb";
-    br = "#fde68a";
-    fg = "#92400e";
-    dot = "#d97706";
+    el.classList.add("isMedium");
     label = "Medium";
   } else if (v === "high") {
-    bg = "#fef2f2";
-    br = "#fecaca";
-    fg = "#991b1b";
-    dot = "#dc2626";
+    el.classList.add("isHigh");
     label = "High";
   }
 
-  el.innerHTML = `<span aria-hidden="true" style="width:8px;height:8px;border-radius:999px;background:${dot};display:inline-block;"></span> Risk: ${label}`;
-  el.style.background = bg;
-  el.style.borderColor = br;
-  el.style.color = fg;
+  el.textContent = `Risk: ${label}`;
 }
 
 function setScopeBadge(previewEl, checkedPages, failedPages) {
@@ -397,68 +401,111 @@ function setScopeBadge(previewEl, checkedPages, failedPages) {
   el.textContent = `Coverage: ${parts.join(" • ") || "—"}`;
 }
 
+function setMeta(previewEl, scan) {
+  const t = previewEl.querySelector("#wrcMetaTarget");
+  const time = previewEl.querySelector("#wrcMetaTime");
+  if (t) t.textContent = hostnameOf(scan.url || "");
+  if (time) time.textContent = scan.scannedAt ? safeStr(scan.scannedAt) : "—";
+}
+
+function renderDrivers(previewEl, scan, rawData) {
+  const el = previewEl.querySelector("#wrcDrivers");
+  if (!el) return;
+
+  // Prefer structured: data.risk.reasons
+  const structuredReasons = safeArr(rawData?.risk?.reasons).map((s) => safeStr(s)).filter(Boolean);
+
+  // Fallback: normalized scan riskReasons
+  const reasons = structuredReasons.length ? structuredReasons : safeArr(scan.riskReasons);
+
+  el.innerHTML = "";
+
+  if (!reasons.length) {
+    const empty = document.createElement("div");
+    empty.className = "wrcEmpty";
+    empty.textContent =
+      "No explicit drivers were returned for this scan. The paid report still records coverage and detectable signals at the captured timestamp.";
+    el.appendChild(empty);
+    return;
+  }
+
+  const ul = document.createElement("ul");
+  ul.className = "wrcList";
+  reasons.slice(0, 8).forEach((r) => {
+    const li = document.createElement("li");
+    li.textContent = r;
+    ul.appendChild(li);
+  });
+  el.appendChild(ul);
+}
+
 function renderGrid(previewEl, scan) {
   const grid = previewEl.querySelector("#wrcGrid");
   if (!grid) return;
 
-  const trackers = safeArr(scan.trackingScriptsDetected);
-  const vendors = safeArr(scan.cookieVendorsDetected);
+  const trackers = safeArr(scan.trackingScriptsDetected).map((s) => safeStr(s)).filter(Boolean);
+  const vendors = safeArr(scan.cookieVendorsDetected).map((s) => safeStr(s)).filter(Boolean);
+
+  const totalImages = num(scan.totalImages, 0);
+  const missingAlt = num(scan.imagesMissingAlt, 0);
 
   const cells = [
     {
       title: "Policies",
+      status: scan.hasPrivacyPolicy && scan.hasTerms ? "OK" : "Review",
+      tone: scan.hasPrivacyPolicy && scan.hasTerms ? "ok" : "warn",
       lines: [
         `Privacy: ${scan.hasPrivacyPolicy ? "Detected" : "Not detected"}`,
         `Terms: ${scan.hasTerms ? "Detected" : "Not detected"}`,
         `Cookie policy: ${scan.hasCookiePolicy ? "Detected" : "Not detected"}`,
       ],
-      good: !!scan.hasPrivacyPolicy && !!scan.hasTerms,
     },
     {
-      title: "Consent",
+      title: "Consent signals",
+      status: scan.hasCookieBanner ? "OK" : "Review",
+      tone: scan.hasCookieBanner ? "ok" : "warn",
       lines: [
         `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"}`,
-        vendors.length
-          ? `Vendor signals: ${vendors.slice(0, 2).join(", ")}${vendors.length > 2 ? "…" : ""}`
-          : "Vendor signals: None detected",
+        vendors.length ? `Vendors: ${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""}` : "Vendors: none detected",
       ],
-      good: !!scan.hasCookieBanner,
     },
     {
       title: "Tracking",
+      status: trackers.length || vendors.length ? "Review" : "OK",
+      tone: trackers.length || vendors.length ? "warn" : "ok",
       lines: [
         trackers.length
-          ? `Scripts: ${trackers.slice(0, 2).join(", ")}${trackers.length > 2 ? "…" : ""}`
-          : "Scripts: None detected",
-        vendors.length ? `Vendors: ${vendors.length}` : "Vendors: 0",
+          ? `Scripts: ${trackers.slice(0, 3).join(", ")}${trackers.length > 3 ? "…" : ""}`
+          : "Scripts: none detected",
+        vendors.length ? `Vendor signals: ${vendors.length}` : "Vendor signals: 0",
       ],
-      good: !trackers.length && !vendors.length,
     },
     {
-      title: "Forms",
+      title: "Forms & data capture",
+      status: num(scan.formsDetected, 0) > 0 ? "Review" : "OK",
+      tone: num(scan.formsDetected, 0) > 0 ? "warn" : "ok",
       lines: [
-        `Forms detected: ${Number(scan.formsDetected || 0)}`,
-        `Personal-data signals: ${Number(scan.formsPersonalDataSignals || 0)} (heuristic)`,
+        `Forms detected: ${num(scan.formsDetected, 0)}`,
+        `Personal-data signals: ${num(scan.formsPersonalDataSignals, 0)} (heuristic)`,
       ],
-      good: Number(scan.formsDetected || 0) === 0,
     },
     {
       title: "Accessibility",
+      status: missingAlt > 0 ? "Review" : "OK",
+      tone: missingAlt > 0 ? "warn" : "ok",
       lines: [
-        `Alt text missing: ${Number(scan.imagesMissingAlt || 0)} of ${Number(scan.totalImages || 0)}`,
-        safeArr(scan.accessibilityNotes).length
-          ? `Notes: ${truncate(scan.accessibilityNotes[0], 52)}`
-          : "Notes: None recorded",
+        `Alt text missing: ${missingAlt} of ${totalImages}`,
+        safeArr(scan.accessibilityNotes).length ? `Note: ${truncate(scan.accessibilityNotes[0], 80)}` : "Notes: none recorded",
       ],
-      good: Number(scan.imagesMissingAlt || 0) === 0,
     },
     {
-      title: "Identity",
+      title: "Identity & transport",
+      status: scan.contactInfoPresent && scan.https ? "OK" : "Review",
+      tone: scan.contactInfoPresent && scan.https ? "ok" : "warn",
       lines: [
         `Contact signals: ${scan.contactInfoPresent ? "Detected" : "Not detected"}`,
         `HTTPS: ${scan.https ? "Detected" : "Not detected"}`,
       ],
-      good: !!scan.contactInfoPresent && !!scan.https,
     },
   ];
 
@@ -466,63 +513,20 @@ function renderGrid(previewEl, scan) {
 
   for (const c of cells) {
     const card = document.createElement("div");
-    card.style.border = "1px solid #e5e7eb";
-    card.style.borderRadius = "14px";
-    card.style.background = "#ffffff";
-    card.style.padding = "12px 14px";
-    card.style.display = "flex";
-    card.style.flexDirection = "column";
-    card.style.gap = "6px";
+    card.className = `wrcCard wrcCard--${c.tone}`;
 
-    const top = document.createElement("div");
-    top.style.display = "flex";
-    top.style.alignItems = "center";
-    top.style.justifyContent = "space-between";
-    top.style.gap = "10px";
+    card.innerHTML = `
+      <div class="wrcCardTop">
+        <div class="wrcCardTitle">${escapeHtml(c.title)}</div>
+        <div class="wrcCardPill">${escapeHtml(c.status)}</div>
+      </div>
+      <div class="wrcCardBody">
+        ${c.lines.map((ln) => `<div class="wrcCardLine">${escapeHtml(ln)}</div>`).join("")}
+      </div>
+    `;
 
-    const title = document.createElement("div");
-    title.textContent = c.title;
-    title.style.fontWeight = "800";
-    title.style.fontSize = "13px";
-    title.style.color = "#0f172a";
-
-    const pill = document.createElement("span");
-    pill.textContent = c.good ? "OK" : "Review";
-    pill.style.fontSize = "12px";
-    pill.style.fontWeight = "800";
-    pill.style.padding = "6px 10px";
-    pill.style.borderRadius = "999px";
-    pill.style.border = "1px solid #e5e7eb";
-    pill.style.background = c.good ? "#ecfdf5" : "#fffbeb";
-    pill.style.color = c.good ? "#065f46" : "#92400e";
-
-    top.appendChild(title);
-    top.appendChild(pill);
-
-    const body = document.createElement("div");
-    body.style.fontSize = "12.5px";
-    body.style.color = "#475569";
-    body.style.lineHeight = "1.45";
-
-    for (const line of c.lines) {
-      const row = document.createElement("div");
-      row.textContent = line;
-      body.appendChild(row);
-    }
-
-    card.appendChild(top);
-    card.appendChild(body);
     grid.appendChild(card);
   }
-
-  const mq = window.matchMedia("(max-width: 560px)");
-  const applyCols = () => {
-    grid.style.gridTemplateColumns = mq.matches
-      ? "1fr"
-      : "repeat(2, minmax(0, 1fr))";
-  };
-  applyCols();
-  mq.addEventListener?.("change", applyCols);
 }
 
 function renderCoverage(previewEl, scan) {
@@ -531,37 +535,51 @@ function renderCoverage(previewEl, scan) {
 
   const checked = safeArr(scan.checkedPages);
   const failed = safeArr(scan.failedPages);
+  const notes = safeArr(scan.scanCoverageNotes);
 
   const checkedPaths = checked
-    .map((p) => {
-      try {
-        return new URL(p.url).pathname || "/";
-      } catch {
-        return "/";
-      }
-    })
-    .slice(0, 8);
+    .map((p) => pathOf(p?.url))
+    .filter(Boolean)
+    .slice(0, 10);
 
   const failedPaths = failed
     .map((p) => {
-      try {
-        const path = new URL(p.url).pathname || "/";
-        const st = p.status || 0;
-        return `${path} (HTTP ${st || "?"})`;
-      } catch {
-        return `unknown (HTTP ${p.status || "?"})`;
-      }
+      const pth = pathOf(p?.url);
+      const st = num(p?.status, 0);
+      return `${pth} (HTTP ${st || "?"})`;
     })
-    .slice(0, 8);
+    .filter(Boolean)
+    .slice(0, 10);
 
-  const domain = hostnameOf(scan.url || "");
+  const noteItems = notes.map((n) => safeStr(n)).filter(Boolean).slice(0, 6);
 
   box.innerHTML = `
-    <div style="font-weight:800;color:#0f172a;font-size:13px;">Coverage summary</div>
-    <div style="margin-top:6px;font-size:12.5px;color:#475569;line-height:1.45;">
-      <div><strong>Target:</strong> ${domain}</div>
-      <div><strong>Checked:</strong> ${checkedPaths.length ? checkedPaths.join(", ") : "—"}</div>
-      <div><strong>Failed:</strong> ${failedPaths.length ? failedPaths.join(", ") : "None"}</div>
+    <div class="wrcCoverageTop">
+      <div class="wrcCoverageTitle">Coverage log (preview)</div>
+      <div class="wrcCoverageHint">Scope-locked, same-origin, public HTML only.</div>
+    </div>
+
+    <div class="wrcCoverageGrid">
+      <div class="wrcCoverageBlock">
+        <div class="wrcCoverageK">Checked</div>
+        <div class="wrcCoverageV mono">${checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"}</div>
+      </div>
+
+      <div class="wrcCoverageBlock">
+        <div class="wrcCoverageK">Failed</div>
+        <div class="wrcCoverageV mono">${failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"}</div>
+      </div>
+
+      <div class="wrcCoverageBlock">
+        <div class="wrcCoverageK">Coverage notes</div>
+        <div class="wrcCoverageV">
+          ${
+            noteItems.length
+              ? `<ul class="wrcList">${noteItems.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
+              : `<div class="wrcEmpty">No additional coverage notes were recorded for this scan.</div>`
+          }
+        </div>
+      </div>
     </div>
   `;
 }
@@ -574,16 +592,17 @@ function renderConfidence(previewEl, scan) {
   const checked = safeArr(scan.checkedPages).length;
   const failed = safeArr(scan.failedPages).length;
 
-  let msg = "This preview reflects what was detectable at the time of scanning.";
+  let msg =
+    "Limitations: This preview reflects what was detectable at capture time. It is not a legal opinion, certification, or monitoring.";
   if (!ok || checked === 0) {
     msg =
-      "We couldn’t retrieve enough HTML to generate a reliable preview. Try again, check the URL, or test a different page.";
+      "Limitations: We couldn’t retrieve enough HTML to generate a reliable preview. Try again, check the URL, or test a different page. Paid reports require sufficient coverage to seal the snapshot.";
   } else if (checked <= 1) {
     msg =
-      "Coverage is limited. Some signals may exist elsewhere (e.g., footer policies). The paid report records coverage explicitly and includes verification.";
+      "Limitations: Coverage is limited. Some signals may exist elsewhere (e.g., footer policies). The paid report records coverage explicitly and includes verification.";
   } else if (failed) {
     msg =
-      "Some standard pages could not be retrieved; this may reduce detection coverage. The paid report records coverage and failures explicitly.";
+      "Limitations: Some standard pages could not be retrieved; this may reduce detection coverage. The paid report records coverage and failures explicitly.";
   }
 
   el.textContent = msg;
@@ -639,14 +658,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setCheckoutUi(kind, isBusy) {
     if (kind === "single") {
-      payButton.textContent = isBusy
-        ? "Redirecting to secure checkout…"
-        : "Download full PDF report (£99)";
+      payButton.textContent = isBusy ? "Redirecting to secure checkout…" : "Download full PDF report (£99)";
     }
     if (kind === "threepack" && threepackButton) {
-      threepackButton.textContent = isBusy
-        ? "Redirecting to secure checkout…"
-        : "Best value: 3 reports (£199)";
+      threepackButton.textContent = isBusy ? "Redirecting to secure checkout…" : "Best value: 3 reports (£199)";
     }
   }
 
@@ -705,27 +720,25 @@ document.addEventListener("DOMContentLoaded", () => {
           preview,
           "warn",
           "Limited coverage",
-          "We couldn’t retrieve enough HTML to run a full preview. You can still try again or test a different URL."
+          "We couldn’t retrieve enough HTML to run a full preview. You can still try again, or test a different URL."
         );
       } else {
         hideNotice(preview);
       }
 
-      // Render premium pieces
+      // Render audit-grade pieces
+      setMeta(preview, scan);
       setRiskBadge(preview, scan.riskLevel);
       setScopeBadge(preview, scan.checkedPages, scan.failedPages);
+      renderDrivers(preview, scan, data);
       renderGrid(preview, scan);
       renderCoverage(preview, scan);
       renderConfidence(preview, scan);
 
       // Findings list:
       // - If backend provided legacy findings, show them
-      // - Otherwise build them client-side from the structured model
-      const findings =
-        safeArr(data?.findings).length
-          ? data.findings
-          : buildFindingsFromScan(scan);
-
+      // - Otherwise build them client-side from the normalized model
+      const findings = safeArr(data?.findings).length ? data.findings : buildFindingsFromScan(scan);
       renderLegacyFindingsList(findingsEl, findings);
 
       preview.style.display = "block";
@@ -739,12 +752,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     } catch (err) {
       console.error(err);
-      showNotice(
-        preview,
-        "err",
-        "Something went wrong",
-        "The preview request failed. Please try again in a moment."
-      );
+      showNotice(preview, "err", "Something went wrong", "The preview request failed. Please try again in a moment.");
       track("preview_failed", { err: safeStr(err?.message) });
     } finally {
       isScanning = false;

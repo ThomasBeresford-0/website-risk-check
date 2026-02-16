@@ -106,20 +106,9 @@ app.use(express.json({ limit: "30kb" }));
 const PUBLIC_DIR = path.join(__dirname, "../public");
 app.use(express.static(PUBLIC_DIR, { etag: true }));
 
-/* =========================
-   HARD-GUARANTEE: SAMPLE PDF + LOCAL PDF.JS FILES
-   (removes all ambiguity; fixes "Cannot GET /public.pdf")
-========================= */
-
-app.get("/public.pdf", (_req, res) => {
-  const p = path.join(PUBLIC_DIR, "public.pdf");
-  if (!fs.existsSync(p)) return res.status(404).send("Missing public/public.pdf on server");
-  return res.sendFile(p);
-});
-
-app.get("/report.pdf", (_req, res) => {
-  const p = path.join(PUBLIC_DIR, "report.pdf");
-  if (!fs.existsSync(p)) return res.status(404).send("Missing public/report.pdf on server");
+app.get("/sample-report.pdf", (_req, res) => {
+  const p = path.join(PUBLIC_DIR, "sample-report.pdf");
+  if (!fs.existsSync(p)) return res.status(404).send("Missing public/sample-report.pdf on server");
   return res.sendFile(p);
 });
 
@@ -155,8 +144,7 @@ app.get("/__assets", (_req, res) => {
       ok: true,
       publicDir: PUBLIC_DIR,
       files: {
-        "public.pdf": { exists: exists("public.pdf"), bytes: size("public.pdf") },
-        "report.pdf": { exists: exists("report.pdf"), bytes: size("report.pdf") },
+        "sample-report.pdf": { exists: exists("sample-report.pdf"), bytes: size("sample-report.pdf") },
         "vendor/pdfjs/pdf.min.js": {
           exists: exists("vendor/pdfjs/pdf.min.js"),
           bytes: size("vendor/pdfjs/pdf.min.js"),
@@ -165,10 +153,9 @@ app.get("/__assets", (_req, res) => {
           exists: exists("vendor/pdfjs/pdf.worker.min.js"),
           bytes: size("vendor/pdfjs/pdf.worker.min.js"),
         },
-        "sample-report.html": {
-          exists: exists("sample-report.html"),
-          bytes: size("sample-report.html"),
-        },
+        "sample-report.html": { exists: exists("sample-report.html"), bytes: size("sample-report.html") },
+        "sample-report.js": { exists: exists("sample-report.js"), bytes: size("sample-report.js") },
+        "sample-report.css": { exists: exists("sample-report.css"), bytes: size("sample-report.css") },
       },
     });
   } catch (e) {
@@ -374,25 +361,6 @@ app.post("/preview-scan", async (req, res) => {
     return res
       .status(500)
       .json({ ok: false, error: "preview_failed", message: "Preview scan failed" });
-  }
-});
-
-app.get("/__generate-sample", async (_req, res) => {
-  try {
-    const sampleUrl = "https://example.com";
-    const scanData = await scanWebsite(sampleUrl);
-
-    const outputPath = path.join(PUBLIC_DIR, "report.pdf");
-
-    await generateReport(
-      { ...scanData, shareToken: "SAMPLE001" },
-      outputPath
-    );
-
-    res.send("Sample report generated.");
-  } catch (e) {
-    console.error(e);
-    res.status(500).send("Failed to generate sample.");
   }
 });
 

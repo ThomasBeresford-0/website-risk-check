@@ -40,6 +40,14 @@ const PALETTE = {
 };
 
 /* =========================
+   LAYOUT CONSTANTS (critical)
+========================= */
+// Header is drawn around y=30..52; content must ALWAYS start below it.
+const CONTENT_TOP_Y = 78;
+// Footer is drawn near bottom; do not allow it to affect content flow.
+const FOOTER_SAFE_PAD = 58;
+
+/* =========================
    HELPERS
 ========================= */
 
@@ -77,11 +85,6 @@ function toneForRisk(level) {
   return "green";
 }
 
-function ensureSpace(doc, minSpace = 120) {
-  const bottom = doc.page.height - doc.page.margins.bottom;
-  if (doc.y + minSpace > bottom) doc.addPage();
-}
-
 function widthBetweenMargins(doc) {
   return doc.page.width - doc.page.margins.left - doc.page.margins.right;
 }
@@ -94,9 +97,27 @@ function xRight(doc) {
   return doc.page.width - doc.page.margins.right;
 }
 
-function pageSafeTop(doc) {
-  // header band ends around ~64, then content starts
-  return Math.max(doc.y, 78);
+/**
+ * Always keep doc.y in a sane place after page creation.
+ * IMPORTANT: This is what fixes your “content starts halfway down” issue.
+ */
+function normalizeBodyCursor(doc) {
+  if (doc.y < CONTENT_TOP_Y) doc.y = CONTENT_TOP_Y;
+  if (doc.x !== doc.page.margins.left) doc.x = doc.page.margins.left;
+}
+
+/**
+ * Ensure there is enough vertical space for the next block.
+ * When we add a page, pageAdded handler will draw header and normalize cursor.
+ */
+function ensureSpace(doc, minSpace = 120) {
+  const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
+  if (doc.y + minSpace > bottom) {
+    doc.addPage();
+    // pageAdded handler will run and normalize doc.y,
+    // but normalize here too to be ultra-safe.
+    normalizeBodyCursor(doc);
+  }
 }
 
 /* =========================
@@ -373,7 +394,8 @@ function addHeader(doc, data) {
 
   doc.restore();
 
-  if (doc.y < 72) doc.y = 78;
+  // CRITICAL: always normalize body cursor after header
+  normalizeBodyCursor(doc);
 }
 
 function addFooter(doc, meta, integrityHash) {
@@ -388,6 +410,10 @@ function addFooter(doc, meta, integrityHash) {
   const scanId = meta?.scanId ? String(meta.scanId) : "—";
   const ts = meta?.scannedAt ? iso(meta.scannedAt) : ""; // DO NOT Date.now() (avoid layout entropy)
 
+  // IMPORTANT: prevent footer rendering from poisoning doc.y
+  const prevY = doc.y;
+  const prevX = doc.x;
+
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(left, bottomY - 10).lineTo(right, bottomY - 10).stroke();
@@ -401,6 +427,10 @@ function addFooter(doc, meta, integrityHash) {
   doc.text(line1, left, bottomY, { width, align: "center" });
   doc.text(line2, left, bottomY + 10, { width, align: "center" });
   doc.restore();
+
+  // restore content cursor
+  doc.y = prevY;
+  doc.x = prevX;
 }
 
 /* =========================
@@ -573,15 +603,13 @@ function drawRiskRegister_landscape(doc, rows) {
   const fixedW = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
   cols[cols.length - 1].w = Math.max(180, tableW - fixedW);
 
-  function drawHeader(y) {
-    // header bg + border
+  function drawHeaderRow(y) {
     doc.save();
     doc.rect(left, y, tableW, headerH).fill(PALETTE.navy);
     doc.strokeColor(PALETTE.grid).lineWidth(1.2);
     doc.rect(left, y, tableW, headerH).stroke();
     doc.restore();
 
-    // header text
     let x = left;
     doc.save();
     doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10);
@@ -591,7 +619,6 @@ function drawRiskRegister_landscape(doc, rows) {
     });
     doc.restore();
 
-    // verticals
     x = left;
     cols.forEach((c) => {
       doc.save();
@@ -619,7 +646,6 @@ function drawRiskRegister_landscape(doc, rows) {
         doc.font("Helvetica-Bold").fontSize(10.5);
         heights.push(doc.heightOfString(String(r[key] ?? ""), { width: tw }) + yPad);
       } else if (key === "score") {
-        // big number, always centered
         heights.push(14 + yPad + 16);
       } else if (key === "category") {
         doc.font("Helvetica").fontSize(10.5);
@@ -634,21 +660,24 @@ function drawRiskRegister_landscape(doc, rows) {
     return Math.min(170, Math.max(minRowH, h));
   }
 
-  // Start table
+  // Start table at current doc.y, but never above CONTENT_TOP_Y
+  normalizeBodyCursor(doc);
   let y = doc.y;
-  drawHeader(y);
+
+  drawHeaderRow(y);
   y += headerH;
 
   rows.forEach((r, idx) => {
     const rowH = calcRowHeight(r);
 
     // page break with header repetition
-    const bottom = doc.page.height - doc.page.margins.bottom - 40;
+    const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
     if (y + rowH > bottom) {
       addFooter(doc, r.__metaForFooter, r.__hashForFooter); // safe no-op if missing
       doc.addPage({ layout: "landscape" });
-      y = pageSafeTop(doc);
-      drawHeader(y);
+      // pageAdded will add header + normalize cursor
+      y = doc.y;
+      drawHeaderRow(y);
       y += headerH;
     }
 
@@ -948,6 +977,8 @@ export async function generateReport(data, outputPath) {
         doc._wrcPageNo = (doc._wrcPageNo || 1) + 1;
         // Header on all pages except cover (page 1)
         if (doc._wrcPageNo >= 2) addHeader(doc, data);
+        // ALWAYS normalize cursor (prevents mid-page starts & ghost pages)
+        normalizeBodyCursor(doc);
       });
 
       /* ======================================================
@@ -956,7 +987,7 @@ export async function generateReport(data, outputPath) {
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      doc.addPage();
+      doc.addPage(); // page 2 will get header + normalized cursor automatically
 
       /* ======================================================
          PAGE 2 — EXEC SUMMARY (cards + narrative + key facts)
@@ -985,8 +1016,16 @@ export async function generateReport(data, outputPath) {
       card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
       card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
 
-      card(doc, left, y0 + cardH + gap, colW, cardH, { title: "Coverage", value: scopeVal, foot: "Scope-locked (public paths)" });
-      card(doc, left + colW + gap, y0 + cardH + gap, colW, cardH, { title: "Verification fingerprint", value: verVal, foot: "Public integrity check" });
+      card(doc, left, y0 + cardH + gap, colW, cardH, {
+        title: "Coverage",
+        value: scopeVal,
+        foot: "Scope-locked (public paths)",
+      });
+      card(doc, left + colW + gap, y0 + cardH + gap, colW, cardH, {
+        title: "Verification fingerprint",
+        value: verVal,
+        foot: "Public integrity check",
+      });
 
       doc.y = y0 + cardH * 2 + gap * 2 + 8;
 
@@ -1036,9 +1075,13 @@ export async function generateReport(data, outputPath) {
       /* ======================================================
          PAGE 3+ — RISK REGISTER (LANDSCAPE, repeat header)
       ====================================================== */
-      doc.addPage({ layout: "landscape" });
+      doc.addPage({ layout: "landscape" }); // pageAdded -> header + normalized cursor
 
-      sectionTitle(doc, "Risk register", "Indicative probability×impact scoring for detected/derived entries (not legal conclusions).");
+      sectionTitle(
+        doc,
+        "Risk register",
+        "Indicative probability×impact scoring for detected/derived entries (not legal conclusions)."
+      );
       doc.moveDown(0.2);
 
       drawRiskRegister_landscape(doc, riskRows);

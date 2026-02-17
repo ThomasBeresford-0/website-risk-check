@@ -1,11 +1,12 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
-// BOUTIQUE UPGRADE (v2): true “consultancy artifact” layout
+// BOUTIQUE UPGRADE (v2.1): consultancy artifact layout (fixed Executive Summary page layout)
 // ✅ Premium cover + executive summary cards + clean typography
+// ✅ Executive summary now uses proper grid + two-column content (no awkward dead space)
 // ✅ Risk register rendered on LANDSCAPE page(s) with repeated header row
 // ✅ Verification page with QR + integrity explanation
 // ✅ Uses deterministic structured findings[] when present; deterministic legacy fallback otherwise
-// ✅ Fixes: NO blank/ghost pages (footer can NEVER wrap), NO table overflow, NO footer poisoning doc.y
+// ✅ Fixes: NO table overflow, NO footer poisoning doc.y
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
@@ -41,7 +42,7 @@ const PALETTE = {
 };
 
 /* =========================
-   LAYOUT CONSTANTS (critical)
+   LAYOUT CONSTANTS
 ========================= */
 // Header is drawn around y=30..52; content must ALWAYS start below it.
 const CONTENT_TOP_Y = 78;
@@ -100,7 +101,7 @@ function xRight(doc) {
 
 /**
  * Always keep doc.y in a sane place after page creation.
- * IMPORTANT: This fixes mid-page starts & "ghost pages".
+ * IMPORTANT: This is what fixes mid-page starts & "ghost pages".
  */
 function normalizeBodyCursor(doc) {
   if (doc.y < CONTENT_TOP_Y) doc.y = CONTENT_TOP_Y;
@@ -108,57 +109,15 @@ function normalizeBodyCursor(doc) {
 }
 
 /**
- * Add a page preserving current layout/size unless overridden.
- * IMPORTANT: prevents accidental portrait pages inside landscape sections.
- */
-function addPageSame(doc, extra = {}) {
-  const layout = doc?.page?.layout; // "portrait" | "landscape" (pdfkit)
-  const size = doc?.page?.size; // e.g. "A4"
-  const payload = { size, layout, ...extra };
-  // Remove undefined keys (pdfkit is fine, but keep clean)
-  if (!payload.size) delete payload.size;
-  if (!payload.layout) delete payload.layout;
-  doc.addPage(payload);
-}
-
-/**
  * Ensure there is enough vertical space for the next block.
- * When we add a page, pageAdded handler will draw header and normalize cursor.
+ * Adds a page and normalizes cursor.
  */
 function ensureSpace(doc, minSpace = 120) {
   const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
   if (doc.y + minSpace > bottom) {
-    addPageSame(doc);
+    doc.addPage();
     normalizeBodyCursor(doc);
   }
-}
-
-/**
- * Fit text onto ONE line (never wrap).
- * CRITICAL: prevents footer text wrapping which can force PDFKit to add new pages.
- */
-function fitOneLine(doc, text, maxWidth) {
-  const s = String(text ?? "");
-  if (doc.widthOfString(s) <= maxWidth) return s;
-
-  const ell = "…";
-  let lo = 0;
-  let hi = s.length;
-
-  while (lo < hi) {
-    const mid = Math.ceil((lo + hi) / 2);
-    const candidate = s.slice(0, mid) + ell;
-    if (doc.widthOfString(candidate) <= maxWidth) lo = mid;
-    else hi = mid - 1;
-  }
-
-  return s.slice(0, lo) + ell;
-}
-
-function shortHash(hash) {
-  const h = String(hash || "");
-  if (h.length <= 22) return h;
-  return `${h.slice(0, 10)}…${h.slice(-10)}`;
 }
 
 /* =========================
@@ -331,7 +290,7 @@ function badge(doc, text, tone = "gray", x, y) {
 }
 
 function sectionTitle(doc, title, subtitle = "") {
-  ensureSpace(doc, 160);
+  ensureSpace(doc, 180);
 
   doc.font("Helvetica-Bold").fontSize(20).fillColor(PALETTE.ink).text(title);
   if (subtitle) {
@@ -345,9 +304,9 @@ function sectionTitle(doc, title, subtitle = "") {
 }
 
 function subTitle(doc, title) {
-  ensureSpace(doc, 110);
+  ensureSpace(doc, 120);
   doc.font("Helvetica-Bold").fontSize(12.5).fillColor(PALETTE.ink).text(title);
-  doc.moveDown(0.4);
+  doc.moveDown(0.35);
 }
 
 function bodyText(doc, text) {
@@ -368,7 +327,11 @@ function bulletList(doc, items) {
 function card(doc, x, y, w, h, { title, value, foot } = {}) {
   doc.save();
   doc.roundedRect(x, y, w, h, 14).fillColor("#FFFFFF").fill();
-  doc.strokeColor(PALETTE.line).lineWidth(1).roundedRect(x, y, w, h, 14).stroke();
+  doc
+    .strokeColor(PALETTE.line)
+    .lineWidth(1)
+    .roundedRect(x, y, w, h, 14)
+    .stroke();
   doc.restore();
 
   const pad = 14;
@@ -398,6 +361,21 @@ function card(doc, x, y, w, h, { title, value, foot } = {}) {
   }
 }
 
+function panel(doc, x, y, w, h, { title } = {}) {
+  doc.save();
+  doc.roundedRect(x, y, w, h, 14).fillColor(PALETTE.soft).fill();
+  doc.strokeColor(PALETTE.line).lineWidth(1).roundedRect(x, y, w, h, 14).stroke();
+  doc.restore();
+
+  if (title) {
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10.8)
+      .fillColor(PALETTE.ink)
+      .text(title, x + 14, y + 12, { width: w - 28 });
+  }
+}
+
 /* =========================
    HEADER / FOOTER
 ========================= */
@@ -409,7 +387,6 @@ function addHeader(doc, data) {
   const right = xRight(doc);
   const width = right - left;
 
-  // top divider
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(left, 52).lineTo(right, 52).stroke();
@@ -435,77 +412,44 @@ function addHeader(doc, data) {
     .text(`Page ${doc._wrcPageNo || 1}`, left, 42, { width, align: "right" });
 
   doc.restore();
-
-  // CRITICAL: always normalize body cursor after header
   normalizeBodyCursor(doc);
 }
 
-/**
- * ✅ CRITICAL FIX: Footer can NEVER wrap.
- * Wrapping at a fixed y near the bottom is what causes PDFKit to auto-add pages,
- * producing "blank pages" with only footer fragments.
- */
 function addFooter(doc, meta, integrityHash) {
   const left = xLeft(doc);
   const right = xRight(doc);
   const width = right - left;
-
-  // Draw safely above the bottom edge
-  const bottomY = doc.page.height - doc.page.margins.bottom - 26;
+  const bottomY = doc.page.height - 40;
 
   const base = process.env.BASE_URL || "";
-  const verifyPath = `/verify/${integrityHash}`;
-  const verifyUrl = base ? `${base}${verifyPath}` : verifyPath;
+  const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
 
   const scanId = meta?.scanId ? String(meta.scanId) : "—";
   const ts = meta?.scannedAt ? iso(meta.scannedAt) : "";
 
-  // IMPORTANT: prevent footer rendering from poisoning doc.y
   const prevY = doc.y;
   const prevX = doc.x;
 
-  // divider
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(left, bottomY - 10).lineTo(right, bottomY - 10).stroke();
   doc.restore();
 
-  // Short, deterministic footer strings (no wrap)
-  const line1Raw = `WebsiteRiskCheck.com • Report ID: ${scanId}${ts ? ` • Timestamp (UTC): ${ts}` : ""}`;
-
-  // Display short verify in footer (full URL + full hash live on Verification page)
-  const line2Raw = `Verify: ${base ? `${base}/verify/${shortHash(integrityHash)}` : `/verify/${shortHash(integrityHash)}`}`;
+  const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId}${ts ? ` • Timestamp (UTC): ${ts}` : ""}`;
+  const line2 = `Verify: ${verifyUrl}`;
 
   doc.save();
   doc.font("Helvetica").fontSize(8).fillColor(PALETTE.muted);
-
-  const line1 = fitOneLine(doc, line1Raw, width);
-  const line2 = fitOneLine(doc, line2Raw, width);
-
-  // Force single-line render (no line breaks, no continuation)
-  doc.text(line1, left, bottomY, {
-    width,
-    align: "center",
-    lineBreak: false,
-    continued: false,
-  });
-
-  doc.text(line2, left, bottomY + 10, {
-    width,
-    align: "center",
-    lineBreak: false,
-    continued: false,
-  });
-
+  doc.text(line1, left, bottomY, { width, align: "center" });
+  doc.text(line2, left, bottomY + 10, { width, align: "center" });
   doc.restore();
 
-  // restore content cursor
   doc.y = prevY;
   doc.x = prevX;
 }
 
 /* =========================
-   COVER (premium + tighter)
+   COVER
 ========================= */
 
 function drawCoverBackground(doc) {
@@ -515,15 +459,13 @@ function drawCoverBackground(doc) {
   doc.save();
   doc.rect(0, 0, w, h).fill(PALETTE.paper);
 
-  // top-left wedge
   doc
     .moveTo(0, 0)
     .lineTo(w * 0.42, 0)
-    .lineTo(0, h * 0.2)
+    .lineTo(0, h * 0.20)
     .closePath()
     .fill(PALETTE.tealMid);
 
-  // bottom-right wedge
   doc
     .moveTo(w * 0.32, h)
     .lineTo(w, h * 0.58)
@@ -531,21 +473,19 @@ function drawCoverBackground(doc) {
     .closePath()
     .fill(PALETTE.tealDark);
 
-  // accent strip
   doc
-    .moveTo(w * 0.4, h)
-    .lineTo(w, h * 0.7)
+    .moveTo(w * 0.40, h)
+    .lineTo(w, h * 0.70)
     .lineTo(w, h * 0.78)
     .lineTo(w * 0.52, h)
     .closePath()
     .fill(PALETTE.greenLight);
 
-  // thin white cut
   doc
     .moveTo(w * 0.46, h)
     .lineTo(w, h * 0.74)
     .lineTo(w, h * 0.765)
-    .lineTo(w * 0.5, h)
+    .lineTo(w * 0.50, h)
     .closePath()
     .fill("#FFFFFF");
 
@@ -558,7 +498,6 @@ function drawCover(doc, meta, risk, integrityHash) {
   const left = xLeft(doc);
   const width = widthBetweenMargins(doc);
 
-  // Brand
   doc
     .font("Helvetica-Bold")
     .fontSize(12)
@@ -574,7 +513,6 @@ function drawCover(doc, meta, risk, integrityHash) {
       align: "left",
     });
 
-  // Title
   doc
     .font("Helvetica-Bold")
     .fontSize(36)
@@ -590,11 +528,9 @@ function drawCover(doc, meta, risk, integrityHash) {
       align: "center",
     });
 
-  // Risk badge
   const tone = toneForRisk(risk.level);
   badge(doc, `Risk level: ${risk.level}`, tone, left + width / 2 - 92, 470);
 
-  // Details card
   const boxY = 552;
   const boxW = Math.min(540, width);
   const boxX = left + (width - boxW) / 2;
@@ -626,7 +562,6 @@ function drawCover(doc, meta, risk, integrityHash) {
     ry += 32;
   });
 
-  // Disclosure
   doc
     .font("Helvetica")
     .fontSize(9.6)
@@ -640,7 +575,199 @@ function drawCover(doc, meta, risk, integrityHash) {
 }
 
 /* =========================
-   RISK REGISTER TABLE (LANDSCAPE, repeated header)
+   EXEC SUMMARY (FIXED LAYOUT)
+========================= */
+
+function whatThisMeansFor(level) {
+  if (level === "High") {
+    return "Multiple risk-relevant signals and/or missing public indicators were detected on the scanned surface. This does not prove non-compliance, but it suggests a structured review of policies, consent controls, and data-capture touchpoints may be warranted.";
+  }
+  if (level === "Medium") {
+    return "Some risk-relevant signals and/or missing public indicators were detected on the scanned surface. This does not prove non-compliance, but it suggests potential gaps worth reviewing.";
+  }
+  return "Relatively few risk-relevant signals were detected on the scanned surface at the recorded timestamp. This does not guarantee compliance, but fewer obvious gaps were observed in scope.";
+}
+
+function renderExecSummary(doc, { meta, coverage, signals, risk, integrityHash, trackers, vendors, totalImages, imagesMissingAlt }) {
+  sectionTitle(
+    doc,
+    "Executive summary",
+    "Client-ready snapshot of observable website signals at a fixed timestamp."
+  );
+
+  // risk pill
+  const tone = toneForRisk(risk.level);
+  const pill = badge(doc, `Risk level: ${risk.level}`, tone, xLeft(doc), doc.y);
+  doc.y += pill.h + 10;
+
+  // 2×2 cards (full width)
+  const left = xLeft(doc);
+  const w = widthBetweenMargins(doc);
+  const gap = 12;
+  const colW = (w - gap) / 2;
+  const cardH = 78;
+
+  const idVal = meta.scanId || "—";
+  const tsVal = meta.scannedAt ? iso(meta.scannedAt) : "—";
+  const scopeVal = `${safeArr(coverage?.checkedPages).length || 0} page(s) checked`;
+  const verVal = integrityHash.slice(0, 10) + "…" + integrityHash.slice(-10);
+
+  const yCards = doc.y;
+
+  card(doc, left, yCards, colW, cardH, { title: "Report ID", value: idVal });
+  card(doc, left + colW + gap, yCards, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
+
+  card(doc, left, yCards + cardH + gap, colW, cardH, {
+    title: "Coverage",
+    value: scopeVal,
+    foot: "Scope-locked (public paths)",
+  });
+  card(doc, left + colW + gap, yCards + cardH + gap, colW, cardH, {
+    title: "Verification fingerprint",
+    value: verVal,
+    foot: "Public integrity check",
+  });
+
+  // Move cursor BELOW the card grid
+  doc.y = yCards + cardH * 2 + gap * 2 + 16;
+
+  // Two-column content block
+  const colGap = 14;
+  const colW2 = (w - colGap) / 2;
+  const xL = left;
+  const xR = left + colW2 + colGap;
+  const yTop = doc.y;
+
+  // Build right column "Key findings" list
+  const keyFindings = [];
+  keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
+  keyFindings.push(`Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`);
+  keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
+  keyFindings.push(`Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`);
+  keyFindings.push(
+    `Consent banner indicator: ${signals?.consent?.bannerDetected ? "Detected" : "Not detected"} (heuristic)`
+  );
+  keyFindings.push(
+    `Tracking scripts: ${
+      trackers.length
+        ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
+        : "None detected"
+    }`
+  );
+  keyFindings.push(
+    `Cookie vendor signals: ${
+      vendors.length
+        ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
+        : "None detected"
+    }`
+  );
+  keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
+  keyFindings.push(
+    `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
+  );
+  keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
+  keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
+
+  // Estimate height needed so we can page-break cleanly if required
+  doc.save();
+  doc.font("Helvetica").fontSize(10.2);
+  const leftTextH =
+    doc.heightOfString(whatThisMeansFor(risk.level), { width: colW2, lineGap: 4 }) +
+    18 +
+    doc.heightOfString("Notable observations", { width: colW2 }) +
+    10 +
+    doc.heightOfString(safeArr(risk.reasons).slice(0, 10).join("\n"), { width: colW2, lineGap: 4 });
+
+  const rightListH =
+    16 + // panel title
+    doc.heightOfString(keyFindings.join("\n"), { width: colW2 - 28, lineGap: 4 }) +
+    28;
+
+  doc.restore();
+
+  const blockNeeded = Math.max(leftTextH, rightListH) + 36;
+  ensureSpace(doc, Math.max(220, blockNeeded));
+
+  // Re-set anchors after possible page add
+  const y0 = doc.y;
+
+  // LEFT COLUMN
+  let yL = y0;
+
+  doc.font("Helvetica-Bold").fontSize(12).fillColor(PALETTE.ink).text("What this means", xL, yL, {
+    width: colW2,
+  });
+  yL += 18;
+
+  doc.font("Helvetica").fontSize(10.8).fillColor(PALETTE.body).text(whatThisMeansFor(risk.level), xL, yL, {
+    width: colW2,
+    lineGap: 4,
+  });
+  yL += doc.heightOfString(whatThisMeansFor(risk.level), { width: colW2, lineGap: 4 }) + 12;
+
+  doc.font("Helvetica-Bold").fontSize(12).fillColor(PALETTE.ink).text("Notable observations", xL, yL, {
+    width: colW2,
+  });
+  yL += 14;
+
+  doc.font("Helvetica").fontSize(10.8).fillColor(PALETTE.body);
+  const obs = safeArr(risk.reasons).slice(0, 10);
+  if (obs.length) {
+    // manual bullets (more predictable than doc.list for column layouts)
+    const bulletX = xL + 10;
+    const textX = xL + 22;
+    const lineGap = 4;
+
+    obs.forEach((t) => {
+      const lineH = doc.heightOfString(clampText(t, 180), { width: colW2 - 22, lineGap });
+      doc.circle(bulletX, yL + 6, 1.6).fill(PALETTE.ink);
+      doc.fillColor(PALETTE.body).text(clampText(t, 180), textX, yL, { width: colW2 - 22, lineGap });
+      yL += lineH + 6;
+    });
+  } else {
+    doc.fillColor(PALETTE.muted).text("No notable observations recorded.", xL, yL, { width: colW2 });
+    yL += 18;
+  }
+
+  // RIGHT COLUMN (panel)
+  let yR = y0;
+  const panelPadTop = 34;
+  const panelPadInner = 14;
+
+  // compute panel height based on content
+  doc.save();
+  doc.font("Helvetica").fontSize(10.2);
+  const listH = doc.heightOfString(keyFindings.join("\n"), { width: colW2 - 28, lineGap: 4 });
+  doc.restore();
+
+  const panelH = Math.max(180, panelPadTop + panelPadInner + listH + 16);
+  panel(doc, xR, yR, colW2, panelH, { title: "Key findings (detectable signals)" });
+
+  // list inside panel
+  let yList = yR + panelPadTop;
+  const bx = xR + 14;
+  const bw = colW2 - 28;
+
+  doc.font("Helvetica").fontSize(10.2).fillColor(PALETTE.body);
+
+  // manual bullets inside panel
+  keyFindings.slice(0, 12).forEach((t) => {
+    const lineH = doc.heightOfString(clampText(t, 220), { width: bw - 16, lineGap: 4 });
+    doc.circle(bx + 6, yList + 6, 1.6).fill(PALETTE.ink);
+    doc.fillColor(PALETTE.body).text(clampText(t, 220), bx + 16, yList, { width: bw - 16, lineGap: 4 });
+    yList += lineH + 6;
+  });
+
+  yR = yR + panelH;
+
+  // Set doc.y to the *lowest* point so spacing continues cleanly
+  doc.y = Math.max(yL, yR) + 10;
+
+  hr(doc, 6);
+}
+
+/* =========================
+   RISK REGISTER TABLE (LANDSCAPE)
 ========================= */
 
 function scoreBand(score) {
@@ -666,10 +793,9 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     { key: "impact", w: 80, label: "Impact" },
     { key: "score", w: 70, label: "Score" },
     { key: "trigger", w: 150, label: "Trigger" },
-    { key: "response", w: 0, label: "Mitigation response" }, // remainder
+    { key: "response", w: 0, label: "Mitigation response" },
   ];
 
-  // ✅ GUARANTEED-FIT WIDTH ALLOCATOR (NEVER OVERFLOWS)
   const MIN_LAST = 170;
   const MIN_DESC = 150;
   const MIN_TRIGGER = 120;
@@ -735,7 +861,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   function calcRowHeight(r) {
     const padX = 10;
-    const yPad = 24; // 12 top + 12 bottom
+    const yPad = 24;
     const heights = [];
 
     cols.forEach((c) => {
@@ -757,8 +883,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     });
 
     const h = Math.max(minRowH, ...heights);
-    // Clamp to prevent huge rows from blowing layout
-    return Math.min(170, Math.max(minRowH, h));
+    return Math.max(minRowH, h);
   }
 
   normalizeBodyCursor(doc);
@@ -769,13 +894,12 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   const bottom = () => doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
 
-  safeArr(rows).forEach((r, idx) => {
+  rows.forEach((r, idx) => {
     const rowH = calcRowHeight(r);
 
     if (y + rowH > bottom()) {
       addFooter(doc, meta, integrityHash);
-
-      addPageSame(doc, { layout: "landscape" });
+      doc.addPage({ layout: "landscape" });
       normalizeBodyCursor(doc);
       y = doc.y;
 
@@ -849,20 +973,6 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 }
 
 /* =========================
-   EXEC / RISK MODEL TEXT
-========================= */
-
-function whatThisMeansFor(level) {
-  if (level === "High") {
-    return "Multiple risk-relevant signals and/or missing public indicators were detected on the scanned surface. This does not prove non-compliance, but it suggests a structured review of policies, consent controls, and data-capture touchpoints may be warranted.";
-  }
-  if (level === "Medium") {
-    return "Some risk-relevant signals and/or missing public indicators were detected on the scanned surface. This does not prove non-compliance, but it suggests potential gaps worth reviewing.";
-  }
-  return "Relatively few risk-relevant signals were detected on the scanned surface at the recorded timestamp. This does not guarantee compliance, but fewer obvious gaps were observed in scope.";
-}
-
-/* =========================
    FINDINGS → ROWS (preferred)
 ========================= */
 
@@ -903,6 +1013,7 @@ function buildRiskRegister(meta, coverage, signals) {
 
   const rows = [];
 
+  // Compliance policy presence
   {
     const missing =
       (!signals?.policies?.privacy ? 1 : 0) +
@@ -926,6 +1037,7 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
+  // Tracking
   {
     const hasTracking = trackers.length > 0 || vendors.length > 0;
     const prob = hasTracking ? 4 : 2;
@@ -945,6 +1057,7 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
+  // Forms / data capture
   {
     const forms = num(signals?.forms?.detected);
     const personalSignals = num(signals?.forms?.personalDataSignals);
@@ -965,6 +1078,7 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
+  // Accessibility
   {
     const ratio = totalImages > 0 ? missingAlt / totalImages : 0;
     const prob = ratio > 0.3 ? 4 : ratio > 0 ? 3 : 1;
@@ -980,10 +1094,11 @@ function buildRiskRegister(meta, coverage, signals) {
       scoreNum: score,
       trigger: "Alt text missing for a portion of detected images (heuristic scan).",
       response:
-        "Add alt text to meaningful images on key pages. Prioritise conversion and policy pages first.",
+        "Add alt text to meaningful images on key pages where missing. Prioritise conversion and policy pages first.",
     });
   }
 
+  // Trust / identity
   {
     const prob = signals?.contact?.detected ? 1 : 3;
     const impact = signals?.contact?.detected ? 1 : 2;
@@ -1018,14 +1133,11 @@ export async function generateReport(data, outputPath) {
       const coverage = getCoverage(data);
       const signals = getSignals(data);
 
-      // Integrity hash from normalized objective model
       const integrityInput = buildIntegrityInput(data);
       const integrityHash = computeIntegrityHash(integrityInput);
 
-      // Risk from scan data
       const risk = computeRisk(data);
 
-      // Attach for downstream compatibility
       data.integrityHash = integrityHash;
       data.riskLevel = risk.level;
       data.riskScore = risk.score;
@@ -1041,9 +1153,7 @@ export async function generateReport(data, outputPath) {
 
       const findings = safeArr(data?.findings || data?.meta?.findings);
       const structuredRows = rowsFromFindings(findings);
-      const riskRows = structuredRows.length
-        ? structuredRows
-        : buildRiskRegister(meta, coverage, signals);
+      const riskRows = structuredRows.length ? structuredRows : buildRiskRegister(meta, coverage, signals);
 
       const doc = new PDFDocument({
         margin: 54,
@@ -1058,126 +1168,35 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      // Page number tracking (stable)
       doc._wrcPageNo = 1;
 
       doc.on("pageAdded", () => {
         doc._wrcPageNo = (doc._wrcPageNo || 1) + 1;
-
-        // Header on all pages except cover (page 1)
         if (doc._wrcPageNo >= 2) addHeader(doc, data);
-
-        // ALWAYS normalize cursor (prevents mid-page starts)
         normalizeBodyCursor(doc);
       });
 
-      /* ======================================================
-         PAGE 1 — COVER
-      ====================================================== */
+      // PAGE 1 — COVER
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      // Page 2 (portrait)
-      addPageSame(doc);
-
-      /* ======================================================
-         PAGE 2 — EXEC SUMMARY
-      ====================================================== */
-      sectionTitle(
-        doc,
-        "Executive summary",
-        "Client-ready snapshot of observable website signals at a fixed timestamp."
-      );
-
-      const tone = toneForRisk(risk.level);
-      badge(doc, `Risk level: ${risk.level}`, tone, xLeft(doc), doc.y);
-      doc.moveDown(1.0);
-
-      const left = xLeft(doc);
-      const w = widthBetweenMargins(doc);
-      const gap = 12;
-      const colW = (w - gap) / 2;
-      const cardH = 78;
-
-      const idVal = meta.scanId || "—";
-      const tsVal = meta.scannedAt ? iso(meta.scannedAt) : "—";
-      const scopeVal = `${safeArr(coverage?.checkedPages).length || 0} page(s) checked`;
-      const verVal = integrityHash.slice(0, 10) + "…" + integrityHash.slice(-10);
-
-      const y0 = doc.y;
-
-      card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
-      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
-
-      card(doc, left, y0 + cardH + gap, colW, cardH, {
-        title: "Coverage",
-        value: scopeVal,
-        foot: "Scope-locked (public paths)",
+      // PAGE 2 — EXEC SUMMARY
+      doc.addPage();
+      renderExecSummary(doc, {
+        meta,
+        coverage,
+        signals,
+        risk,
+        integrityHash,
+        trackers,
+        vendors,
+        totalImages,
+        imagesMissingAlt,
       });
-      card(doc, left + colW + gap, y0 + cardH + gap, colW, cardH, {
-        title: "Verification fingerprint",
-        value: verVal,
-        foot: "Public integrity check",
-      });
-
-      doc.y = y0 + cardH * 2 + gap * 2 + 8;
-
-      bodyText(doc, whatThisMeansFor(risk.level));
-      doc.moveDown(0.6);
-
-      subTitle(doc, "Notable observations");
-      bulletList(doc, safeArr(risk.reasons).slice(0, 10));
-      hr(doc);
-
-      subTitle(doc, "Key findings (detectable signals)");
-      const keyFindings = [];
-
-      keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
-      keyFindings.push(
-        `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
-      );
-      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
-      keyFindings.push(
-        `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
-      );
-      keyFindings.push(
-        `Consent banner indicator: ${
-          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
-        } (heuristic)`
-      );
-
-      keyFindings.push(
-        `Tracking scripts: ${
-          trackers.length
-            ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
-            : "None detected"
-        }`
-      );
-
-      keyFindings.push(
-        `Cookie vendor signals: ${
-          vendors.length
-            ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
-            : "None detected"
-        }`
-      );
-
-      keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
-      keyFindings.push(
-        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
-      );
-      keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      keyFindings.push(
-        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
-      );
-
-      bulletList(doc, keyFindings.slice(0, 12));
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         PAGE 3+ — RISK REGISTER (LANDSCAPE)
-      ====================================================== */
-      addPageSame(doc, { layout: "landscape" });
+      // PAGE 3+ — RISK REGISTER (LANDSCAPE)
+      doc.addPage({ layout: "landscape" });
 
       sectionTitle(
         doc,
@@ -1201,16 +1220,10 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         FINDINGS BY CATEGORY (portrait)
-      ====================================================== */
-      addPageSame(doc, { layout: "portrait" });
+      // NEXT — FINDINGS BY CATEGORY
+      doc.addPage();
 
-      sectionTitle(
-        doc,
-        "Findings by category",
-        "What was detected on the scanned surface (scope-locked)."
-      );
+      sectionTitle(doc, "Findings by category", "What was detected on the scanned surface (scope-locked).");
 
       subTitle(doc, "Connection");
       bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
@@ -1269,12 +1282,11 @@ export async function generateReport(data, outputPath) {
       subTitle(doc, "Contact & identity signals");
       bulletList(doc, [`Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`]);
       bodyText(doc, "Detected using simple patterns (email/phone/contact link) on the scanned surface only.");
+
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         COMMON NEXT STEPS
-      ====================================================== */
-      addPageSame(doc);
+      // COMMON NEXT STEPS
+      doc.addPage();
 
       sectionTitle(doc, "Common next steps", "General orientation only — not legal advice.");
 
@@ -1295,10 +1307,8 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         METHODOLOGY & LIMITATIONS
-      ====================================================== */
-      addPageSame(doc);
+      // METHODOLOGY & LIMITATIONS
+      doc.addPage();
 
       sectionTitle(doc, "Methodology & limitations", "How this snapshot is produced, and what it does not do.");
 
@@ -1336,10 +1346,8 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         VERIFICATION
-      ====================================================== */
-      addPageSame(doc);
+      // VERIFICATION
+      doc.addPage();
 
       sectionTitle(doc, "Report verification", "Public integrity check for this sealed snapshot.");
 

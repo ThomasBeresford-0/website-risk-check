@@ -1,6 +1,6 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
-// BOUTIQUE UPGRADE (v2.1): consultancy artifact layout (STABLE)
+// BOUTIQUE UPGRADE (v2.2): consultancy artifact layout (STABLE)
 // ✅ Fixes: NO blank/ghost pages (footer-safe), NO table overflow, NO footer poisoning doc.y
 // ✅ Premium cover + exec summary + landscape risk register + verification QR
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
@@ -24,7 +24,6 @@ const PALETTE = {
   muted: "#5B6B82",
   body: "#1F2937",
   line: "#D7DEE2",
-  soft: "#F7FAFC",
 
   navy: "#021942",
   rowA: "#F3F4F6",
@@ -111,11 +110,14 @@ function normalizeBodyCursor(doc) {
 
 /**
  * Ensure there is enough vertical space for the next block.
+ * IMPORTANT: This is the only “flow” pagination helper used outside of the table,
+ * so we keep it deterministic + footer-safe.
  */
 function ensureSpace(doc, minSpace = 120) {
   const bottom = contentBottomY(doc);
   if (doc.y + minSpace > bottom) {
     doc.addPage();
+    // header is drawn by pageAdded hook; we only normalize cursor here
     normalizeBodyCursor(doc);
   }
 }
@@ -399,7 +401,7 @@ function addHeader(doc, data) {
  * CRITICAL FIX:
  * Footer Y must be inside bottom margin.
  * If you render footer below doc.page.height - doc.page.margins.bottom,
- * PDFKit auto-adds a new page -> blank pages.
+ * PDFKit auto-adds a new page -> ghost pages.
  */
 function addFooter(doc, meta, integrityHash) {
   const left = xLeft(doc);
@@ -413,7 +415,7 @@ function addFooter(doc, meta, integrityHash) {
   const ts = meta?.scannedAt ? iso(meta.scannedAt) : "";
 
   // SAFE footer block coordinates (inside margins)
-  const footerTop = doc.page.height - doc.page.margins.bottom - FOOTER_HEIGHT; // inside margins
+  const footerTop = doc.page.height - doc.page.margins.bottom - FOOTER_HEIGHT;
   const dividerY = footerTop + 6;
   const line1Y = footerTop + 12;
   const line2Y = footerTop + 22;
@@ -432,7 +434,6 @@ function addFooter(doc, meta, integrityHash) {
 
   doc.save();
   doc.font("Helvetica").fontSize(8).fillColor(PALETTE.muted);
-  // Render using explicit Y well inside margins (no pagination)
   doc.text(line1, left, line1Y, { width, align: "center", lineBreak: false });
   doc.text(line2, left, line2Y, { width, align: "center", lineBreak: false });
   doc.restore();
@@ -587,6 +588,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   const headerH = 34;
   const minRowH = 92;
 
+  // NOTE: These widths are “targets”, we hard-fit the final column to tableW.
   const cols = [
     { key: "category", w: 110, label: "Risk\nCategory" },
     { key: "desc", w: 190, label: "Risk\nDescription" },
@@ -597,9 +599,9 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     { key: "response", w: 0, label: "Mitigation response" },
   ];
 
-  // guaranteed-fit allocator
-  const MIN_LAST = 170;
-  const MIN_DESC = 150;
+  // guaranteed-fit allocator (prevents overflow in any margin/layout)
+  const MIN_LAST = 190;
+  const MIN_DESC = 160;
   const MIN_TRIGGER = 120;
 
   let fixedW = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
@@ -629,7 +631,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     remaining = tableW - fixedW;
   }
 
-  cols[cols.length - 1].w = Math.max(90, remaining);
+  cols[cols.length - 1].w = Math.max(MIN_LAST, remaining);
 
   function drawHeaderRow(y) {
     doc.save();
@@ -647,6 +649,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     });
     doc.restore();
 
+    // vertical grid lines
     x = left;
     cols.forEach((c) => {
       doc.save();
@@ -665,27 +668,32 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   function calcRowHeight(r) {
     const padX = 10;
     const yPad = 24;
-    const heights = [];
 
-    cols.forEach((c) => {
-      const tw = c.w - padX * 2;
+    const heights = cols.map((c) => {
+      const tw = Math.max(12, c.w - padX * 2);
       const key = c.key;
 
       if (key === "prob" || key === "impact") {
         doc.font("Helvetica-Bold").fontSize(10.5);
-        heights.push(doc.heightOfString(String(r[key] ?? ""), { width: tw }) + yPad);
-      } else if (key === "score") {
-        heights.push(14 + yPad + 16);
-      } else if (key === "category") {
-        doc.font("Helvetica").fontSize(10.5);
-        heights.push(doc.heightOfString(String(r.category ?? ""), { width: tw }) + yPad);
-      } else {
-        doc.font("Helvetica").fontSize(10.2);
-        heights.push(doc.heightOfString(String(r[key] ?? ""), { width: tw, lineGap: 3 }) + yPad);
+        return doc.heightOfString(String(r[key] ?? ""), { width: tw }) + yPad;
       }
+
+      if (key === "score") {
+        return 14 + yPad + 16;
+      }
+
+      if (key === "category") {
+        doc.font("Helvetica").fontSize(10.5);
+        return doc.heightOfString(String(r.category ?? ""), { width: tw }) + yPad;
+      }
+
+      doc.font("Helvetica").fontSize(10.2);
+      return doc.heightOfString(String(r[key] ?? ""), { width: tw, lineGap: 3 }) + yPad;
     });
 
-    return Math.max(minRowH, ...heights);
+    // clamp prevents runaway height from pathological strings
+    const h = Math.max(minRowH, ...heights);
+    return Math.min(180, h);
   }
 
   normalizeBodyCursor(doc);
@@ -700,9 +708,11 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     const rowH = calcRowHeight(r);
 
     if (y + rowH > bottom()) {
+      // close out this page cleanly BEFORE adding a new one
       addFooter(doc, meta, integrityHash);
 
       doc.addPage({ layout: "landscape" });
+      // header drawn by pageAdded
       normalizeBodyCursor(doc);
       y = doc.y;
 
@@ -730,6 +740,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     doc.rect(left, y, tableW, rowH).stroke();
     doc.restore();
 
+    // vertical grid lines
     let vx = left;
     cols.forEach((c) => {
       doc.save();
@@ -744,26 +755,31 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + rowH).stroke();
     doc.restore();
 
+    // text
     let cx = left;
     doc.save();
     cols.forEach((c) => {
       const pad = 10;
       const tx = cx + pad;
       const ty = y + 12;
-      const tw = c.w - pad * 2;
+      const tw = Math.max(12, c.w - pad * 2);
 
       if (c.key === "category") {
         doc.font("Helvetica").fontSize(10.5).fillColor(PALETTE.ink);
-        doc.text(clampText(r.category, 60), tx, ty, { width: tw });
+        doc.text(clampText(r.category, 70), tx, ty, { width: tw });
       } else if (c.key === "prob" || c.key === "impact") {
         doc.font("Helvetica-Bold").fontSize(10.5).fillColor(PALETTE.ink);
-        doc.text(clampText(r[c.key], 40), tx, ty + 18, { width: tw, align: "center" });
+        doc.text(clampText(r[c.key], 46), tx, ty + 18, { width: tw, align: "center" });
       } else if (c.key === "score") {
         doc.font("Helvetica-Bold").fontSize(14).fillColor("#111827");
         doc.text(String(r.scoreNum), tx, ty + 28, { width: tw, align: "center" });
       } else {
         doc.font("Helvetica").fontSize(10.2).fillColor(PALETTE.ink);
-        doc.text(clampText(r[c.key], 260), tx, ty, { width: tw, lineGap: 3 });
+        doc.text(clampText(r[c.key], 320), tx, ty, {
+          width: tw,
+          lineGap: 3,
+          ellipsis: true,
+        });
       }
 
       cx += c.w;
@@ -807,13 +823,13 @@ function rowsFromFindings(findings) {
     const iLabel = f?.impact?.label || "Moderate";
 
     return {
-      category: clampText(f?.category || "General", 60),
-      desc: clampText(f?.description || "", 260),
-      prob: clampText(`${pLabel} (${pVal})`, 40),
-      impact: clampText(`${iLabel} (${iVal})`, 40),
+      category: clampText(f?.category || "General", 70),
+      desc: clampText(f?.description || "", 320),
+      prob: clampText(`${pLabel} (${pVal})`, 46),
+      impact: clampText(`${iLabel} (${iVal})`, 46),
       scoreNum,
-      trigger: clampText(f?.trigger || "Detected signals indicate potential exposure.", 260),
-      response: clampText(f?.mitigation || "Review and remediate as appropriate.", 260),
+      trigger: clampText(f?.trigger || "Detected signals indicate potential exposure.", 320),
+      response: clampText(f?.mitigation || "Review and remediate as appropriate.", 320),
     };
   });
 }
@@ -951,6 +967,7 @@ export async function generateReport(data, outputPath) {
 
       const risk = computeRisk(data);
 
+      // Mutate only safe “enrichment” fields (NOT used by integrity input)
       data.integrityHash = integrityHash;
       data.riskLevel = risk.level;
       data.riskScore = risk.score;
@@ -966,9 +983,7 @@ export async function generateReport(data, outputPath) {
 
       const findings = safeArr(data?.findings || data?.meta?.findings);
       const structuredRows = rowsFromFindings(findings);
-      const riskRows = structuredRows.length
-        ? structuredRows
-        : buildRiskRegister(meta, coverage, signals);
+      const riskRows = structuredRows.length ? structuredRows : buildRiskRegister(meta, coverage, signals);
 
       const doc = new PDFDocument({
         margin: 54,
@@ -983,19 +998,27 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
+      // deterministic, monotonic page numbering
       doc._wrcPageNo = 1;
 
       doc.on("pageAdded", () => {
         doc._wrcPageNo = (doc._wrcPageNo || 1) + 1;
+
+        // Cover is page 1 only. Every subsequent page gets the header.
         if (doc._wrcPageNo >= 2) addHeader(doc, data);
+
         normalizeBodyCursor(doc);
       });
 
-      // PAGE 1 — COVER
+      /* ======================
+         PAGE 1 — COVER
+      ====================== */
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      // PAGE 2 — EXEC SUMMARY
+      /* ======================
+         PAGE 2 — EXEC SUMMARY
+      ====================== */
       doc.addPage();
 
       sectionTitle(
@@ -1053,9 +1076,7 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
       keyFindings.push(`Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Consent banner indicator: ${
-          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
-        } (heuristic)`
+        `Consent banner indicator: ${signals?.consent?.bannerDetected ? "Detected" : "Not detected"} (heuristic)`
       );
 
       keyFindings.push(
@@ -1079,14 +1100,14 @@ export async function generateReport(data, outputPath) {
         `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
       );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      keyFindings.push(
-        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
-      );
+      keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
 
       bulletList(doc, keyFindings.slice(0, 12));
       addFooter(doc, meta, integrityHash);
 
-      // RISK REGISTER — LANDSCAPE
+      /* ======================
+         RISK REGISTER — LANDSCAPE
+      ====================== */
       doc.addPage({ layout: "landscape" });
 
       sectionTitle(
@@ -1111,7 +1132,9 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      // FINDINGS BY CATEGORY
+      /* ======================
+         FINDINGS BY CATEGORY
+      ====================== */
       doc.addPage();
 
       sectionTitle(doc, "Findings by category", "What was detected on the scanned surface (scope-locked).");
@@ -1176,7 +1199,9 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      // COMMON NEXT STEPS
+      /* ======================
+         COMMON NEXT STEPS
+      ====================== */
       doc.addPage();
 
       sectionTitle(doc, "Common next steps", "General orientation only — not legal advice.");
@@ -1198,7 +1223,9 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      // METHODOLOGY & LIMITATIONS
+      /* ======================
+         METHODOLOGY & LIMITATIONS
+      ====================== */
       doc.addPage();
 
       sectionTitle(doc, "Methodology & limitations", "How this snapshot is produced, and what it does not do.");
@@ -1237,7 +1264,9 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      // VERIFICATION
+      /* ======================
+         VERIFICATION
+      ====================== */
       doc.addPage();
 
       sectionTitle(doc, "Report verification", "Public integrity check for this sealed snapshot.");

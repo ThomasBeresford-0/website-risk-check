@@ -17,10 +17,18 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
+  <!-- Font (professional / audit) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
   <!-- Global BASE only -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <!-- Homepage page-owned styles -->
-  <link rel="stylesheet" href="/index.css?v=4" />
+  <link rel="stylesheet" href="/index.css?v=5" />
 </head>
 
 <body>
@@ -105,7 +113,7 @@
 
           <div id="preview" class="preview" aria-live="polite">
             <div class="previewHead">
-              <div>
+              <div class="previewHeadInner">
                 <div class="previewTitle">Preview findings</div>
                 <div class="previewHint">Full report includes structured breakdown + verification section</div>
               </div>
@@ -157,7 +165,7 @@
 
     <!-- FOR AGENCIES -->
     <section class="section" id="agencies">
-      <div class="container">
+      <div class="container sectionWrap">
         <div class="sectionHead">
           <h2>Designed for billable client work</h2>
           <p>
@@ -189,7 +197,7 @@
 
     <!-- REPORT -->
     <section class="section sectionAlt" id="report">
-      <div class="container">
+      <div class="container sectionWrap">
         <div class="sectionHead">
           <h2>What the report contains</h2>
           <p>Structured, fileable, and written to read like a real deliverable.</p>
@@ -218,7 +226,7 @@
 
     <!-- VERIFICATION -->
     <section class="section" id="verification">
-      <div class="container narrow">
+      <div class="container narrow sectionWrap">
         <div class="sectionHead">
           <h2>Cryptographic verification</h2>
           <p>
@@ -238,7 +246,7 @@
 
     <!-- METHODOLOGY -->
     <section class="section sectionAlt" id="methodology">
-      <div class="container narrow">
+      <div class="container narrow sectionWrap">
         <div class="sectionHead">
           <h2>Methodology</h2>
           <p>Scope-locked and transparent — so the PDF can be used as evidence.</p>
@@ -258,7 +266,7 @@
 
     <!-- FAQ -->
     <section class="section" id="faq">
-      <div class="container narrow">
+      <div class="container narrow sectionWrap">
         <div class="sectionHead">
           <h2>FAQ</h2>
         </div>

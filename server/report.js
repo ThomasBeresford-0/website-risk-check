@@ -6,6 +6,7 @@
 // ✅ Verification page with QR + integrity explanation
 // ✅ Uses deterministic structured findings[] when present; deterministic legacy fallback otherwise
 // ✅ Fixes: NO blank/ghost pages, NO table overflow, NO footer poisoning doc.y
+// ✅ Fixes: ensureSpace NEVER flips landscape→portrait mid-table/section
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
@@ -29,10 +30,12 @@ const PALETTE = {
   line: "#D7DEE2",
   soft: "#F7FAFC",
 
-  navy: "#021942",
-  grid: "#2B57C6",
-  rowA: "#F3F4F6",
-  rowB: "#EEF2F7",
+  // Risk register styling (boutique, not “blue spreadsheet”)
+  tableHeaderBg: "#0B1220",
+  tableHeaderDiv: "#334155",
+  tableGrid: "#CBD5E1",
+  rowA: "#F8FAFC",
+  rowB: "#F1F5F9",
 
   scoreGreen: "#BFD83A",
   scoreYellow: "#F6BE34",
@@ -108,14 +111,25 @@ function normalizeBodyCursor(doc) {
 }
 
 /**
+ * Add a new page WITHOUT accidentally switching layout (portrait/landscape).
+ * PDFKit will keep some settings, but this makes it explicit + future-proof.
+ */
+function addPageLikeCurrent(doc) {
+  const layout = doc?.page?.layout || "portrait";
+  const size = doc?.page?.size || "A4";
+  doc.addPage({ size, layout, margin: doc.page.margins.left }); // keep numeric margin parity
+  normalizeBodyCursor(doc);
+}
+
+/**
  * Ensure there is enough vertical space for the next block.
  * When we add a page, pageAdded handler will draw header and normalize cursor.
+ * CRITICAL: uses addPageLikeCurrent so landscape sections stay landscape.
  */
 function ensureSpace(doc, minSpace = 120) {
   const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
   if (doc.y + minSpace > bottom) {
-    doc.addPage();
-    normalizeBodyCursor(doc);
+    addPageLikeCurrent(doc);
   }
 }
 
@@ -448,7 +462,7 @@ function drawCoverBackground(doc) {
   doc
     .moveTo(0, 0)
     .lineTo(w * 0.42, 0)
-    .lineTo(0, h * 0.20)
+    .lineTo(0, h * 0.2)
     .closePath()
     .fill(PALETTE.tealMid);
 
@@ -462,8 +476,8 @@ function drawCoverBackground(doc) {
 
   // accent strip
   doc
-    .moveTo(w * 0.40, h)
-    .lineTo(w, h * 0.70)
+    .moveTo(w * 0.4, h)
+    .lineTo(w, h * 0.7)
     .lineTo(w, h * 0.78)
     .lineTo(w * 0.52, h)
     .closePath()
@@ -474,7 +488,7 @@ function drawCoverBackground(doc) {
     .moveTo(w * 0.46, h)
     .lineTo(w, h * 0.74)
     .lineTo(w, h * 0.765)
-    .lineTo(w * 0.50, h)
+    .lineTo(w * 0.5, h)
     .closePath()
     .fill("#FFFFFF");
 
@@ -570,8 +584,8 @@ function drawCover(doc, meta, risk, integrityHash) {
 
 /* =========================
    RISK REGISTER TABLE (LANDSCAPE, repeated header)
-   ✅ Fixes overflow by deriving widths from margins every page
-   ✅ Fixes blank pages by never adding a page without drawing content
+   ✅ GUARANTEED FIT (never overflows off page)
+   ✅ Landscape-safe page breaks + repeated header row
 ========================= */
 
 function scoreBand(score) {
@@ -582,34 +596,80 @@ function scoreBand(score) {
   return { fill: "#D1FAE5", ink: "#065F46" };
 }
 
-function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHeader }) {
-  // Always compute from margins so it can NEVER hang off the page.
+function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   const left = xLeft(doc);
   const right = xRight(doc);
   const tableW = right - left;
 
-  // Landscape tuning
   const headerH = 34;
   const minRowH = 92;
 
-  // Column plan (landscape)
+  // Boutique table tokens
+  const GRID = PALETTE.tableGrid;
+  const HEADER_BG = PALETTE.tableHeaderBg;
+  const HEADER_DIV = PALETTE.tableHeaderDiv;
+
+  // Column plan with desired + mins
   const cols = [
-    { key: "category", w: 110, label: "Risk\nCategory" },
-    { key: "desc", w: 190, label: "Risk\nDescription" },
-    { key: "prob", w: 90, label: "Probability" },
-    { key: "impact", w: 80, label: "Impact" },
-    { key: "score", w: 70, label: "Score" },
-    { key: "trigger", w: 150, label: "Trigger" },
-    { key: "response", w: 0, label: "Mitigation response" }, // remainder
+    { key: "category", w: 110, min: 90, label: "Risk\nCategory" },
+    { key: "desc", w: 190, min: 140, label: "Risk\nDescription" },
+    { key: "prob", w: 90, min: 70, label: "Probability" },
+    { key: "impact", w: 80, min: 70, label: "Impact" },
+    { key: "score", w: 70, min: 60, label: "Score" },
+    { key: "trigger", w: 150, min: 110, label: "Trigger" },
+    { key: "response", w: 220, min: 140, label: "Mitigation response" },
   ];
 
-  const fixedW = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
-  cols[cols.length - 1].w = Math.max(180, tableW - fixedW);
+  // ✅ GUARANTEED-FIT allocator (sum widths ALWAYS equals tableW)
+  (function allocateWidths() {
+    const sum = (arr) => arr.reduce((a, c) => a + c.w, 0);
+    const sumMin = cols.reduce((a, c) => a + c.min, 0);
+
+    if (sumMin > tableW) {
+      // Even mins can't fit: scale them down proportionally (still deterministic)
+      const scale = tableW / sumMin;
+      cols.forEach((c) => (c.w = Math.max(40, Math.floor(c.min * scale))));
+    } else {
+      // Start at desired
+      cols.forEach((c) => (c.w = c.w));
+
+      // Shrink order from most-flexible to least-flexible
+      let over = sum(cols) - tableW;
+      const order = ["desc", "response", "trigger", "category", "prob", "impact", "score"];
+
+      for (const key of order) {
+        if (over <= 0) break;
+        const c = cols.find((x) => x.key === key);
+        if (!c) continue;
+        const can = Math.max(0, c.w - c.min);
+        const take = Math.min(can, over);
+        c.w -= take;
+        over -= take;
+      }
+
+      // If anything remains (rare), hard-trim but never below 40
+      if (over > 0) {
+        for (const key of ["response", "desc", "trigger"]) {
+          if (over <= 0) break;
+          const c = cols.find((x) => x.key === key);
+          if (!c) continue;
+          const can = Math.max(0, c.w - 40);
+          const take = Math.min(can, over);
+          c.w -= take;
+          over -= take;
+        }
+      }
+    }
+
+    // Fix rounding drift by forcing last column to make the total exact
+    const current = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
+    cols[cols.length - 1].w = Math.max(40, tableW - current);
+  })();
 
   function drawHeaderRow(y) {
     doc.save();
-    doc.rect(left, y, tableW, headerH).fill(PALETTE.navy);
-    doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+    doc.rect(left, y, tableW, headerH).fill(HEADER_BG);
+    doc.strokeColor(HEADER_DIV).lineWidth(1);
     doc.rect(left, y, tableW, headerH).stroke();
     doc.restore();
 
@@ -622,16 +682,17 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
     });
     doc.restore();
 
+    // Vertical header dividers
     x = left;
     cols.forEach((c) => {
       doc.save();
-      doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+      doc.strokeColor(HEADER_DIV).lineWidth(1);
       doc.moveTo(x, y).lineTo(x, y + headerH).stroke();
       doc.restore();
       x += c.w;
     });
     doc.save();
-    doc.strokeColor(PALETTE.grid).lineWidth(1.2);
+    doc.strokeColor(HEADER_DIV).lineWidth(1);
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + headerH).stroke();
     doc.restore();
   }
@@ -660,7 +721,8 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
     });
 
     const h = Math.max(minRowH, ...heights);
-    return Math.min(170, Math.max(minRowH, h));
+    // ✅ Clamp so the table never becomes “chunky” / ridiculous
+    return Math.min(160, Math.max(minRowH, h));
   }
 
   normalizeBodyCursor(doc);
@@ -671,19 +733,15 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
 
   const bottom = () => doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
 
-  rows.forEach((r, idx) => {
+  safeArr(rows).forEach((r, idx) => {
     const rowH = calcRowHeight(r);
 
-    // page break with header repetition
+    // Page break + repeated header
     if (y + rowH > bottom()) {
-      // Close current page cleanly
       addFooter(doc, meta, integrityHash);
 
-      doc.addPage({ layout: "landscape" });
-      // pageAdded handler already ran header + normalized cursor
-      // but on some PDFKit versions, layout pages can start at y=0
-      if (dataForHeader) addHeader(doc, dataForHeader);
-
+      doc.addPage({ layout: "landscape", size: "A4", margin: 54 });
+      // pageAdded handler runs, but we still normalize defensively
       normalizeBodyCursor(doc);
       y = doc.y;
 
@@ -693,11 +751,12 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
 
     const bg = idx % 2 === 0 ? PALETTE.rowA : PALETTE.rowB;
 
+    // Row background
     doc.save();
     doc.rect(left, y, tableW, rowH).fill(bg);
     doc.restore();
 
-    // score band fill
+    // Score band fill
     const scoreIndex = cols.findIndex((c) => c.key === "score");
     const scoreX = left + cols.slice(0, scoreIndex).reduce((a, c) => a + c.w, 0);
     const scoreW = cols[scoreIndex].w;
@@ -707,27 +766,27 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
     doc.rect(scoreX, y, scoreW, rowH).fill(sb.fill);
     doc.restore();
 
-    // outer border
+    // Outer border
     doc.save();
-    doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+    doc.strokeColor(GRID).lineWidth(0.6);
     doc.rect(left, y, tableW, rowH).stroke();
     doc.restore();
 
-    // verticals
+    // Vertical grid lines
     let vx = left;
     cols.forEach((c) => {
       doc.save();
-      doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+      doc.strokeColor(GRID).lineWidth(0.6);
       doc.moveTo(vx, y).lineTo(vx, y + rowH).stroke();
       doc.restore();
       vx += c.w;
     });
     doc.save();
-    doc.strokeColor(PALETTE.grid).lineWidth(1.0);
+    doc.strokeColor(GRID).lineWidth(0.6);
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + rowH).stroke();
     doc.restore();
 
-    // text
+    // Cell text
     let cx = left;
     doc.save();
     cols.forEach((c) => {
@@ -744,7 +803,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHea
         doc.text(clampText(r[c.key], 40), tx, ty + 18, { width: tw, align: "center" });
       } else if (c.key === "score") {
         doc.font("Helvetica-Bold").fontSize(14).fillColor("#111827");
-        doc.text(String(r.scoreNum), tx, ty + 28, { width: tw, align: "center" });
+        doc.text(String(num(r.scoreNum, 0)), tx, ty + 28, { width: tw, align: "center" });
       } else {
         doc.font("Helvetica").fontSize(10.2).fillColor(PALETTE.ink);
         doc.text(clampText(r[c.key], 260), tx, ty, { width: tw, lineGap: 3 });
@@ -995,11 +1054,11 @@ export async function generateReport(data, outputPath) {
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      // Always add a real next page and immediately render content (prevents blank pages)
-      doc.addPage(); // page 2 gets header + normalized cursor via pageAdded
+      // Page 2
+      doc.addPage();
 
       /* ======================================================
-         PAGE 2 — EXEC SUMMARY (cards + narrative + key facts)
+         PAGE 2 — EXEC SUMMARY
       ====================================================== */
       sectionTitle(
         doc,
@@ -1056,9 +1115,7 @@ export async function generateReport(data, outputPath) {
       const keyFindings = [];
 
       keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
-      keyFindings.push(
-        `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
-      );
+      keyFindings.push(`Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`);
       keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
       keyFindings.push(
         `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
@@ -1072,9 +1129,7 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(
         `Tracking scripts: ${
           trackers.length
-            ? `Detected (${trackers.slice(0, 4).join(", ")}${
-                trackers.length > 4 ? "…" : ""
-              })`
+            ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
             : "None detected"
         }`
       );
@@ -1082,18 +1137,14 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(
         `Cookie vendor signals: ${
           vendors.length
-            ? `Detected (${vendors.slice(0, 4).join(", ")}${
-                vendors.length > 4 ? "…" : ""
-              })`
+            ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
             : "None detected"
         }`
       );
 
       keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
       keyFindings.push(
-        `Potential personal-data field signals: ${num(
-          signals?.forms?.personalDataSignals
-        )} (heuristic)`
+        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
       );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
       keyFindings.push(
@@ -1101,13 +1152,12 @@ export async function generateReport(data, outputPath) {
       );
 
       bulletList(doc, keyFindings.slice(0, 12));
-
       addFooter(doc, meta, integrityHash);
 
       /* ======================================================
-         PAGE 3+ — RISK REGISTER (LANDSCAPE, repeat header)
+         PAGE 3+ — RISK REGISTER (LANDSCAPE)
       ====================================================== */
-      doc.addPage({ layout: "landscape" }); // pageAdded => header + normalize
+      doc.addPage({ layout: "landscape", size: "A4", margin: 54 });
 
       sectionTitle(
         doc,
@@ -1116,11 +1166,7 @@ export async function generateReport(data, outputPath) {
       );
       doc.moveDown(0.2);
 
-      drawRiskRegister_landscape(doc, riskRows, {
-        meta,
-        integrityHash,
-        dataForHeader: data,
-      });
+      drawRiskRegister_landscape(doc, riskRows, { meta, integrityHash });
 
       doc
         .font("Helvetica")
@@ -1136,22 +1182,15 @@ export async function generateReport(data, outputPath) {
       addFooter(doc, meta, integrityHash);
 
       /* ======================================================
-         NEXT — FINDINGS BY CATEGORY
+         FINDINGS BY CATEGORY
       ====================================================== */
       doc.addPage();
 
-      sectionTitle(
-        doc,
-        "Findings by category",
-        "What was detected on the scanned surface (scope-locked)."
-      );
+      sectionTitle(doc, "Findings by category", "What was detected on the scanned surface (scope-locked).");
 
       subTitle(doc, "Connection");
       bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
-      bodyText(
-        doc,
-        "HTTPS reduces interception risk and is commonly expected for customer-facing websites."
-      );
+      bodyText(doc, "HTTPS reduces interception risk and is commonly expected for customer-facing websites.");
       hr(doc);
 
       subTitle(doc, "Policies (public-path detection)");
@@ -1178,13 +1217,8 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       subTitle(doc, "Consent indicators (heuristic)");
-      bulletList(doc, [
-        `Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`,
-      ]);
-      bodyText(
-        doc,
-        "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee."
-      );
+      bulletList(doc, [`Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`]);
+      bodyText(doc, "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee.");
       hr(doc);
 
       subTitle(doc, "Forms & data capture (heuristic)");
@@ -1213,10 +1247,7 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Contact & identity signals");
       bulletList(doc, [`Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`]);
-      bodyText(
-        doc,
-        "Detected using simple patterns (email/phone/contact link) on the scanned surface only."
-      );
+      bodyText(doc, "Detected using simple patterns (email/phone/contact link) on the scanned surface only.");
 
       addFooter(doc, meta, integrityHash);
 
@@ -1226,7 +1257,6 @@ export async function generateReport(data, outputPath) {
       doc.addPage();
 
       sectionTitle(doc, "Common next steps", "General orientation only — not legal advice.");
-
       bodyText(
         doc,
         "The items below are commonly reviewed when these signals appear. They’re presented as practical next steps and are not prescriptive requirements."
@@ -1322,7 +1352,6 @@ export async function generateReport(data, outputPath) {
 
       doc.moveDown(0.8);
 
-      // QR
       const qrDataUrl = await QRCode.toDataURL(verifyUrl);
       ensureSpace(doc, 240);
 

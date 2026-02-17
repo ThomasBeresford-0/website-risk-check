@@ -1,5 +1,7 @@
 // public/sample-report.js
-// Boutique showcase: flipbook-style PDF preview (PDF.js) + hard-linked verification.
+// Boutique showcase: progressive PDF preview.
+// Baseline: native iframe preview (always works).
+// Enhancement: PDF.js flipbook on top (if worker + CSP allow).
 // Uses LOCAL PDF.js + LOCAL worker to avoid CSP/worker blocking.
 
 (() => {
@@ -7,12 +9,9 @@
      CONFIG
   ========================= */
 
-  // Choose the showcase PDF (you have both in /public)
   const SAMPLE_PDF_URL = "/sample-report.pdf";
-
-  const SAMPLE_VERIFY_PATH = "/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c";
-
-
+  const SAMPLE_VERIFY_PATH =
+    "/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c";
   const REPORT_ID = "SAMPLE-001";
 
   const TURN_MS = 610;
@@ -36,6 +35,9 @@
   const verifyPathEl = document.getElementById("verifyPath");
   const reportIdEl = document.getElementById("reportId");
 
+  const copyVerifyBtn = document.getElementById("copyVerifyBtn");
+  const copyReportIdBtn = document.getElementById("copyReportIdBtn");
+
   const prevBtn = document.getElementById("prevBtn");
   const nextBtn = document.getElementById("nextBtn");
   const pageNumEl = document.getElementById("pageNum");
@@ -48,22 +50,18 @@
   const frontCanvas = document.getElementById("frontCanvas");
   const backCanvas = document.getElementById("backCanvas");
 
+  const frontPage = document.getElementById("frontPage");
+  const backPage = document.getElementById("backPage");
+
   const loadingState = document.getElementById("loadingState");
   const errorState = document.getElementById("errorState");
   const directPdfLink = document.getElementById("directPdfLink");
 
-  const required = [
-    flipStage,
-    frontCanvas,
-    backCanvas,
-    prevBtn,
-    nextBtn,
-    pageNumEl,
-    pageCountEl,
-    loadingState,
-    errorState,
-  ];
-  if (required.some((el) => !el)) return;
+  const nativePdfFrame = document.getElementById("nativePdfFrame");
+
+  // If the page doesn’t have the flipbook section for any reason, just wire the links and bail.
+  const required = [flipStage, frontCanvas, backCanvas, prevBtn, nextBtn, pageNumEl, pageCountEl];
+  const hasFlipbook = !required.some((el) => !el);
 
   /* =========================
      Wire static links (CTA + proof)
@@ -85,22 +83,83 @@
   bindLink(openVerifyBtn2, SAMPLE_VERIFY_PATH);
   bindLink(directPdfLink, SAMPLE_PDF_URL);
 
+  // Ensure iframe points at the right PDF (in case HTML is cached / older)
+  if (nativePdfFrame && nativePdfFrame.tagName === "IFRAME") {
+    nativePdfFrame.setAttribute("src", `${SAMPLE_PDF_URL}#view=FitH`);
+  }
+
+  /* =========================
+     Copy helpers
+  ========================= */
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fallback
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function flashBtn(btn, okText, failText) {
+    if (!btn) return;
+    const original = btn.textContent;
+    btn.textContent = okText;
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = original || failText;
+      btn.disabled = false;
+    }, 900);
+  }
+
+  if (copyVerifyBtn) {
+    copyVerifyBtn.addEventListener("click", async () => {
+      const full = `${location.origin}${SAMPLE_VERIFY_PATH}`;
+      const ok = await copyText(full);
+      flashBtn(copyVerifyBtn, ok ? "Copied" : "Copy failed", "Copy");
+    });
+  }
+
+  if (copyReportIdBtn) {
+    copyReportIdBtn.addEventListener("click", async () => {
+      const ok = await copyText(REPORT_ID);
+      flashBtn(copyReportIdBtn, ok ? "Copied" : "Copy failed", "Copy");
+    });
+  }
+
+  // If no flipbook exists, we’re done.
+  if (!hasFlipbook) return;
+
   /* =========================
      PDF.js bootstrap (LOCAL)
   ========================= */
 
   const pdfjsLib = window.pdfjsLib;
+
+  // Baseline is iframe; only attempt enhancement if PDF.js exists.
   if (!pdfjsLib) {
-    loadingState.hidden = true;
-    errorState.hidden = false;
+    // Don’t blow up the UI — just show the small interactive unavailable note
+    if (loadingState) loadingState.hidden = true;
+    if (errorState) errorState.hidden = false;
     return;
   }
 
-  // LOCAL worker (put the files here):
-  // public/vendor/pdfjs/pdf.min.js
-  // public/vendor/pdfjs/pdf.worker.min.js
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "/vendor/pdfjs/pdf.worker.min.js?v=1";
+  // Worker must exist at /public/vendor/pdfjs/pdf.worker.min.js
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.js?v=1";
 
   /* =========================
      State
@@ -113,21 +172,26 @@
 
   let frontIsA = true;
   let isTurning = false;
+  let enhancementReady = false;
 
   /* =========================
      Helpers
   ========================= */
 
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
   function setReadout() {
-    pageNumEl.textContent = String(pageNum);
-    pageCountEl.textContent = String(totalPages || "–");
+    if (pageNumEl) pageNumEl.textContent = String(pageNum);
+    if (pageCountEl) pageCountEl.textContent = String(totalPages || "–");
   }
 
   function lockButtons() {
-    prevBtn.disabled = pageNum <= 1 || isTurning;
-    nextBtn.disabled = pageNum >= totalPages || isTurning;
-    if (zoomInBtn) zoomInBtn.disabled = isTurning;
-    if (zoomOutBtn) zoomOutBtn.disabled = isTurning;
+    prevBtn.disabled = pageNum <= 1 || isTurning || !enhancementReady;
+    nextBtn.disabled = pageNum >= totalPages || isTurning || !enhancementReady;
+    if (zoomInBtn) zoomInBtn.disabled = isTurning || !enhancementReady;
+    if (zoomOutBtn) zoomOutBtn.disabled = isTurning || !enhancementReady;
   }
 
   function getFrontCanvas() {
@@ -135,10 +199,6 @@
   }
   function getBackCanvas() {
     return frontIsA ? backCanvas : frontCanvas;
-  }
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
   }
 
   function fitCanvas(canvas, viewport) {
@@ -152,12 +212,10 @@
 
   async function renderPageToCanvas(n, canvas) {
     const page = await pdfDoc.getPage(n);
-
     const viewport = page.getViewport({ scale });
-
     const dpr = fitCanvas(canvas, viewport);
-    const ctx = canvas.getContext("2d", { alpha: false });
 
+    const ctx = canvas.getContext("2d", { alpha: false });
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -170,9 +228,29 @@
     }).promise;
   }
 
-  function showError() {
-    loadingState.hidden = true;
-    errorState.hidden = false;
+  function showEnhancementError() {
+    // Keep iframe as the real preview. This error is only about the flipbook.
+    if (loadingState) loadingState.hidden = true;
+    if (errorState) errorState.hidden = false;
+
+    enhancementReady = false;
+    lockButtons();
+  }
+
+  function enableFlipbookUI() {
+    // Hide iframe overlay via CSS
+    document.body.classList.add("isFlipReady");
+
+    // Unhide canvas pages (we hid them with aria-hidden in HTML)
+    if (frontPage) frontPage.removeAttribute("aria-hidden");
+    if (backPage) backPage.removeAttribute("aria-hidden");
+
+    enhancementReady = true;
+    if (errorState) errorState.hidden = true;
+    if (loadingState) loadingState.hidden = true;
+
+    setReadout();
+    lockButtons();
   }
 
   /* =========================
@@ -180,7 +258,7 @@
   ========================= */
 
   async function goTo(n, { animate = true } = {}) {
-    if (!pdfDoc || isTurning) return;
+    if (!pdfDoc || isTurning || !enhancementReady) return;
 
     const to = clamp(n, 1, totalPages);
     if (to === pageNum) return;
@@ -204,8 +282,7 @@
           lockButtons();
         }, TURN_MS);
       } else {
-        const front = getFrontCanvas();
-        await renderPageToCanvas(to, front);
+        await renderPageToCanvas(to, getFrontCanvas());
         pageNum = to;
         isTurning = false;
         setReadout();
@@ -215,7 +292,7 @@
       console.error("PDF render navigation error:", e);
       isTurning = false;
       lockButtons();
-      showError();
+      showEnhancementError();
     }
   }
 
@@ -225,45 +302,56 @@
 
   async function init() {
     try {
-      loadingState.hidden = false;
-      errorState.hidden = true;
+      if (loadingState) loadingState.hidden = false;
+      if (errorState) errorState.hidden = true;
+
+      // Disable controls until enhanced is actually ready
+      enhancementReady = false;
+      lockButtons();
 
       pdfDoc = await pdfjsLib.getDocument({
         url: SAMPLE_PDF_URL,
         withCredentials: false,
+        // If you ever hit CORS weirdness, you can add:
+        // disableStream: true,
+        // disableAutoFetch: true,
       }).promise;
 
       totalPages = pdfDoc.numPages || 0;
       pageNum = 1;
 
+      // Render first page to the active “front” canvas
       await renderPageToCanvas(pageNum, getFrontCanvas());
 
-      setReadout();
-      loadingState.hidden = true;
-      lockButtons();
+      // Enhancement succeeded — switch from iframe to flipbook
+      enableFlipbookUI();
 
+      // Click-to-turn (only meaningful in enhanced mode)
       flipStage.addEventListener("click", () => {
-        if (isTurning) return;
+        if (isTurning || !enhancementReady) return;
         if (pageNum < totalPages) goTo(pageNum + 1, { animate: true });
         else if (pageNum > 1) goTo(pageNum - 1, { animate: true });
       });
 
-      prevBtn.addEventListener("click", () =>
-        goTo(pageNum - 1, { animate: true })
-      );
-      nextBtn.addEventListener("click", () =>
-        goTo(pageNum + 1, { animate: true })
-      );
+      prevBtn.addEventListener("click", () => goTo(pageNum - 1, { animate: true }));
+      nextBtn.addEventListener("click", () => goTo(pageNum + 1, { animate: true }));
 
-      window.addEventListener("keydown", (ev) => {
-        if (isTurning) return;
-        if (ev.key === "ArrowLeft") goTo(pageNum - 1, { animate: true });
-        if (ev.key === "ArrowRight") goTo(pageNum + 1, { animate: true });
+      // Keyboard nav ONLY when stage is focused (no global hijack)
+      flipStage.addEventListener("keydown", (ev) => {
+        if (isTurning || !enhancementReady) return;
+        if (ev.key === "ArrowLeft") {
+          ev.preventDefault();
+          goTo(pageNum - 1, { animate: true });
+        }
+        if (ev.key === "ArrowRight") {
+          ev.preventDefault();
+          goTo(pageNum + 1, { animate: true });
+        }
       });
 
       if (zoomInBtn) {
         zoomInBtn.addEventListener("click", async () => {
-          if (!pdfDoc || isTurning) return;
+          if (!pdfDoc || isTurning || !enhancementReady) return;
           scale = clamp(scale + SCALE_STEP, SCALE_MIN, SCALE_MAX);
           await renderPageToCanvas(pageNum, getFrontCanvas());
         });
@@ -271,27 +359,28 @@
 
       if (zoomOutBtn) {
         zoomOutBtn.addEventListener("click", async () => {
-          if (!pdfDoc || isTurning) return;
+          if (!pdfDoc || isTurning || !enhancementReady) return;
           scale = clamp(scale - SCALE_STEP, SCALE_MIN, SCALE_MAX);
           await renderPageToCanvas(pageNum, getFrontCanvas());
         });
       }
 
+      // Rerender on resize (debounced)
       let t = null;
       window.addEventListener("resize", () => {
         clearTimeout(t);
         t = setTimeout(async () => {
-          if (!pdfDoc || isTurning) return;
+          if (!pdfDoc || isTurning || !enhancementReady) return;
           try {
             await renderPageToCanvas(pageNum, getFrontCanvas());
           } catch (e) {
             console.error("PDF resize rerender error:", e);
           }
-        }, 120);
+        }, 140);
       });
     } catch (err) {
       console.error("Sample PDF init error:", err);
-      showError();
+      showEnhancementError();
     }
   }
 

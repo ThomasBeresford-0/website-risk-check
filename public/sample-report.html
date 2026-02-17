@@ -20,21 +20,47 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- Your global site CSS (keep in sync with server ASSET_VERSION) -->
+  <!-- Global CSS -->
   <link rel="stylesheet" href="/style.css?v=13" />
-
-  <!-- Page-specific -->
+  <!-- Page CSS -->
   <link rel="stylesheet" href="/sample-report.css?v=4" />
 
-  <!-- Small page-only a11y polish (no layout fights with CSS file) -->
   <meta name="theme-color" content="#0b1220">
+
+  <!-- Tiny progressive-enhancement hook (no dependencies) -->
+  <script>
+    document.documentElement.classList.add('js');
+  </script>
+
+  <!-- Minimal “don’t look broken” safety net if PDF.js fails:
+       show native iframe, keep flipbook elements for enhancement. -->
+  <style>
+    /* Keep this tiny + non-invasive */
+    .nativePdfFrame{
+      width:100%;
+      height:100%;
+      border:0;
+      border-radius:14px;
+      background:#fff;
+    }
+    .nativePdfWrap{
+      position:absolute;
+      inset:0;
+      padding:18px;
+      display:block;
+    }
+    /* When JS enhances successfully, your sample-report.js can add this class to hide the native viewer */
+    .isFlipReady .nativePdfWrap{ display:none; }
+  </style>
 </head>
+
 <body>
-  <!-- Keep your existing header/nav pattern -->
+  <!-- Header / nav -->
   <header class="topbar">
     <div class="container topbarInner">
       <a class="brand" href="/" aria-label="Website Risk Check home">
-        <span class="brandMark" aria-hidden="true">🛡️</span>
+        <!-- No emoji. Let CSS handle the mark if you want one. -->
+        <span class="brandMark" aria-hidden="true"></span>
         <span class="brandName">Website Risk Check</span>
       </a>
 
@@ -48,23 +74,25 @@
   <main class="container srWrap">
     <!-- HERO / SHOWCASE -->
     <section class="srHero" aria-label="Sample report showcase">
+      <!-- LEFT -->
       <div class="srHeroLeft">
         <div class="srEyebrow">Sample verified report</div>
 
-        <h1 class="srTitle">This is the PDF your client gets after payment.</h1>
+        <h1 class="srTitle">This is the PDF your client receives after payment.</h1>
 
         <p class="srLead">
-          A point-in-time snapshot that’s sealed, timestamped, and verifiable. This page is a showcase — the report itself is
-          the PDF, not a wall of HTML text.
+          A point-in-time snapshot, sealed and timestamped at capture time.
+          Verification confirms the PDF’s integrity (not legal compliance).
         </p>
 
         <div class="srCtas" role="group" aria-label="Primary actions">
-          <!-- These are wired by sample-report.js (href set at runtime) -->
+          <!-- wired by sample-report.js -->
           <a class="btnPrimary" id="openPdfBtn" href="#" role="button">Open sample PDF</a>
           <a class="btnSoft" id="openVerifyBtn" href="#" role="button">Open verification</a>
           <a class="btnGhost" href="/" role="button">Run a scan</a>
         </div>
 
+        <!-- Tight facts (same content, less “form”) -->
         <div class="srFacts" aria-label="Key facts">
           <div class="srFact">
             <div class="srFactK">Deliverable</div>
@@ -89,16 +117,16 @@
           and observable signals during capture.
         </div>
 
-        <div class="srMiniHelp">
-          <div class="srMiniHelpT">How to preview</div>
+        <!-- Make “how to preview” smaller + less boxy (still useful) -->
+        <div class="srMiniHelp" aria-label="Preview instructions">
+          <div class="srMiniHelpT">Preview tips</div>
           <ul class="srMiniHelpList">
-            <li>Click the page to turn, or use ← → keys.</li>
+            <li>Use ← → to move pages (interactive mode), or scroll in the native preview.</li>
             <li>Open the PDF to see the verification code inside the report.</li>
-            <li>Open verification to confirm the report fingerprint matches.</li>
+            <li>Open verification to confirm the fingerprint matches.</li>
           </ul>
         </div>
 
-        <!-- Tiny trust strip (subtle, not salesy) -->
         <div class="srTrust" aria-label="Trust statement">
           <div class="srTrustRow">
             <span class="srTrustDot" aria-hidden="true"></span>
@@ -106,18 +134,18 @@
           </div>
           <div class="srTrustRow">
             <span class="srTrustDot" aria-hidden="true"></span>
-            <span>Public verification confirms integrity only (not compliance).</span>
+            <span>Verification confirms integrity only (not compliance).</span>
           </div>
         </div>
       </div>
 
-      <!-- FLIPBOOK VIEWER -->
+      <!-- RIGHT -->
       <div class="srHeroRight">
-        <div class="flipShell" aria-label="Sample report flipbook">
+        <div class="flipShell" aria-label="Sample report preview">
           <div class="flipTopBar">
             <div class="flipLabel">
               <span class="dot" aria-hidden="true"></span>
-              <span>Sample PDF (interactive preview)</span>
+              <span>Sample PDF (preview)</span>
             </div>
 
             <div class="flipControls" role="group" aria-label="Flipbook controls">
@@ -131,8 +159,23 @@
             </div>
           </div>
 
-          <div class="flipStage" id="flipStage" aria-label="PDF page preview" tabindex="0">
-            <div class="flipPage isFront" id="frontPage">
+          <!-- IMPORTANT CHANGE:
+               Native PDF viewer is ALWAYS present so the page never looks “broken”.
+               Your pdf.js flip canvases remain so JS can enhance when available. -->
+          <div class="flipStage" id="flipStage" aria-label="PDF preview" tabindex="0" style="position:relative;">
+            <!-- Native fallback (always visible unless JS adds .isFlipReady on <body>) -->
+            <div class="nativePdfWrap" id="nativePdfWrap" aria-label="Native PDF preview">
+              <iframe
+                class="nativePdfFrame"
+                id="nativePdfFrame"
+                title="Sample report PDF"
+                loading="lazy"
+                src="/sample-report.pdf#view=FitH"
+              ></iframe>
+            </div>
+
+            <!-- Flipbook layer (progressive enhancement) -->
+            <div class="flipPage isFront" id="frontPage" aria-hidden="true">
               <canvas id="frontCanvas"></canvas>
               <div class="flipShadow" aria-hidden="true"></div>
             </div>
@@ -142,27 +185,28 @@
               <div class="flipShadow" aria-hidden="true"></div>
             </div>
 
-            <div class="flipLoading" id="loadingState" role="status" aria-live="polite">
+            <div class="flipLoading" id="loadingState" role="status" aria-live="polite" hidden>
               <div class="spinner" aria-hidden="true"></div>
               <div>
                 <div class="flipLoadingTitle">Loading sample PDF…</div>
-                <div class="flipLoadingSub">Rendering pages for a true preview.</div>
+                <div class="flipLoadingSub">Rendering pages for interactive preview.</div>
               </div>
             </div>
 
+            <!-- If your JS still uses this, keep it — but it no longer nukes the whole UI. -->
             <div class="flipError" id="errorState" hidden>
-              <div class="flipErrorTitle">Couldn’t load the sample PDF.</div>
+              <div class="flipErrorTitle">Interactive preview unavailable.</div>
               <div class="flipErrorSub">
-                The interactive preview failed (blocked worker/CSP, script, or file path). You can still open the PDF directly.
+                The native preview still works. If you want interactive flipping, check PDF.js worker path/CSP.
               </div>
               <div class="flipErrorActions">
-                <a class="btnPrimary" id="directPdfLink" href="#" target="_blank" rel="noopener">Open sample PDF</a>
+                <a class="btnPrimary" id="directPdfLink" href="/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
               </div>
             </div>
           </div>
 
           <div class="flipFooter">
-            <div class="flipHint">Tip: use ← → keys. Click the page to turn.</div>
+            <div class="flipHint">Tip: open the PDF for the verification code.</div>
             <div class="flipZoom" role="group" aria-label="Zoom controls">
               <button class="miniBtn" id="zoomOutBtn" type="button" aria-label="Zoom out">–</button>
               <button class="miniBtn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
@@ -199,11 +243,11 @@
       <div class="srGrid">
         <div class="srCard">
           <div class="srCardT">Executive summary</div>
-          <div class="srCardP">A calm, client-facing overview: risk level, key drivers, and next steps.</div>
+          <div class="srCardP">Client-facing overview: risk level, key drivers, and recommended next steps.</div>
         </div>
         <div class="srCard">
           <div class="srCardT">Risk register</div>
-          <div class="srCardP">A structured table with category, likelihood, impact, triggers, and recommendations.</div>
+          <div class="srCardP">Structured findings: category, likelihood, impact, triggers, and recommendations.</div>
         </div>
         <div class="srCard">
           <div class="srCardT">Coverage snapshot</div>
@@ -211,7 +255,7 @@
         </div>
         <div class="srCard">
           <div class="srCardT">Verification</div>
-          <div class="srCardP">A fingerprint + QR that links to a public integrity check page.</div>
+          <div class="srCardP">Fingerprint + QR linking to a public integrity verification page.</div>
         </div>
       </div>
     </section>
@@ -224,9 +268,8 @@
           compliance or legality.
         </div>
         <div class="srCalloutA">
-          <!-- keep this as a real link fallback even if JS fails -->
           <a class="btnSoft" id="verifyStaticBtn"
-              href="/verify/b50d49f57a066f6cc6274c743a896f6bea7c56f54d993c6f7848c6988eeb5319"
+             href="/verify/b50d49f57a066f6cc6274c743a896f6bea7c56f54d993c6f7848c6988eeb5319"
              target="_blank" rel="noopener">
             View verification
           </a>
@@ -235,7 +278,6 @@
       </div>
     </section>
 
-    <!-- Footer (tiny, professional) -->
     <footer class="srFooter" aria-label="Sample report footer">
       <div class="srFooterInner">
         <div class="srFooterLeft">
@@ -252,18 +294,12 @@
     </footer>
   </main>
 
-  <!-- PDF.js (LOCAL — avoids CSP/CDN/worker blocking) -->
+  <!-- PDF.js (LOCAL) -->
   <script src="/vendor/pdfjs/pdf.min.js?v=1"></script>
-
-  <!-- IMPORTANT: worker file must exist at /vendor/pdfjs/pdf.worker.min.js
-       sample-report.js should set:
-       pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.js";
-  -->
 
   <!-- Page logic -->
   <script src="/sample-report.js?v=5"></script>
 
-  <!-- No-JS fallback (kept minimal, hidden from JS users by CSS if you want) -->
   <noscript>
     <div class="container" style="padding:16px 20px;">
       <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;background:#fff;">

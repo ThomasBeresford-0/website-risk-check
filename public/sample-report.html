@@ -9,38 +9,44 @@
   <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
   <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
 
-  <!-- Global: tokens + reset + container -->
-  <link rel="stylesheet" href="/style.css?v=13" />
-  <!-- Page-only -->
+  <!-- Base + page CSS -->
+  <link rel="stylesheet" href="/style.css?v=14" />
   <link rel="stylesheet" href="/sample-report.css?v=13" />
 
   <meta name="theme-color" content="#0b1220">
 </head>
-<body class="pageSampleReport">
-  <div class="bg" aria-hidden="true"></div>
 
-  <!-- HEADER (page-owned styles) -->
-  <header class="siteHeader" role="banner">
+<body class="pageSampleReport">
+
+  <!-- =========================
+       HEADER (matches sample-report.css)
+  ========================== -->
+  <header class="siteHeader">
     <div class="container headerInner">
+
       <a href="/" class="brand" aria-label="Website Risk Check home">
         <span class="brandDot" aria-hidden="true"></span>
-        <span class="brandText">Website Risk Check</span>
+        <span>Website Risk Check</span>
       </a>
 
-      <nav class="headerNav" aria-label="Primary navigation">
+      <nav class="headerNav" aria-label="Primary">
         <a href="/" class="headerLink">Run a scan</a>
         <a href="/agency" class="headerLink">For agencies</a>
         <a href="/sample-report" class="headerLink isActive" aria-current="page">Sample report</a>
       </nav>
 
-      <div class="headerCtas">
-        <a class="headerBtn" href="/">Start scan</a>
-      </div>
+      <a href="/" class="headerBtn">Start scan</a>
+
     </div>
   </header>
 
+  <!-- =========================
+       MAIN
+  ========================== -->
   <main class="container srWrap">
-    <section class="srHero" aria-label="Sample report showcase">
+
+    <section class="srHero">
+
       <!-- LEFT -->
       <div class="srLeft">
         <div class="srEyebrow">Sample verified report</div>
@@ -48,17 +54,25 @@
         <h1 class="srTitle">This is the PDF your client receives after payment.</h1>
 
         <p class="srLead">
-          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint and publicly verifiable.
-          This is the exact paid deliverable — not a demo.
+          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint
+          and publicly verifiable. This is the exact paid deliverable — not a demo.
         </p>
 
-        <div class="srCtas" role="group" aria-label="Primary actions">
-          <a class="btnPrimary" href="/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
-          <a class="btnSoft" href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" rel="noopener">Open verification</a>
-          <a class="btnGhost" href="/" role="button">Run a scan</a>
+        <div class="srCtas">
+          <a href="/sample-report.pdf" target="_blank" rel="noopener" class="btnPrimary">
+            Open sample PDF
+          </a>
+          <a
+            href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+            target="_blank"
+            rel="noopener"
+            class="btnSoft"
+          >
+            Open verification
+          </a>
         </div>
 
-        <div class="srFacts" aria-label="Key facts">
+        <div class="srFacts">
           <div class="srFact">
             <div class="srFactK">Deliverable</div>
             <div class="srFactV">Client-ready PDF</div>
@@ -77,40 +91,40 @@
           </div>
         </div>
 
-        <div class="srNote" role="note">
+        <div class="srNote">
           Informational snapshot only — not legal advice, certification, or monitoring.
-          Verification confirms document integrity only (not compliance).
-        </div>
-
-        <div class="srMiniHelp" aria-label="How to use this page">
-          <div class="srMiniHelpT">How to use this page</div>
-          <ul class="srMiniHelpList">
-            <li>Use the preview on the right to see the cover and first impression.</li>
-            <li>Open the PDF to view the full deliverable and the verification code inside.</li>
-            <li>Open verification to confirm the fingerprint matches the PDF.</li>
-          </ul>
+          Verification confirms integrity only (not compliance).
         </div>
       </div>
 
       <!-- RIGHT -->
       <div class="srRight">
-        <div class="artifactFrame" aria-label="Sample PDF preview">
+
+        <div class="artifactFrame">
           <div class="artifactTop">
             <div class="artifactLabel">Sample PDF preview</div>
-            <div class="artifactActions" role="group" aria-label="Preview actions">
+            <div class="artifactActions">
               <a class="artifactBtn" href="/sample-report.pdf" target="_blank" rel="noopener">Open PDF</a>
-              <a class="artifactBtn isSoft" href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" rel="noopener">Verify</a>
+              <a
+                class="artifactBtn isSoft"
+                href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+                target="_blank"
+                rel="noopener"
+              >
+                Verify
+              </a>
             </div>
           </div>
 
-          <a class="artifactPreview" href="/sample-report.pdf" target="_blank" rel="noopener" aria-label="Open the full sample PDF">
+          <a class="artifactPreview" href="/sample-report.pdf" target="_blank" rel="noopener">
             <img
               class="artifactImg"
               src="/sample-report-cover.png?v=1"
-              alt="Sample report cover preview"
+              alt="Sample report preview"
               loading="eager"
             />
-            <div class="artifactOverlay" aria-hidden="true">
+
+            <div class="artifactOverlay">
               <div class="artifactOverlayInner">
                 <div class="artifactOverlayTitle">Open the full PDF</div>
                 <div class="artifactOverlaySub">Exact paid deliverable · includes verification code</div>
@@ -120,93 +134,71 @@
 
           <div class="artifactFoot">
             <div class="artifactFootNote">
-              Static preview image. The official deliverable is the PDF file.
+              This is a static preview image. The official deliverable is the PDF.
             </div>
           </div>
         </div>
 
-        <div class="proofPanel" aria-label="Verification details">
+        <!-- Optional proof panel (only include if you actually add it to HTML) -->
+        <!--
+        <div class="proofPanel">
           <div class="proofRow">
-            <div class="proofK">Verification link</div>
-            <div class="proofV">
-              <code>/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c</code>
-            </div>
+            <div class="proofK">Integrity hash</div>
+            <div class="proofV"><code>c7eb98c3…8db8c</code></div>
           </div>
           <div class="proofRow">
-            <div class="proofK">Report ID</div>
-            <div class="proofV"><code>SAMPLE-001</code></div>
+            <div class="proofK">Verification</div>
+            <div class="proofV"><code>/verify/…</code></div>
           </div>
         </div>
+        -->
+
       </div>
+
     </section>
 
-    <section class="srSection" aria-label="What clients receive">
-      <h2 class="srH2">What your client receives</h2>
-      <div class="srGrid">
-        <div class="srCard">
-          <div class="srCardT">Executive summary</div>
-          <div class="srCardP">Client-facing overview: risk level, key drivers, and next steps.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Risk register</div>
-          <div class="srCardP">Structured findings with category, impact, triggers, and recommendations.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Coverage snapshot</div>
-          <div class="srCardP">Exactly which pages were checked (scope-locked), plus limitations.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Verification</div>
-          <div class="srCardP">Fingerprint + QR that links to a public integrity check page.</div>
-        </div>
-      </div>
-    </section>
+    <!-- If you add below-sections later, your CSS is already ready:
+         .srSection .srGrid .srCard etc.
+    -->
 
-    <section class="srSection" aria-label="Verification explanation">
-      <div class="srCallout">
-        <div class="srCalloutT">Why verification matters</div>
-        <div class="srCalloutP">
-          If the PDF is altered after generation, verification fails. This confirms integrity only — it does not certify
-          compliance or legality.
-        </div>
-        <div class="srCalloutA">
-          <a class="btnSoft" href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" rel="noopener">View verification</a>
-          <a class="btnGhost" href="/">Run a scan</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- FOOTER (page-owned styles) -->
-    <footer class="siteFooter" role="contentinfo">
-      <div class="footerTop container">
-        <div class="footerLeft">
-          <div class="footerBrand">Website Risk Check</div>
-          <div class="footerTag">Point-in-time website risk snapshot with public verification.</div>
-        </div>
-
-        <div class="footerRight">
-          <div class="footerCol">
-            <div class="footerHeading">Product</div>
-            <a href="/" class="footerLink">Run a scan</a>
-            <a href="/sample-report" class="footerLink">Sample report</a>
-            <a href="/agency" class="footerLink">For agencies</a>
-          </div>
-          <div class="footerCol">
-            <div class="footerHeading">Legal</div>
-            <a href="/terms" class="footerLink">Terms</a>
-            <a href="/privacy" class="footerLink">Privacy</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="footerBottom">
-        © <span id="year"></span> Website Risk Check. All rights reserved.
-      </div>
-    </footer>
   </main>
+
+  <!-- =========================
+       FOOTER (matches sample-report.css)
+  ========================== -->
+  <footer class="siteFooter">
+    <div class="container footerTop">
+
+      <div class="footerLeft">
+        <div class="footerBrand">Website Risk Check</div>
+        <div class="footerTag">Point-in-time website risk snapshot with public verification.</div>
+      </div>
+
+      <div class="footerRight">
+        <div class="footerCol">
+          <div class="footerHeading">Product</div>
+          <a href="/" class="footerLink">Run a scan</a>
+          <a href="/sample-report" class="footerLink">Sample report</a>
+          <a href="/agency" class="footerLink">For agencies</a>
+        </div>
+
+        <div class="footerCol">
+          <div class="footerHeading">Legal</div>
+          <a href="/terms" class="footerLink">Terms</a>
+          <a href="/privacy" class="footerLink">Privacy</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footerBottom">
+      © <span id="year"></span> Website Risk Check. All rights reserved.
+    </div>
+  </footer>
 
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
+
 </body>
 </html>

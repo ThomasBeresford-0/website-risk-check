@@ -1,654 +1,197 @@
 /* public/sample-report.css */
-/* Boutique showcase page: the PDF is the product.
-   v3 — editorial rhythm, fewer “card chips”, stronger artifact frame, no gimmicks.
-*/
-
-/* =========================
-   Base spacing
-========================= */
+/* v10 — premium artifact presentation */
 
 .srWrap{
-  padding: 34px 0 86px;
+  padding: 60px 0 100px;
 }
 
 .srHero{
   display:grid;
   grid-template-columns: 1.05fr .95fr;
-  gap: 34px;
+  gap: 60px;
   align-items:start;
-  margin-top: 18px;
 }
 
 @media (max-width: 980px){
   .srHero{
     grid-template-columns:1fr;
-    gap: 22px;
+    gap:40px;
   }
 }
 
-/* =========================
-   Left column (editorial)
-========================= */
+/* LEFT */
 
 .srEyebrow{
-  font-weight: 800;
-  letter-spacing: .10em;
-  text-transform: uppercase;
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 12px;
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:800;
+  color:#9ca3af;
+  margin-bottom:14px;
 }
 
 .srTitle{
-  margin: 0 0 14px;
-  font-size: 46px;
-  line-height: 1.04;
-  letter-spacing: -.04em;
-  color: var(--text);
-}
-
-@media (max-width: 520px){
-  .srTitle{ font-size: 34px; line-height: 1.08; }
+  font-size:48px;
+  line-height:1.05;
+  letter-spacing:-.04em;
+  margin:0 0 18px;
+  font-weight:700;
+  color:#111827;
 }
 
 .srLead{
-  margin: 0 0 18px;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1.65;
-  max-width: 64ch;
+  font-size:16px;
+  line-height:1.65;
+  color:#6b7280;
+  margin-bottom:26px;
+  max-width:60ch;
 }
 
-/* CTAs sit tighter and feel premium */
 .srCtas{
   display:flex;
-  gap:10px;
+  gap:14px;
+  margin-bottom:36px;
   flex-wrap:wrap;
-  margin: 10px 0 18px;
-}
-
-/* =========================
-   Buttons (calmer, premium)
-========================= */
-
-.btnPrimary, .btnSoft, .btnGhost{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 800;
-  font-size: 14px;
-  text-decoration:none;
-  border: 1px solid var(--border);
-  transition: transform .06s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
-  user-select:none;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .btnPrimary{
-  background: var(--ink);
-  color: #fff;
-  border-color: rgba(15,23,42,.16);
-  box-shadow: 0 10px 20px rgba(15,23,42,.10);
+  background:#111827;
+  color:#fff;
+  padding:12px 20px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:600;
+  box-shadow:0 12px 28px rgba(0,0,0,.12);
+  transition:.15s ease;
 }
+.btnPrimary:hover{ transform:translateY(-2px); }
 
 .btnSoft{
-  background: #fff;
-  color: var(--text);
-  border-color: rgba(15,23,42,.14);
+  background:#f3f4f6;
+  color:#111827;
+  padding:12px 20px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:600;
 }
-
-.btnGhost{
-  background: transparent;
-  color: var(--text);
-}
-
-.btnPrimary:hover, .btnSoft:hover, .btnGhost:hover{
-  transform: translateY(-1px);
-}
-
-.btnPrimary:active, .btnSoft:active, .btnGhost:active{
-  transform: translateY(0);
-}
-
-.btnPrimary:focus-visible, .btnSoft:focus-visible, .btnGhost:focus-visible,
-.iconBtn:focus-visible, .miniBtn:focus-visible, .miniCopy:focus-visible{
-  outline: none;
-  box-shadow: var(--ring);
-}
-
-/* =========================
-   Facts (no more “card soup”)
-========================= */
 
 .srFacts{
   display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
-  max-width: 560px;
-}
-
-.srFact{
-  background: transparent;
-  border: 1px solid rgba(15,23,42,.10);
-  border-radius: 16px;
-  padding: 12px 12px;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:24px;
 }
 
 .srFactK{
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--muted);
-  font-weight: 850;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#9ca3af;
 }
 
 .srFactV{
-  font-size: 14px;
-  color: var(--text);
-  font-weight: 900;
-  margin-top: 6px;
+  font-size:14px;
+  font-weight:600;
+  margin-top:4px;
 }
 
 .srNote{
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: #fff;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-  max-width: 560px;
+  font-size:13px;
+  color:#9ca3af;
+  line-height:1.6;
 }
 
-.srMiniHelp{
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: #fff;
-  max-width: 560px;
-}
+/* RIGHT — Artifact */
 
-.srMiniHelpT{
-  font-weight: 900;
-  font-size: 13px;
-  color: var(--text);
-  margin-bottom: 8px;
-  letter-spacing: -.01em;
-}
-
-.srMiniHelpList{
-  margin: 0;
-  padding-left: 18px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* Trust strip stays subtle */
-.srTrust{
-  margin-top: 14px;
-  max-width: 560px;
-}
-
-.srTrustRow{
-  display:flex;
-  gap: 10px;
-  align-items:flex-start;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-  margin-top: 8px;
-}
-
-.srTrustDot{
-  width:8px;
-  height:8px;
-  margin-top: 6px;
-  border-radius:999px;
-  background: rgba(15,23,42,.28);
-  flex: 0 0 auto;
-}
-
-/* =========================
-   Artifact frame (right)
-========================= */
-
-.flipShell{
-  border-radius: 20px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: #fff;
-  box-shadow: 0 30px 90px rgba(15,23,42,.14);
-  overflow:hidden;
-}
-
-.flipTopBar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(15,23,42,.10);
-  background: #fff;
-}
-
-.flipLabel{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  color: var(--muted);
-  font-weight: 850;
-  font-size: 13px;
-}
-
-.flipLabel .dot{
-  width:8px;
-  height:8px;
-  border-radius:999px;
-  background: rgba(15,23,42,.32);
-  display:inline-block;
-}
-
-.flipControls{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-.iconBtn{
-  width: 38px;
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: rgba(15,23,42,.035);
-  font-weight: 900;
-  cursor:pointer;
-  transition: transform .06s ease, background .12s ease;
-}
-
-.iconBtn:hover{ transform: translateY(-1px); }
-.iconBtn:active{ transform: translateY(0); }
-
-.iconBtn:disabled{
-  opacity: .50;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.pageReadout{
-  font-weight: 900;
-  color: var(--text);
-  font-size: 13px;
-}
-
-.pageReadout .muted{
-  color: var(--muted);
-  font-weight: 800;
-}
-
-/* Stage: treat as “desk”, but cleaner */
-.flipStage{
-  position:relative;
-  height: 560px;
-  background:
-    radial-gradient(120% 90% at 50% 10%, rgba(15,23,42,.05), transparent 60%),
-    linear-gradient(180deg, rgba(15,23,42,.02), rgba(15,23,42,.04));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  perspective: 1200px;
-}
-
-@media (max-width: 520px){
-  .flipStage{ height: 480px; }
-}
-
-/* Native PDF iframe wrapper (if present) */
-.nativePdfWrap{
-  position:absolute;
-  inset:0;
-  padding: 14px;
-}
-
-.nativePdfFrame{
-  width:100%;
-  height:100%;
-  border: 1px solid rgba(15,23,42,.12);
-  border-radius: 14px;
+.artifactFrame{
+  border-radius:24px;
   background:#fff;
-}
-
-/* Flip “paper” layer */
-.flipPage{
-  position:absolute;
-  width: 88%;
-  height: 90%;
-  border-radius: 14px;
-  background: #fff;
-  border: 1px solid rgba(15,23,42,.12);
-  box-shadow: 0 26px 70px rgba(15,23,42,.16);
+  border:1px solid rgba(0,0,0,.08);
+  box-shadow:0 40px 120px rgba(0,0,0,.15);
   overflow:hidden;
-  transform-style: preserve-3d;
 }
 
-.flipPage canvas{
-  width:100%;
-  height:100%;
-  display:block;
-}
-
-.flipShadow{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(120% 100% at 95% 50%, rgba(15,23,42,.12), transparent 55%),
-    radial-gradient(120% 100% at 0% 50%, rgba(15,23,42,.06), transparent 50%);
-  opacity:.22;
-}
-
-.flipPage.isBack{
-  transform: rotateY(180deg);
-  opacity: 0;
-}
-
-/* Turning animation */
-.flipStage.isTurning .flipPage.isFront{
-  animation: turnFront .6s ease-in-out forwards;
-  transform-origin: 100% 50%;
-}
-.flipStage.isTurning .flipPage.isBack{
-  animation: turnBack .6s ease-in-out forwards;
-  transform-origin: 0% 50%;
-  opacity: 1;
-}
-
-@keyframes turnFront{
-  0%{ transform: rotateY(0deg); }
-  100%{ transform: rotateY(-180deg); }
-}
-@keyframes turnBack{
-  0%{ transform: rotateY(180deg); }
-  100%{ transform: rotateY(0deg); }
-}
-
-/* Loading overlay (subtle) */
-.flipLoading{
-  position:absolute;
-  inset:0;
-  display:flex;
-  gap: 14px;
-  align-items:center;
-  justify-content:center;
-  padding: 18px;
-  color: var(--muted);
-  text-align:left;
-  background: rgba(255,255,255,.55);
-  backdrop-filter: blur(2px);
-}
-
-.spinner{
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  border: 2px solid rgba(15,23,42,.18);
-  border-top-color: rgba(15,23,42,.60);
-  animation: spin .8s linear infinite;
-}
-
-@keyframes spin{ to{ transform: rotate(360deg); } }
-
-.flipLoadingTitle{
-  font-weight: 900;
-  color: var(--text);
-}
-.flipLoadingSub{
-  font-size: 13px;
-  margin-top: 2px;
-}
-
-/* Error overlay: do NOT look dramatic */
-.flipError{
-  position:absolute;
-  inset:auto 14px 14px 14px;
-  border: 1px solid rgba(15,23,42,.12);
-  border-radius: 14px;
-  background: rgba(255,255,255,.92);
-  padding: 12px 12px;
-  color: var(--muted);
-  box-shadow: 0 14px 40px rgba(15,23,42,.12);
-  text-align:left;
-}
-
-.flipErrorTitle{
-  font-weight: 950;
-  color: var(--text);
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.flipErrorSub{
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.flipErrorActions{
-  margin-top: 10px;
-}
-
-/* Footer of frame */
-.flipFooter{
+.artifactTop{
+  padding:16px 20px;
+  border-bottom:1px solid rgba(0,0,0,.06);
   display:flex;
   justify-content:space-between;
-  gap: 10px;
-  padding: 10px 14px;
-  border-top: 1px solid rgba(15,23,42,.10);
-  background: #fff;
-}
-
-.flipHint{
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.flipZoom{
-  display:flex;
-  gap: 8px;
-}
-
-.miniBtn{
-  width: 36px;
-  height: 32px;
-  border-radius: 12px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: rgba(15,23,42,.035);
-  font-weight: 950;
-  cursor:pointer;
-  transition: transform .06s ease, background .12s ease;
-}
-
-.miniBtn:hover{ transform: translateY(-1px); }
-.miniBtn:active{ transform: translateY(0); }
-
-/* =========================
-   Proof panel
-========================= */
-
-.srProof{
-  margin-top: 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(15,23,42,.12);
-  background: #fff;
-  padding: 10px 12px;
-}
-
-.srProofRow{
-  display:flex;
-  justify-content:space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-top: 1px solid rgba(15,23,42,.06);
-}
-.srProofRow:first-child{ border-top: 0; }
-
-.srProofK{
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 850;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.srProofV{
-  display:flex;
   align-items:center;
-  gap: 8px;
-  max-width: 70%;
 }
 
-.srProofV code{
-  font-size: 12px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.artifactLabel{
+  font-size:13px;
+  font-weight:600;
+  color:#6b7280;
 }
 
-.miniCopy{
-  border: 1px solid rgba(15,23,42,.12);
-  background: rgba(15,23,42,.03);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-weight: 850;
-  font-size: 12px;
-  cursor:pointer;
-  transition: transform .06s ease, background .12s ease;
-}
-.miniCopy:hover{ transform: translateY(-1px); }
-.miniCopy:active{ transform: translateY(0); }
-
-/* Below actions */
-.srBelowCtas{
-  margin-top: 12px;
+.artifactActions{
   display:flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap:12px;
 }
 
-/* =========================
-   Sections (below)
-========================= */
-
-.srSection{
-  margin-top: 36px;
-}
-
-.srH2{
-  font-size: 20px;
-  margin: 0 0 14px;
-  letter-spacing: -.01em;
-  color: var(--text);
-}
-
-/* Cards grid */
-.srGrid{
-  display:grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-@media (max-width: 980px){
-  .srGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 520px){
-  .srGrid{ grid-template-columns: 1fr; }
-}
-
-.srCard{
-  border: 1px solid rgba(15,23,42,.10);
-  border-radius: 18px;
-  background: #fff;
-  padding: 14px;
-  box-shadow: 0 12px 26px rgba(15,23,42,.06);
-}
-
-.srCardT{
-  font-weight: 900;
-  letter-spacing: -.01em;
-  color: var(--text);
-}
-
-.srCardP{
-  margin-top: 6px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-/* Callout */
-.srCallout{
-  border: 1px solid rgba(15,23,42,.12);
-  border-radius: 20px;
-  background: #fff;
-  padding: 16px;
-  box-shadow: 0 18px 44px rgba(15,23,42,.08);
-}
-
-.srCalloutT{
-  font-weight: 950;
-  font-size: 16px;
-  letter-spacing: -.01em;
-  color: var(--text);
-}
-
-.srCalloutP{
-  margin-top: 6px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.srCalloutA{
-  margin-top: 12px;
-  display:flex;
-  gap: 10px;
-  flex-wrap:wrap;
-}
-
-/* Footer (page-level) */
-.srFooter{
-  margin-top: 46px;
-  border-top: 1px solid rgba(15,23,42,.10);
-  padding-top: 18px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.srFooterInner{
-  display:flex;
-  justify-content:space-between;
-  gap: 12px;
-  flex-wrap:wrap;
-}
-
-.srFooterLeft, .srFooterRight{
-  display:flex;
-  gap: 10px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-
-.srFooterLink{
-  color: var(--muted);
+.artifactBtn{
+  font-size:13px;
+  padding:8px 14px;
+  border-radius:999px;
   text-decoration:none;
+  font-weight:600;
+  background:#111827;
+  color:#fff;
 }
-.srFooterLink:hover{
-  color: var(--text);
+.artifactBtn.isSoft{
+  background:#f3f4f6;
+  color:#111827;
 }
 
-.srFooterDot{
-  opacity:.55;
+.artifactPreview{
+  position:relative;
+  padding:40px;
+  background:linear-gradient(180deg,#f9fafb,#f3f4f6);
+}
+
+.artifactImg{
+  width:100%;
+  border-radius:18px;
+  box-shadow:0 30px 80px rgba(0,0,0,.25);
+  transition:.2s ease;
+}
+
+.artifactPreview:hover .artifactImg{
+  transform:translateY(-4px);
+}
+
+.artifactOverlay{
+  position:absolute;
+  inset:40px;
+  border-radius:18px;
+  display:flex;
+  align-items:flex-end;
+  padding:20px;
+  background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.6));
+  opacity:0;
+  transition:.2s ease;
+}
+
+.artifactPreview:hover .artifactOverlay{
+  opacity:1;
+}
+
+.artifactOverlayTitle{
+  color:#fff;
+  font-weight:700;
+  font-size:16px;
+}
+
+.artifactOverlaySub{
+  font-size:13px;
+  color:#d1d5db;
+  margin-top:4px;
+}
+
+.artifactFoot{
+  padding:14px 20px;
+  border-top:1px solid rgba(0,0,0,.06);
+  font-size:12px;
+  color:#6b7280;
 }

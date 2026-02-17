@@ -9,20 +9,9 @@
   <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
   <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
 
-  <!-- Social -->
-  <meta property="og:title" content="Sample verified report — Website Risk Check" />
-  <meta property="og:description" content="Preview the paid deliverable: a sealed, timestamped PDF with public verification." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://websiteriskcheck.com/sample-report" />
-
-  <!-- Favicons -->
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" href="/favicon.svg?v=1" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
-
-  <!-- Global CSS -->
+  <!-- Global styles -->
   <link rel="stylesheet" href="/style.css?v=13" />
+  <link rel="stylesheet" href="/sample-report.css?v=10" />
 
   <meta name="theme-color" content="#0b1220">
 </head>
@@ -34,7 +23,6 @@
 
   <header class="siteHeader">
     <div class="container headerInner">
-
       <a href="/" class="logo">
         <span class="logoText">Website Risk Check</span>
       </a>
@@ -46,7 +34,6 @@
       </nav>
 
       <a href="/" class="headerCta">Start scan</a>
-
     </div>
   </header>
 
@@ -54,71 +41,111 @@
        MAIN
   ========================== -->
 
-  <main class="container" style="padding-top:80px;">
+  <main class="container srWrap">
 
-    <section class="srHero" style="display:grid;grid-template-columns:1fr 1.2fr;gap:60px;align-items:start;">
+    <section class="srHero">
 
-      <!-- LEFT -->
-      <div>
+      <!-- LEFT COLUMN -->
+      <div class="srLeft">
 
-        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:16px;">
-          Sample verified report
-        </div>
+        <div class="srEyebrow">Sample verified report</div>
 
-        <h1 style="font-size:40px;line-height:1.15;margin-bottom:20px;">
+        <h1 class="srTitle">
           This is the PDF your client receives after payment.
         </h1>
 
-        <p style="font-size:16px;color:#6b7280;max-width:520px;margin-bottom:28px;">
-          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint,
-          and publicly verifiable. This is the exact paid deliverable — not a demo.
+        <p class="srLead">
+          A point-in-time snapshot captured in UTC, sealed with an integrity
+          fingerprint and publicly verifiable. This is the exact paid
+          deliverable — not a demo.
         </p>
 
-        <div style="display:flex;gap:14px;margin-bottom:40px;">
-          <a href="/sample-report.pdf" target="_blank" class="primaryBtn">Open sample PDF</a>
-          <a href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" class="secondaryBtn">Open verification</a>
+        <div class="srCtas">
+          <a href="/sample-report.pdf" target="_blank" class="btnPrimary">
+            Open sample PDF
+          </a>
+          <a href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+             target="_blank"
+             class="btnSoft">
+            Open verification
+          </a>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:30px;max-width:520px;">
-          <div>
-            <div class="factLabel">Deliverable</div>
-            <div class="factValue">Client-ready PDF</div>
+        <div class="srFacts">
+          <div class="srFact">
+            <div class="srFactK">Deliverable</div>
+            <div class="srFactV">Client-ready PDF</div>
           </div>
-          <div>
-            <div class="factLabel">Timestamp</div>
-            <div class="factValue">Captured in UTC</div>
+          <div class="srFact">
+            <div class="srFactK">Timestamp</div>
+            <div class="srFactV">Captured in UTC</div>
           </div>
-          <div>
-            <div class="factLabel">Scope</div>
-            <div class="factValue">Up to 6 pages</div>
+          <div class="srFact">
+            <div class="srFactK">Scope</div>
+            <div class="srFactV">Up to 6 pages</div>
           </div>
-          <div>
-            <div class="factLabel">Verification</div>
-            <div class="factValue">Public integrity check</div>
+          <div class="srFact">
+            <div class="srFactK">Verification</div>
+            <div class="srFactV">Public integrity check</div>
           </div>
         </div>
 
-        <div style="font-size:14px;color:#9ca3af;max-width:520px;">
+        <div class="srNote">
           Informational snapshot only — not legal advice, certification, or monitoring.
           Verification confirms integrity only (not compliance).
         </div>
 
       </div>
 
-      <!-- RIGHT -->
+      <!-- RIGHT COLUMN -->
+      <div class="srRight">
 
-      <div style="border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.04);">
+        <div class="artifactFrame">
 
-        <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#6b7280;">
-          Sample PDF preview
+          <div class="artifactTop">
+            <div class="artifactLabel">Sample PDF preview</div>
+            <div class="artifactActions">
+              <a class="artifactBtn"
+                 href="/sample-report.pdf"
+                 target="_blank">Open PDF</a>
+
+              <a class="artifactBtn isSoft"
+                 href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+                 target="_blank">Verify</a>
+            </div>
+          </div>
+
+          <a class="artifactPreview"
+             href="/sample-report.pdf"
+             target="_blank">
+
+            <img
+              class="artifactImg"
+              src="/sample-report-cover.webp"
+              alt="Sample report preview"
+              onerror="this.onerror=null;this.src='/sample-report-cover.png';"
+            />
+
+            <div class="artifactOverlay">
+              <div class="artifactOverlayInner">
+                <div class="artifactOverlayTitle">
+                  Open the full PDF
+                </div>
+                <div class="artifactOverlaySub">
+                  Exact paid deliverable · includes verification code
+                </div>
+              </div>
+            </div>
+
+          </a>
+
+          <div class="artifactFoot">
+            <div class="artifactFootNote">
+              This is a static preview image. The official deliverable is the PDF.
+            </div>
+          </div>
+
         </div>
-
-        <iframe
-          src="/sample-report.pdf#view=FitH"
-          style="width:100%;height:780px;border:0;background:#fff;"
-          loading="lazy"
-          title="Sample report PDF preview">
-        </iframe>
 
       </div>
 
@@ -131,7 +158,6 @@
   ========================== -->
 
   <footer class="siteFooter">
-
     <div class="container footerInner">
 
       <div class="footerLeft">
@@ -142,7 +168,6 @@
       </div>
 
       <div class="footerRight">
-
         <div class="footerCol">
           <div class="footerHeading">Product</div>
           <a href="/" class="footerLink">Run a scan</a>
@@ -155,7 +180,6 @@
           <a href="/terms" class="footerLink">Terms</a>
           <a href="/privacy" class="footerLink">Privacy</a>
         </div>
-
       </div>
 
     </div>
@@ -163,7 +187,6 @@
     <div class="footerBottom">
       © <span id="year"></span> Website Risk Check. All rights reserved.
     </div>
-
   </footer>
 
   <script>

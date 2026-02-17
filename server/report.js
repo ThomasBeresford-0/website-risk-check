@@ -1,7 +1,8 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
-// BOUTIQUE UPGRADE (v2.2): consultancy artifact layout (STABLE)
+// BOUTIQUE UPGRADE (v2.3): consultancy artifact layout (STABLE)
 // ✅ Fixes: NO blank/ghost pages (footer-safe), NO table overflow, NO footer poisoning doc.y
+// ✅ Polishes: denser landscape register (no massive whitespace), footer breathing room, tighter header
 // ✅ Premium cover + exec summary + landscape risk register + verification QR
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
@@ -25,7 +26,8 @@ const PALETTE = {
   body: "#1F2937",
   line: "#D7DEE2",
 
-  navy: "#021942",
+  // softened for “consultancy” look (less harsh than #021942)
+  navy: "#0F2A54",
   rowA: "#F3F4F6",
   rowB: "#EEF2F7",
 
@@ -147,8 +149,8 @@ function getCoverage(data) {
       data?.fetchOk === false
         ? false
         : data?.fetchOk === true
-          ? true
-          : safeArr(data?.checkedPages).length > 0,
+        ? true
+        : safeArr(data?.checkedPages).length > 0,
     fetchStatus: num(data?.fetchStatus, 0),
   };
 }
@@ -429,7 +431,9 @@ function addFooter(doc, meta, integrityHash) {
   doc.moveTo(left, dividerY).lineTo(right, dividerY).stroke();
   doc.restore();
 
-  const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId}${ts ? ` • Timestamp (UTC): ${ts}` : ""}`;
+  const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId}${
+    ts ? ` • Timestamp (UTC): ${ts}` : ""
+  }`;
   const line2 = `Verify: ${verifyUrl}`;
 
   doc.save();
@@ -545,13 +549,17 @@ function drawCover(doc, meta, risk, integrityHash) {
 
   let ry = boxY + 18;
   rows.forEach(([k, v]) => {
-    doc.font("Helvetica-Bold").fontSize(10.5).fillColor(PALETTE.ink).text(k, boxX + 18, ry, {
-      width: labelW - 18,
-    });
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(10.5)
+      .fillColor(PALETTE.ink)
+      .text(k, boxX + 18, ry, { width: labelW - 18 });
 
-    doc.font("Helvetica").fontSize(10.5).fillColor(PALETTE.body).text(v, valX, ry, {
-      width: boxW - labelW - 18,
-    });
+    doc
+      .font("Helvetica")
+      .fontSize(10.5)
+      .fillColor(PALETTE.body)
+      .text(v, valX, ry, { width: boxW - labelW - 18 });
 
     ry += 32;
   });
@@ -580,28 +588,37 @@ function scoreBand(score) {
   return { fill: "#D1FAE5", ink: "#065F46" };
 }
 
+/**
+ * v2.3 FIX: Dense rows + footer breathing room + tighter header
+ * - fixes the “2 rows per page + massive whitespace” look
+ * - keeps footer-safe pagination and hard-fit columns (no overflow)
+ */
 function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   const left = xLeft(doc);
   const right = xRight(doc);
   const tableW = right - left;
 
-  const headerH = 34;
-  const minRowH = 92;
+  const headerH = 30;
 
-  // NOTE: These widths are “targets”, we hard-fit the final column to tableW.
+  const MIN_ROW_H = 62;
+  const MAX_ROW_H = 118;
+
+  const FOOTER_BREATH = 18;
+
+  // NOTE: target widths; last column is hard-fit to remaining
   const cols = [
-    { key: "category", w: 110, label: "Risk\nCategory" },
-    { key: "desc", w: 190, label: "Risk\nDescription" },
-    { key: "prob", w: 90, label: "Probability" },
-    { key: "impact", w: 80, label: "Impact" },
-    { key: "score", w: 70, label: "Score" },
-    { key: "trigger", w: 150, label: "Trigger" },
+    { key: "category", w: 104, label: "Risk\nCategory" },
+    { key: "desc", w: 198, label: "Risk\nDescription" },
+    { key: "prob", w: 86, label: "Probability" },
+    { key: "impact", w: 76, label: "Impact" },
+    { key: "score", w: 64, label: "Score" },
+    { key: "trigger", w: 152, label: "Trigger" },
     { key: "response", w: 0, label: "Mitigation response" },
   ];
 
-  // guaranteed-fit allocator (prevents overflow in any margin/layout)
-  const MIN_LAST = 190;
-  const MIN_DESC = 160;
+  // guaranteed-fit allocator (prevents horizontal overflow)
+  const MIN_LAST = 210;
+  const MIN_DESC = 170;
   const MIN_TRIGGER = 120;
 
   let fixedW = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
@@ -633,18 +650,26 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   cols[cols.length - 1].w = Math.max(MIN_LAST, remaining);
 
+  const bottom = () => contentBottomY(doc) - FOOTER_BREATH;
+
   function drawHeaderRow(y) {
+    // header background
     doc.save();
     doc.rect(left, y, tableW, headerH).fill(PALETTE.navy);
+    doc.restore();
+
+    // outer stroke
+    doc.save();
     doc.strokeColor("#94A3B8").lineWidth(0.8);
     doc.rect(left, y, tableW, headerH).stroke();
     doc.restore();
 
+    // header text
     let x = left;
     doc.save();
-    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(10);
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9.5);
     cols.forEach((c) => {
-      doc.text(c.label, x + 8, y + 7, { width: c.w - 16, align: "left" });
+      doc.text(c.label, x + 8, y + 6, { width: c.w - 16, align: "left" });
       x += c.w;
     });
     doc.restore();
@@ -667,33 +692,35 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   function calcRowHeight(r) {
     const padX = 10;
-    const yPad = 24;
+    const topPad = 10;
+    const botPad = 10;
 
     const heights = cols.map((c) => {
       const tw = Math.max(12, c.w - padX * 2);
       const key = c.key;
 
-      if (key === "prob" || key === "impact") {
-        doc.font("Helvetica-Bold").fontSize(10.5);
-        return doc.heightOfString(String(r[key] ?? ""), { width: tw }) + yPad;
-      }
+      if (key === "score") return 42;
 
-      if (key === "score") {
-        return 14 + yPad + 16;
+      if (key === "prob" || key === "impact") {
+        doc.font("Helvetica-Bold").fontSize(10.2);
+        return doc.heightOfString(String(r[key] ?? ""), { width: tw }) + topPad + botPad;
       }
 
       if (key === "category") {
-        doc.font("Helvetica").fontSize(10.5);
-        return doc.heightOfString(String(r.category ?? ""), { width: tw }) + yPad;
+        doc.font("Helvetica").fontSize(10.0);
+        return doc.heightOfString(String(r.category ?? ""), { width: tw }) + topPad + botPad;
       }
 
-      doc.font("Helvetica").fontSize(10.2);
-      return doc.heightOfString(String(r[key] ?? ""), { width: tw, lineGap: 3 }) + yPad;
+      doc.font("Helvetica").fontSize(9.8);
+      return (
+        doc.heightOfString(String(r[key] ?? ""), { width: tw, lineGap: 2 }) +
+        topPad +
+        botPad
+      );
     });
 
-    // clamp prevents runaway height from pathological strings
-    const h = Math.max(minRowH, ...heights);
-    return Math.min(180, h);
+    const h = Math.max(MIN_ROW_H, ...heights);
+    return Math.min(MAX_ROW_H, h);
   }
 
   normalizeBodyCursor(doc);
@@ -702,17 +729,13 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   drawHeaderRow(y);
   y += headerH;
 
-  const bottom = () => contentBottomY(doc);
-
   rows.forEach((r, idx) => {
     const rowH = calcRowHeight(r);
 
     if (y + rowH > bottom()) {
-      // close out this page cleanly BEFORE adding a new one
       addFooter(doc, meta, integrityHash);
 
       doc.addPage({ layout: "landscape" });
-      // header drawn by pageAdded
       normalizeBodyCursor(doc);
       y = doc.y;
 
@@ -726,6 +749,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     doc.rect(left, y, tableW, rowH).fill(bg);
     doc.restore();
 
+    // score band
     const scoreIndex = cols.findIndex((c) => c.key === "score");
     const scoreX = left + cols.slice(0, scoreIndex).reduce((a, c) => a + c.w, 0);
     const scoreW = cols[scoreIndex].w;
@@ -735,6 +759,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     doc.rect(scoreX, y, scoreW, rowH).fill(sb.fill);
     doc.restore();
 
+    // outer border
     doc.save();
     doc.strokeColor("#94A3B8").lineWidth(0.6);
     doc.rect(left, y, tableW, rowH).stroke();
@@ -758,38 +783,44 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     // text
     let cx = left;
     doc.save();
+
     cols.forEach((c) => {
       const pad = 10;
       const tx = cx + pad;
-      const ty = y + 12;
       const tw = Math.max(12, c.w - pad * 2);
+      const ty = y + 12;
 
       if (c.key === "category") {
-        doc.font("Helvetica").fontSize(10.5).fillColor(PALETTE.ink);
-        doc.text(clampText(r.category, 70), tx, ty, { width: tw });
+        doc.font("Helvetica").fontSize(10.0).fillColor(PALETTE.ink);
+        doc.text(clampText(r.category, 70), tx, ty, { width: tw, ellipsis: true });
       } else if (c.key === "prob" || c.key === "impact") {
-        doc.font("Helvetica-Bold").fontSize(10.5).fillColor(PALETTE.ink);
-        doc.text(clampText(r[c.key], 46), tx, ty + 18, { width: tw, align: "center" });
+        doc.font("Helvetica-Bold").fontSize(10.2).fillColor(PALETTE.ink);
+        doc.text(clampText(r[c.key], 46), tx, ty + 10, {
+          width: tw,
+          align: "center",
+          ellipsis: true,
+        });
       } else if (c.key === "score") {
         doc.font("Helvetica-Bold").fontSize(14).fillColor("#111827");
-        doc.text(String(r.scoreNum), tx, ty + 28, { width: tw, align: "center" });
+        doc.text(String(r.scoreNum), tx, ty + 18, { width: tw, align: "center" });
       } else {
-        doc.font("Helvetica").fontSize(10.2).fillColor(PALETTE.ink);
+        doc.font("Helvetica").fontSize(9.8).fillColor(PALETTE.ink);
         doc.text(clampText(r[c.key], 320), tx, ty, {
           width: tw,
-          lineGap: 3,
+          lineGap: 2,
           ellipsis: true,
         });
       }
 
       cx += c.w;
     });
+
     doc.restore();
 
     y += rowH;
   });
 
-  doc.y = y + 14;
+  doc.y = y + 22;
 }
 
 /* =========================
@@ -983,7 +1014,9 @@ export async function generateReport(data, outputPath) {
 
       const findings = safeArr(data?.findings || data?.meta?.findings);
       const structuredRows = rowsFromFindings(findings);
-      const riskRows = structuredRows.length ? structuredRows : buildRiskRegister(meta, coverage, signals);
+      const riskRows = structuredRows.length
+        ? structuredRows
+        : buildRiskRegister(meta, coverage, signals);
 
       const doc = new PDFDocument({
         margin: 54,
@@ -1045,7 +1078,10 @@ export async function generateReport(data, outputPath) {
       const y0 = doc.y;
 
       card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
-      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
+      card(doc, left + colW + gap, y0, colW, cardH, {
+        title: "Timestamp (UTC)",
+        value: tsVal,
+      });
 
       card(doc, left, y0 + cardH + gap, colW, cardH, {
         title: "Coverage",
@@ -1072,11 +1108,17 @@ export async function generateReport(data, outputPath) {
       const keyFindings = [];
 
       keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Consent banner indicator: ${signals?.consent?.bannerDetected ? "Detected" : "Not detected"} (heuristic)`
+        `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
+      );
+      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
+      keyFindings.push(
+        `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
+      );
+      keyFindings.push(
+        `Consent banner indicator: ${
+          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
+        } (heuristic)`
       );
 
       keyFindings.push(
@@ -1097,10 +1139,14 @@ export async function generateReport(data, outputPath) {
 
       keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
       keyFindings.push(
-        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
+        `Potential personal-data field signals: ${num(
+          signals?.forms?.personalDataSignals
+        )} (heuristic)`
       );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
+      keyFindings.push(
+        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
+      );
 
       bulletList(doc, keyFindings.slice(0, 12));
       addFooter(doc, meta, integrityHash);
@@ -1141,7 +1187,10 @@ export async function generateReport(data, outputPath) {
 
       subTitle(doc, "Connection");
       bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
-      bodyText(doc, "HTTPS reduces interception risk and is commonly expected for customer-facing websites.");
+      bodyText(
+        doc,
+        "HTTPS reduces interception risk and is commonly expected for customer-facing websites."
+      );
       hr(doc);
 
       subTitle(doc, "Policies (public-path detection)");
@@ -1168,8 +1217,13 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       subTitle(doc, "Consent indicators (heuristic)");
-      bulletList(doc, [`Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`]);
-      bodyText(doc, "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee.");
+      bulletList(doc, [
+        `Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`,
+      ]);
+      bodyText(
+        doc,
+        "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee."
+      );
       hr(doc);
 
       subTitle(doc, "Forms & data capture (heuristic)");
@@ -1177,7 +1231,10 @@ export async function generateReport(data, outputPath) {
         `Forms detected: ${num(signals?.forms?.detected)}`,
         `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)}`,
       ]);
-      bodyText(doc, "Personal-data signals are heuristic counts based on common field names. They are not legal classifications.");
+      bodyText(
+        doc,
+        "Personal-data signals are heuristic counts based on common field names. They are not legal classifications."
+      );
       hr(doc);
 
       subTitle(doc, "Accessibility signals (heuristic)");
@@ -1194,8 +1251,13 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       subTitle(doc, "Contact & identity signals");
-      bulletList(doc, [`Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`]);
-      bodyText(doc, "Detected using simple patterns (email/phone/contact link) on the scanned surface only.");
+      bulletList(doc, [
+        `Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`,
+      ]);
+      bodyText(
+        doc,
+        "Detected using simple patterns (email/phone/contact link) on the scanned surface only."
+      );
 
       addFooter(doc, meta, integrityHash);
 
@@ -1278,7 +1340,11 @@ export async function generateReport(data, outputPath) {
       doc.moveDown(0.8);
 
       subTitle(doc, "Integrity hash (SHA-256)");
-      doc.font("Helvetica").fontSize(9.8).fillColor(PALETTE.ink).text(integrityHash, { lineGap: 2 });
+      doc
+        .font("Helvetica")
+        .fontSize(9.8)
+        .fillColor(PALETTE.ink)
+        .text(integrityHash, { lineGap: 2 });
       doc.moveDown(0.8);
 
       subTitle(doc, "Verification link");

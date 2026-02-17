@@ -2,6 +2,7 @@
   "name": "websiteriskcheck",
   "private": true,
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "make-sample": "node server/scripts/make-sample-report.js"
   }
 }

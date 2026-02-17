@@ -6,7 +6,8 @@
   "description": "Backend service for Website Risk Check",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "make-sample": "node server/scripts/make-sample-report.js"
   },
   "engines": {
     "node": ">=18"

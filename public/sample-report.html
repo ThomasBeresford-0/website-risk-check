@@ -6,20 +6,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
 
   <title>Sample report — what clients receive (PDF) | Website Risk Check</title>
-  <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
+
+  <meta
+    name="description"
+    content="Preview the exact PDF clients receive after payment: a timestamped, immutable website risk snapshot with public integrity verification."
+  />
+
   <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
 
   <!-- Global styles -->
   <link rel="stylesheet" href="/style.css?v=13" />
-  <link rel="stylesheet" href="/sample-report.css?v=10" />
+  <link rel="stylesheet" href="/sample-report.css?v=12" />
 
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#0b1220" />
 </head>
 <body>
 
-  <!-- =========================
-       HEADER
-  ========================== -->
+  <!-- ========================= HEADER ========================== -->
 
   <header class="siteHeader">
     <div class="container headerInner">
@@ -37,9 +40,7 @@
     </div>
   </header>
 
-  <!-- =========================
-       MAIN
-  ========================== -->
+  <!-- ========================= MAIN ========================== -->
 
   <main class="container srWrap">
 
@@ -61,12 +62,21 @@
         </p>
 
         <div class="srCtas">
-          <a href="/sample-report.pdf" target="_blank" class="btnPrimary">
+          <a
+            href="/sample-report.pdf"
+            target="_blank"
+            rel="noopener"
+            class="btnPrimary"
+          >
             Open sample PDF
           </a>
-          <a href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
-             target="_blank"
-             class="btnSoft">
+
+          <a
+            href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+            target="_blank"
+            rel="noopener"
+            class="btnSoft"
+          >
             Open verification
           </a>
         </div>
@@ -76,14 +86,17 @@
             <div class="srFactK">Deliverable</div>
             <div class="srFactV">Client-ready PDF</div>
           </div>
+
           <div class="srFact">
             <div class="srFactK">Timestamp</div>
             <div class="srFactV">Captured in UTC</div>
           </div>
+
           <div class="srFact">
             <div class="srFactK">Scope</div>
             <div class="srFactV">Up to 6 pages</div>
           </div>
+
           <div class="srFact">
             <div class="srFactK">Verification</div>
             <div class="srFactV">Public integrity check</div>
@@ -92,7 +105,7 @@
 
         <div class="srNote">
           Informational snapshot only — not legal advice, certification, or monitoring.
-          Verification confirms integrity only (not compliance).
+          Verification confirms document integrity only (not compliance).
         </div>
 
       </div>
@@ -104,26 +117,40 @@
 
           <div class="artifactTop">
             <div class="artifactLabel">Sample PDF preview</div>
-            <div class="artifactActions">
-              <a class="artifactBtn"
-                 href="/sample-report.pdf"
-                 target="_blank">Open PDF</a>
 
-              <a class="artifactBtn isSoft"
-                 href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
-                 target="_blank">Verify</a>
+            <div class="artifactActions">
+              <a
+                class="artifactBtn"
+                href="/sample-report.pdf"
+                target="_blank"
+                rel="noopener"
+              >
+                Open PDF
+              </a>
+
+              <a
+                class="artifactBtn isSoft"
+                href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+                target="_blank"
+                rel="noopener"
+              >
+                Verify
+              </a>
             </div>
           </div>
 
-          <a class="artifactPreview"
-             href="/sample-report.pdf"
-             target="_blank">
-
+          <a
+            class="artifactPreview"
+            href="/sample-report.pdf"
+            target="_blank"
+            rel="noopener"
+            aria-label="Open full sample PDF in new tab"
+          >
             <img
               class="artifactImg"
-              src="/sample-report-cover.webp"
-              alt="Sample report preview"
-              onerror="this.onerror=null;this.src='/sample-report-cover.png';"
+              src="/sample-report-cover.png?v=1"
+              alt="Preview of Website Risk Check sample report PDF"
+              loading="eager"
             />
 
             <div class="artifactOverlay">
@@ -136,12 +163,11 @@
                 </div>
               </div>
             </div>
-
           </a>
 
           <div class="artifactFoot">
             <div class="artifactFootNote">
-              This is a static preview image. The official deliverable is the PDF.
+              This is a static preview image. The official deliverable is the PDF file.
             </div>
           </div>
 
@@ -153,9 +179,7 @@
 
   </main>
 
-  <!-- =========================
-       FOOTER
-  ========================== -->
+  <!-- ========================= FOOTER ========================== -->
 
   <footer class="siteFooter">
     <div class="container footerInner">
@@ -190,7 +214,8 @@
   </footer>
 
   <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
   </script>
 
 </body>

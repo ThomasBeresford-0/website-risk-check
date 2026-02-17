@@ -1,8 +1,8 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
-// BOUTIQUE UPGRADE (v2.4): perfect spacing + no orphan pages + compact landscape register
-// ✅ Fixes: exec summary dead whitespace, key findings orphan page, risk register spill w/ huge blanks
-// ✅ Still: NO blank/ghost pages (height-clamped), NO table overflow, NO footer poisoning doc.y
+// BOUTIQUE UPGRADE (v2.5): premium alignment + human timestamps + clearer verification + centered luxe QR
+// ✅ Fixes: cover badge centering, random-looking ISO timestamps, footer clarity, fancy centered QR
+// ✅ Keeps: NO ghost pages (footer-safe), NO table overflow, NO orphan pages, deterministic integrity hashing inputs
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
@@ -29,6 +29,10 @@ const PALETTE = {
   rowA: "#F3F4F6",
   rowB: "#EEF2F7",
 
+  // Boutique table grid
+  grid: "#CBD5E1", // slate-300
+  gridSoft: "#E2E8F0", // slate-200
+
   scoreGreen: "#BFD83A",
   scoreYellow: "#F6BE34",
   scoreOrange: "#F39C12",
@@ -42,21 +46,40 @@ const CONTENT_TOP_Y = 78;
 
 // Footer must be drawn INSIDE margins, otherwise PDFKit auto-adds pages.
 // Reserve enough space so content never overlaps footer.
-const FOOTER_HEIGHT = 34; // divider + 2 lines
+const FOOTER_HEIGHT = 38; // divider + 2 lines (slightly taller for clearer copy)
 const FOOTER_GAP = 10; // breathing room above footer reserve
 
 /* =========================
    HELPERS
 ========================= */
 
-function iso(ts) {
+function safeDate(ts) {
   try {
     const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toISOString();
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
   } catch {
-    return "";
+    return null;
   }
+}
+
+function iso(ts) {
+  const d = safeDate(ts);
+  return d ? d.toISOString() : "";
+}
+
+// Human boutique timestamp (still deterministic from meta.scannedAt)
+function formatUtc(ts) {
+  const d = safeDate(ts);
+  if (!d) return "—";
+  // Always UTC, always consistent
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  const mon = months[d.getUTCMonth()];
+  const yyyy = d.getUTCFullYear();
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${dd} ${mon} ${yyyy} • ${hh}:${mm} UTC`;
 }
 
 function yesNo(v) {
@@ -266,6 +289,7 @@ function badge(doc, text, tone = "gray", x, y) {
     red: { bg: "#FEF2F2", fg: "#991B1B", br: "#FECACA" },
     gray: { bg: "#F3F4F6", fg: "#111827", br: "#E5E7EB" },
     blue: { bg: "#EFF6FF", fg: "#1D4ED8", br: "#BFDBFE" },
+    teal: { bg: "#ECFDFB", fg: "#065F46", br: "#99F6E4" },
   };
   const t = tones[tone] || tones.gray;
 
@@ -307,7 +331,7 @@ function sectionTitle(doc, title, subtitle = "") {
 
 // tighter variant for landscape pages (gives table more vertical room)
 function sectionTitleCompact(doc, title, subtitle = "") {
-  ensureSpace(doc, 110);
+  ensureSpace(doc, 105);
 
   doc.font("Helvetica-Bold").fontSize(18).fillColor(PALETTE.ink).text(title);
   if (subtitle) {
@@ -381,79 +405,6 @@ function bulletList(doc, items, opts = {}) {
 
   doc.y = y;
   return y;
-}
-
-/**
- * Two-column bullet list (perfect for “Key findings” so it never creates an orphan page).
- * Returns { yEnd, colHeights }.
- */
-function bulletListTwoCol(doc, items, opts = {}) {
-  const safe = safeArr(items).filter(Boolean);
-  if (!safe.length) return { yEnd: doc.y, colHeights: [0, 0] };
-
-  const x = opts.x ?? xLeft(doc);
-  const w = opts.width ?? widthBetweenMargins(doc);
-  const yStart = opts.y ?? doc.y;
-  const size = opts.size ?? 10.2;
-  const gap = opts.gap ?? 6;
-  const colGap = opts.colGap ?? 16;
-  const lineGap = opts.lineGap ?? 3;
-  const bulletIndent = opts.bulletIndent ?? 14;
-
-  const colW = (w - colGap) / 2;
-  const leftX = x;
-  const rightX = x + colW + colGap;
-
-  doc.font("Helvetica").fontSize(size).fillColor(PALETTE.body);
-
-  // measure each item height in a column
-  const textW = Math.max(20, colW - bulletIndent);
-  const heights = safe.map((t) => doc.heightOfString(String(t), { width: textW, lineGap }) + gap);
-
-  // greedy balance: fill left until it would exceed available height, then right
-  const avail = Math.max(60, contentBottomY(doc) - yStart);
-  const left = [];
-  const right = [];
-
-  let leftH = 0;
-  for (let i = 0; i < safe.length; i++) {
-    if (leftH + heights[i] <= avail || right.length === 0) {
-      left.push(safe[i]);
-      leftH += heights[i];
-    } else {
-      right.push(safe[i]);
-    }
-  }
-
-  const renderCol = (colItems, colX) => {
-    let y = yStart;
-    for (const raw of colItems) {
-      const t = String(raw);
-      const h = doc.heightOfString(t, { width: textW, lineGap });
-
-      if (y + h + 6 > contentBottomY(doc)) {
-        doc.addPage();
-        normalizeBodyCursor(doc);
-        y = doc.y;
-      }
-
-      doc.save();
-      doc.fillColor(PALETTE.body);
-      doc.circle(colX + 3.2, y + 5.2, 1.6).fill();
-      doc.restore();
-
-      doc.text(t, colX + bulletIndent, y, { width: textW, lineGap });
-      y += h + gap;
-    }
-    return y;
-  };
-
-  const yL = renderCol(left, leftX);
-  const yR = renderCol(right, rightX);
-
-  const yEnd = Math.max(yL, yR);
-  doc.y = yEnd;
-  return { yEnd, colHeights: [yL - yStart, yR - yStart] };
 }
 
 function card(doc, x, y, w, h, { title, value, foot } = {}) {
@@ -540,17 +491,20 @@ function addFooter(doc, meta, integrityHash) {
   const right = xRight(doc);
   const width = right - left;
 
-  const base = process.env.BASE_URL || "";
-  const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
+  const base = (process.env.BASE_URL || "").trim();
+  const verifyUrl =
+    base && /^https?:\/\//i.test(base)
+      ? `${base.replace(/\/+$/, "")}/verify/${integrityHash}`
+      : `https://websiteriskcheck.com/verify/${integrityHash}`;
 
   const scanId = meta?.scanId ? String(meta.scanId) : "—";
-  const ts = meta?.scannedAt ? iso(meta.scannedAt) : "";
+  const tsHuman = meta?.scannedAt ? formatUtc(meta.scannedAt) : "—";
 
   // SAFE footer block coordinates (inside margins)
   const footerTop = doc.page.height - doc.page.margins.bottom - FOOTER_HEIGHT;
   const dividerY = footerTop + 6;
   const line1Y = footerTop + 12;
-  const line2Y = footerTop + 22;
+  const line2Y = footerTop + 24;
 
   // Prevent footer render from affecting flow cursor
   const prevY = doc.y;
@@ -561,8 +515,9 @@ function addFooter(doc, meta, integrityHash) {
   doc.moveTo(left, dividerY).lineTo(right, dividerY).stroke();
   doc.restore();
 
-  const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId}${ts ? ` • Timestamp (UTC): ${ts}` : ""}`;
-  const line2 = `Verify: ${verifyUrl}`;
+  // Make this instantly understandable to a client
+  const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId} • Timestamp: ${tsHuman}`;
+  const line2 = `Verify this report: ${verifyUrl}`;
 
   doc.save();
   doc.font("Helvetica").fontSize(8).fillColor(PALETTE.muted);
@@ -654,8 +609,27 @@ function drawCover(doc, meta, risk, integrityHash) {
       align: "center",
     });
 
+  // ✅ Properly centered badge (no magic numbers)
   const tone = toneForRisk(risk.level);
-  badge(doc, `Risk level: ${risk.level}`, tone, left + width / 2 - 92, 470);
+  doc.save();
+  doc.font("Helvetica-Bold").fontSize(10);
+  const badgeText = `Risk level: ${risk.level}`;
+  const badgeW = doc.widthOfString(badgeText) + 20; // padX*2 from badge()
+  doc.restore();
+  const bx = left + (width - badgeW) / 2;
+  badge(doc, badgeText, tone, bx, 468);
+
+  // “Sealed snapshot” stamp (premium cue)
+  const stampW = 178;
+  const stampH = 64;
+  const stampX = xRight(doc) - stampW;
+  const stampY = 78;
+
+  doc.save();
+  doc.roundedRect(stampX, stampY, stampW, stampH, 14).fill("#FFFFFF").stroke(PALETTE.line);
+  doc.font("Helvetica-Bold").fontSize(10).fillColor(PALETTE.tealDark).text("SEALED SNAPSHOT", stampX + 14, stampY + 12);
+  doc.font("Helvetica").fontSize(9).fillColor(PALETTE.muted).text("Publicly verifiable", stampX + 14, stampY + 30);
+  doc.restore();
 
   const boxY = 552;
   const boxW = Math.min(540, width);
@@ -670,9 +644,9 @@ function drawCover(doc, meta, risk, integrityHash) {
 
   const rows = [
     ["Website", meta.hostname || meta.url || "—"],
-    ["Timestamp (UTC)", meta.scannedAt ? iso(meta.scannedAt) : "—"],
+    ["Timestamp", meta.scannedAt ? formatUtc(meta.scannedAt) : "—"],
     ["Report ID", meta.scanId || "—"],
-    ["Integrity hash", integrityHash.slice(0, 28) + "…"],
+    ["Integrity hash", integrityHash.slice(0, 22) + "…" + integrityHash.slice(-10)],
   ];
 
   let ry = boxY + 18;
@@ -695,7 +669,7 @@ function drawCover(doc, meta, risk, integrityHash) {
     .text(
       "Informational snapshot only — not legal advice, certification, or monitoring. Applies only at the recorded timestamp.",
       left,
-      doc.page.height - doc.page.margins.bottom - 60,
+      doc.page.height - doc.page.margins.bottom - 64,
       { width, align: "center", lineGap: 3 }
     );
 }
@@ -713,16 +687,17 @@ function scoreBand(score) {
 }
 
 /**
- * v2.4 (CRITICAL layout)
- * - Compact title/header so table gains vertical height.
- * - Smaller header row + slightly smaller minRowH so 4 rows fit on a single A4 landscape page
- *   in your sample (eliminates the “last row + note on next page” dead whitespace).
- * - Cell text height-clamped (still prevents ghost pages).
+ * v2.5 (BOUTIQUE + CLIP-PROOF)
+ * - Hard-safe landscape margins/width, avoids right-side clipping.
+ * - Boutique slate grid + teal header
+ * - Score rendered as a chip (premium)
+ * - Height-clamped (prevents ghost pages)
  */
 function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
-  const left = xLeft(doc);
-  const right = xRight(doc);
-  const tableW = right - left;
+  // Hard-safe left/right (do not rely on xRight helper across layout modes)
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const tableW = Math.floor(right - left);
 
   // Tighter header so table gains vertical space
   const headerH = 30;
@@ -733,40 +708,34 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     { key: "desc", pct: 0.22, label: "Risk\nDescription", min: 140 },
     { key: "prob", pct: 0.11, label: "Probability", min: 70 },
     { key: "impact", pct: 0.10, label: "Impact", min: 64 },
-    { key: "score", pct: 0.08, label: "Score", min: 52 },
+    { key: "score", pct: 0.08, label: "Score", min: 56 },
     { key: "trigger", pct: 0.17, label: "Trigger", min: 110 },
-    { key: "response", pct: 0.20, label: "Mitigation\nresponse", min: 140 },
+    { key: "response", pct: 0.20, label: "Mitigation\nresponse", min: 150 },
   ];
 
   function buildColsExact() {
-    // Start with pct widths
     let cols = COL_SPEC.map((c) => ({
       ...c,
       w: Math.round(tableW * c.pct),
     }));
 
-    // Apply mins
     cols.forEach((c) => {
       c.w = Math.max(c.min, c.w);
     });
 
     const sum = () => cols.reduce((a, c) => a + c.w, 0);
 
-    // If mins/pcts exceed available width, shrink intelligently but ALWAYS fit
     if (sum() > tableW) {
       const minSum = cols.reduce((a, c) => a + c.min, 0);
 
-      // If even mins can't fit, scale mins down (soft floor)
       if (minSum > tableW) {
-        const SOFT_FLOOR = 44; // never go below this; keeps text readable, avoids "vertical letters"
+        const SOFT_FLOOR = 44;
         const scale = tableW / minSum;
-
         cols = cols.map((c) => ({
           ...c,
           w: Math.max(SOFT_FLOOR, Math.floor(c.min * scale)),
         }));
       } else {
-        // We can fit mins — shave from wider columns down toward mins
         let over = sum() - tableW;
         const shaveOrder = ["desc", "response", "trigger", "category", "prob", "impact"];
 
@@ -788,17 +757,16 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
       }
     }
 
-    // If we have spare pixels, give them to the last column
     if (sum() < tableW) {
       const diff = tableW - sum();
       cols[cols.length - 1].w += diff;
     }
 
-    // Absolute final clamp: FORCE exact fit by setting last col to remainder
+    // Force exact fit by remainder on last col
     const beforeLast = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
     cols[cols.length - 1].w = Math.max(cols[cols.length - 1].min, tableW - beforeLast);
 
-    // If that made us overflow again (rare), shave again from earlier columns
+    // If overflow remains, shave + re-force
     let finalOver = cols.reduce((a, c) => a + c.w, 0) - tableW;
     if (finalOver > 0) {
       const shaveOrder = ["desc", "trigger", "category", "response"];
@@ -817,7 +785,6 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
         }
         if (!shaved) break;
       }
-      // Re-force exact remainder on last col
       const bl = cols.slice(0, -1).reduce((a, c) => a + c.w, 0);
       cols[cols.length - 1].w = Math.max(cols[cols.length - 1].min, tableW - bl);
     }
@@ -829,8 +796,8 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   function drawHeaderRow(y) {
     doc.save();
-    doc.rect(left, y, tableW, headerH).fill(PALETTE.navy);
-    doc.strokeColor("#94A3B8").lineWidth(0.8);
+    doc.rect(left, y, tableW, headerH).fill(PALETTE.tealDark);
+    doc.strokeColor(PALETTE.grid).lineWidth(0.6);
     doc.rect(left, y, tableW, headerH).stroke();
     doc.restore();
 
@@ -851,14 +818,13 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     x = left;
     for (const c of cols) {
       doc.save();
-      doc.strokeColor("#94A3B8").lineWidth(0.8);
+      doc.strokeColor(PALETTE.grid).lineWidth(0.6);
       doc.moveTo(x, y).lineTo(x, y + headerH).stroke();
       doc.restore();
       x += c.w;
     }
-
     doc.save();
-    doc.strokeColor("#94A3B8").lineWidth(0.8);
+    doc.strokeColor(PALETTE.grid).lineWidth(0.6);
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + headerH).stroke();
     doc.restore();
   }
@@ -875,7 +841,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
         return doc.heightOfString(String(r[c.key] ?? ""), { width: tw }) + yPad;
       }
 
-      if (c.key === "score") return 14 + yPad + 12;
+      if (c.key === "score") return 14 + yPad + 14;
 
       if (c.key === "category") {
         doc.font("Helvetica").fontSize(10.1);
@@ -887,14 +853,13 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     });
 
     const h = Math.max(minRowH, ...heights);
-    return Math.min(160, h); // tight clamp, prevents overflow/ghost pages
+    return Math.min(160, h);
   }
 
   function bottom() {
     return contentBottomY(doc);
   }
 
-  // Precompute heights ONCE
   const rowHeights = rows.map((r) => calcRowHeight(r));
 
   function drawRowAt(yTop, r, rowH, idx) {
@@ -904,31 +869,22 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     doc.rect(left, yTop, tableW, rowH).fill(bg);
     doc.restore();
 
-    const scoreIndex = cols.findIndex((c) => c.key === "score");
-    const scoreX = left + cols.slice(0, scoreIndex).reduce((a, c) => a + c.w, 0);
-    const scoreW = cols[scoreIndex].w;
-    const sb = scoreBand(num(r.scoreNum, 0));
-
-    doc.save();
-    doc.rect(scoreX, yTop, scoreW, rowH).fill(sb.fill);
-    doc.restore();
-
     // borders
     doc.save();
-    doc.strokeColor("#94A3B8").lineWidth(0.6);
+    doc.strokeColor(PALETTE.gridSoft).lineWidth(0.5);
     doc.rect(left, yTop, tableW, rowH).stroke();
     doc.restore();
 
     let vx = left;
     for (const c of cols) {
       doc.save();
-      doc.strokeColor("#94A3B8").lineWidth(0.6);
+      doc.strokeColor(PALETTE.gridSoft).lineWidth(0.5);
       doc.moveTo(vx, yTop).lineTo(vx, yTop + rowH).stroke();
       doc.restore();
       vx += c.w;
     }
     doc.save();
-    doc.strokeColor("#94A3B8").lineWidth(0.6);
+    doc.strokeColor(PALETTE.gridSoft).lineWidth(0.5);
     doc.moveTo(left + tableW, yTop).lineTo(left + tableW, yTop + rowH).stroke();
     doc.restore();
 
@@ -937,6 +893,10 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     const savedX = doc.x;
 
     let cx = left;
+    const scoreIndex = cols.findIndex((c) => c.key === "score");
+    const scoreX = left + cols.slice(0, scoreIndex).reduce((a, c) => a + c.w, 0);
+    const scoreW = cols[scoreIndex].w;
+
     for (const c of cols) {
       const pad = 10;
       const tx = cx + pad;
@@ -956,13 +916,20 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
           ellipsis: true,
         });
       } else if (c.key === "score") {
-        doc.font("Helvetica-Bold").fontSize(13.3).fillColor("#111827");
-        doc.text(String(r.scoreNum), tx, ty + 22, {
-          width: tw,
-          height: th - 22,
-          align: "center",
-          ellipsis: true,
-        });
+        // Premium score chip
+        const sb = scoreBand(num(r.scoreNum, 0));
+        const chipW = Math.min(56, scoreW - 18);
+        const chipH = 28;
+        const chipX = scoreX + (scoreW - chipW) / 2;
+        const chipY = yTop + (rowH - chipH) / 2;
+
+        doc.save();
+        doc.roundedRect(chipX, chipY, chipW, chipH, 999).fill(sb.fill);
+        doc.strokeColor(PALETTE.gridSoft).lineWidth(0.8).roundedRect(chipX, chipY, chipW, chipH, 999).stroke();
+        doc.restore();
+
+        doc.font("Helvetica-Bold").fontSize(13).fillColor("#0B1220");
+        doc.text(String(r.scoreNum), chipX, chipY + 7, { width: chipW, align: "center" });
       } else {
         doc.font("Helvetica").fontSize(9.8).fillColor(PALETTE.ink);
         doc.text(clampText(r[c.key], 360), tx, ty, {
@@ -982,27 +949,23 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   normalizeBodyCursor(doc);
 
-  // Keep table high
   let y = doc.y;
   if (y < CONTENT_TOP_Y + 10) y = CONTENT_TOP_Y + 10;
 
   let idx = 0;
 
   while (idx < rows.length) {
-    // New page if header can't fit
     if (y + headerH > bottom()) {
       addFooter(doc, meta, integrityHash);
-      doc.addPage({ layout: "landscape" });
+      doc.addPage({ layout: "landscape", margin: 54 });
       normalizeBodyCursor(doc);
       y = doc.y;
       if (y < CONTENT_TOP_Y + 10) y = CONTENT_TOP_Y + 10;
     }
 
-    // Header
     drawHeaderRow(y);
     y += headerH;
 
-    // Fit as many rows as possible on this page
     let fit = 0;
     let used = 0;
 
@@ -1015,7 +978,6 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
     if (fit === 0) fit = 1;
 
-    // Orphan rule: don't leave exactly 1 row for next page if we can avoid it
     const remainingAfter = (rows.length - idx) - fit;
     if (remainingAfter === 1 && fit > 1) fit -= 1;
 
@@ -1030,7 +992,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
     if (idx < rows.length) {
       addFooter(doc, meta, integrityHash);
-      doc.addPage({ layout: "landscape" });
+      doc.addPage({ layout: "landscape", margin: 54 });
       normalizeBodyCursor(doc);
       y = doc.y;
       if (y < CONTENT_TOP_Y + 10) y = CONTENT_TOP_Y + 10;
@@ -1039,8 +1001,6 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
 
   doc.y = y + 10;
 }
-
-
 
 /* =========================
    EXEC / RISK MODEL TEXT
@@ -1206,7 +1166,7 @@ function buildRiskRegister(meta, coverage, signals) {
 export async function generateReport(data, outputPath) {
   return new Promise(async (resolve, reject) => {
     try {
-      const base = process.env.BASE_URL || "";
+      const base = (process.env.BASE_URL || "").trim();
 
       const meta = getMeta(data);
       const coverage = getCoverage(data);
@@ -1224,7 +1184,10 @@ export async function generateReport(data, outputPath) {
       data.riskReasons = safeArr(risk.reasons);
       if (data.meta) data.meta.integrityHash = integrityHash;
 
-      const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
+      const verifyUrl =
+        base && /^https?:\/\//i.test(base)
+          ? `${base.replace(/\/+$/, "")}/verify/${integrityHash}`
+          : `https://websiteriskcheck.com/verify/${integrityHash}`;
 
       const trackers = safeArr(signals?.trackingScripts);
       const vendors = safeArr(signals?.consent?.vendors);
@@ -1267,7 +1230,7 @@ export async function generateReport(data, outputPath) {
       addFooter(doc, meta, integrityHash);
 
       /* ======================
-         PAGE 2 — EXEC SUMMARY (FIXED: two-column, no orphan whitespace)
+         PAGE 2 — EXEC SUMMARY
       ====================== */
       doc.addPage();
 
@@ -1277,6 +1240,7 @@ export async function generateReport(data, outputPath) {
         "Client-ready snapshot of observable website signals at a fixed timestamp."
       );
 
+      // Risk badge (aligned to left under title; feels intentional)
       const tone = toneForRisk(risk.level);
       badge(doc, `Risk level: ${risk.level}`, tone, xLeft(doc), doc.y);
       doc.moveDown(0.85);
@@ -1288,14 +1252,14 @@ export async function generateReport(data, outputPath) {
       const cardH = 74;
 
       const idVal = meta.scanId || "—";
-      const tsVal = meta.scannedAt ? iso(meta.scannedAt) : "—";
+      const tsVal = meta.scannedAt ? formatUtc(meta.scannedAt) : "—";
       const scopeVal = `${safeArr(coverage?.checkedPages).length || 0} page(s) checked`;
       const verVal = integrityHash.slice(0, 10) + "…" + integrityHash.slice(-10);
 
       const y0 = doc.y;
 
       card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
-      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
+      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp", value: tsVal });
 
       card(doc, left, y0 + cardH + gap, colW, cardH, {
         title: "Coverage",
@@ -1312,8 +1276,6 @@ export async function generateReport(data, outputPath) {
       doc.y = y0 + cardH * 2 + gap * 2 + 10;
 
       // Two-column body block under the cards:
-      // Left column: meaning + notable observations
-      // Right column: key findings list
       const bodyTop = doc.y;
       const bodyColW = (w - 18) / 2;
       const bodyGap = 18;
@@ -1351,7 +1313,7 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
       keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
 
-      // Left column render
+      // Left column
       doc.save();
       doc.x = lx;
       doc.y = bodyTop;
@@ -1376,7 +1338,7 @@ export async function generateReport(data, outputPath) {
 
       doc.restore();
 
-      // Right column render
+      // Right column
       doc.save();
       doc.x = rx;
       doc.y = bodyTop;
@@ -1397,75 +1359,39 @@ export async function generateReport(data, outputPath) {
 
       doc.restore();
 
-      // Continue below the deeper column — but avoid pointless whitespace
       doc.y = Math.min(contentBottomY(doc) - 8, Math.max(leftAfter, rightAfter) + 2);
 
       addFooter(doc, meta, integrityHash);
 
       /* ======================
-         RISK REGISTER — LANDSCAPE (FIXED: compact title + better packing)
+         RISK REGISTER — LANDSCAPE (clean title; remove waffle subtitle)
       ====================== */
-      doc.addPage({ layout: "landscape" });
+      doc.addPage({ layout: "landscape", margin: 54 });
 
       sectionTitleCompact(
         doc,
         "Risk register",
-        "Indicative probability×impact scoring for detected/derived entries (not legal conclusions)."
+        "" // ✅ remove the “Indicative probability×impact…” sentence above the table
       );
 
       drawRiskRegister_landscape(doc, riskRows, { meta, integrityHash });
 
-      // Legend / note (fills remaining space so you don’t get a sad half-empty page)
-      const legendY = doc.y;
-      if (remainingSpace(doc) > 90) {
-        const lx2 = xLeft(doc);
-        const ww = widthBetweenMargins(doc);
+      // Small, clean note beneath (only if space)
+      if (remainingSpace(doc) > 70) {
+        const lx2 = doc.page.margins.left;
+        const ww = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
         doc.save();
-        doc
-          .font("Helvetica-Bold")
-          .fontSize(10.4)
-          .fillColor(PALETTE.ink)
-          .text("How to read this register", lx2, legendY, { width: ww });
+        doc.font("Helvetica").fontSize(9.2).fillColor(PALETTE.muted);
+        doc.text(
+          "Scores are indicative (probability × impact) and do not constitute legal conclusions. Validate against your implementation and target regions.",
+          lx2,
+          doc.y + 6,
+          { width: ww, lineGap: 2.6 }
+        );
         doc.restore();
 
-        doc.y = legendY + 16;
-
-        bodyText(
-          doc,
-          "Scores reflect probability×impact per entry. The overall risk level is derived separately from the signal model. Entries are indicative and should be validated against your actual implementation and target regions.",
-          { width: ww, size: 9.6, lineGap: 3.2 }
-        );
-
-        doc.moveDown(0.4);
-
-        // Color key row
-        const key = [
-          { label: "16+", c: PALETTE.scoreRed },
-          { label: "13–15", c: PALETTE.scoreOrange },
-          { label: "9–12", c: PALETTE.scoreYellow },
-          { label: "5–8", c: PALETTE.scoreGreen },
-        ];
-
-        let kx = lx2;
-        const ky = doc.y + 6;
-
-        key.forEach((it) => {
-          doc.save();
-          doc.rect(kx, ky, 18, 12).fill(it.c);
-          doc.strokeColor(PALETTE.line).lineWidth(0.8).rect(kx, ky, 18, 12).stroke();
-          doc.restore();
-
-          doc
-            .font("Helvetica")
-            .fontSize(9.4)
-            .fillColor(PALETTE.muted)
-            .text(it.label, kx + 24, ky - 1, { width: 60 });
-
-          kx += 90;
-        });
-
-        doc.y = ky + 22;
+        doc.moveDown(0.6);
       }
 
       addFooter(doc, meta, integrityHash);
@@ -1515,10 +1441,7 @@ export async function generateReport(data, outputPath) {
         `Forms detected: ${num(signals?.forms?.detected)}`,
         `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)}`,
       ]);
-      bodyText(
-        doc,
-        "Personal-data signals are heuristic counts based on common field names. They are not legal classifications."
-      );
+      bodyText(doc, "Personal-data signals are heuristic counts based on common field names. They are not legal classifications.");
       hr(doc);
 
       subTitle(doc, "Accessibility signals (heuristic)");
@@ -1528,10 +1451,7 @@ export async function generateReport(data, outputPath) {
           ? safeArr(signals?.accessibility?.notes).map((n) => `Note: ${n}`)
           : ["No accessibility notes recorded by this scan."]),
       ]);
-      bodyText(
-        doc,
-        "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing."
-      );
+      bodyText(doc, "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing.");
       hr(doc);
 
       subTitle(doc, "Contact & identity signals");
@@ -1606,59 +1526,109 @@ export async function generateReport(data, outputPath) {
       addFooter(doc, meta, integrityHash);
 
       /* ======================
-         VERIFICATION
+         VERIFICATION (BOUTIQUE, CENTERED, FANCY)
       ====================== */
       doc.addPage();
 
-      sectionTitle(doc, "Report verification", "Public integrity check for this sealed snapshot.");
+      sectionTitle(doc, "Report verification", "Confirm this sealed snapshot has not been altered.");
 
-      bodyText(
-        doc,
-        "This report can be independently verified using its cryptographic fingerprint. The integrity hash is derived from objective fields only, allowing verification that the recorded facts have not been altered."
+      // Big centered QR card + hash card
+      const pageLeft = xLeft(doc);
+      const pageW = widthBetweenMargins(doc);
+
+      const qrOuterW = Math.min(360, pageW);
+      const qrOuterH = 380;
+      const qrX = pageLeft + (pageW - qrOuterW) / 2;
+
+      // Keep the whole module together
+      ensureSpace(doc, qrOuterH + 160);
+
+      const topY = doc.y + 10;
+
+      // Generate QR
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        margin: 1,
+        scale: 10,
+        color: { dark: "#0B1220", light: "#FFFFFF" },
+      });
+
+      // Outer card (double border + soft inset = premium)
+      doc.save();
+      doc.roundedRect(qrX, topY, qrOuterW, qrOuterH, 18).fill("#FFFFFF");
+      doc.strokeColor(PALETTE.gridSoft).lineWidth(1.2).roundedRect(qrX, topY, qrOuterW, qrOuterH, 18).stroke();
+      doc.strokeColor(PALETTE.tealMid).lineWidth(0.8).roundedRect(qrX + 6, topY + 6, qrOuterW - 12, qrOuterH - 12, 16).stroke();
+      doc.restore();
+
+      // Header inside card
+      doc.save();
+      doc.font("Helvetica-Bold").fontSize(12.5).fillColor(PALETTE.ink);
+      doc.text("Scan to verify this report", qrX, topY + 18, { width: qrOuterW, align: "center" });
+      doc.font("Helvetica").fontSize(9.6).fillColor(PALETTE.muted);
+      doc.text("Opens the public verification page for this integrity fingerprint.", qrX + 26, topY + 38, {
+        width: qrOuterW - 52,
+        align: "center",
+        lineGap: 2.4,
+      });
+      doc.restore();
+
+      // QR in the middle
+      const qrSize = 210;
+      const qrInnerX = qrX + (qrOuterW - qrSize) / 2;
+      const qrInnerY = topY + 78;
+
+      // QR white tile with subtle border
+      doc.save();
+      doc.roundedRect(qrInnerX - 10, qrInnerY - 10, qrSize + 20, qrSize + 20, 16).fill("#FFFFFF");
+      doc.strokeColor(PALETTE.gridSoft).lineWidth(1).roundedRect(qrInnerX - 10, qrInnerY - 10, qrSize + 20, qrSize + 20, 16).stroke();
+      doc.restore();
+
+      doc.image(qrDataUrl, qrInnerX, qrInnerY, { width: qrSize });
+
+      // Verify URL (short display, full in footer)
+      doc.save();
+      doc.font("Helvetica").fontSize(9.2).fillColor(PALETTE.muted);
+      doc.text("Verification link:", qrX + 26, topY + 310, { width: qrOuterW - 52 });
+      doc.font("Helvetica-Bold").fontSize(9.2).fillColor(PALETTE.ink);
+      doc.text(
+        `websiteriskcheck.com/verify/${integrityHash.slice(0, 10)}…${integrityHash.slice(-10)}`,
+        qrX + 26,
+        topY + 326,
+        { width: qrOuterW - 52 }
       );
-      doc.moveDown(0.8);
+      doc.restore();
 
-      subTitle(doc, "Integrity hash (SHA-256)");
-      doc.font("Helvetica").fontSize(9.8).fillColor(PALETTE.ink).text(integrityHash, { lineGap: 2 });
-      doc.moveDown(0.8);
+      doc.y = topY + qrOuterH + 16;
 
-      subTitle(doc, "Verification link");
-      doc.font("Helvetica").fontSize(10.8).fillColor(PALETTE.body).text(verifyUrl);
-      doc.moveDown(0.8);
+      // Hash block (monospace feel using Helvetica + spacing)
+      const hashH = 122;
+      const hashW = Math.min(540, pageW);
+      const hashX = pageLeft + (pageW - hashW) / 2;
 
-      subTitle(doc, "What the integrity hash covers");
+      doc.save();
+      doc.roundedRect(hashX, doc.y, hashW, hashH, 16).fill("#FFFFFF").stroke(PALETTE.gridSoft);
+      doc.restore();
+
+      doc.save();
+      doc.font("Helvetica-Bold").fontSize(10.4).fillColor(PALETTE.ink);
+      doc.text("Integrity hash (SHA-256)", hashX + 18, doc.y + 14, { width: hashW - 36 });
+      doc.font("Helvetica").fontSize(9.2).fillColor(PALETTE.body);
+      doc.text(integrityHash, hashX + 18, doc.y + 34, { width: hashW - 36, lineGap: 2.2 });
+      doc.restore();
+
+      doc.y = doc.y + hashH + 10;
+
+      // What it covers (shorter, cleaner)
+      subTitle(doc, "What verification covers");
       bulletList(doc, [
         "Target URL/hostname, scan ID, scan timestamp",
-        "Scope-locked coverage notes",
-        "HTTPS signal",
-        "Policy presence signals (privacy/terms/cookie policy)",
-        "Consent indicator signal (cookie banner heuristic)",
+        "Scope-locked coverage and notes",
+        "HTTPS signal and policy presence signals",
+        "Consent indicator signal (heuristic)",
         "Tracking scripts and cookie vendor detections",
         "Forms detected and personal-data field signals (heuristic counts)",
         "Accessibility signals (alt text counts, notes)",
         "Contact/identity signal presence",
-        "Per-page coverage (checked/failed paths where available)",
       ]);
-
-      doc.moveDown(0.8);
-
-      const qrDataUrl = await QRCode.toDataURL(verifyUrl);
-      ensureSpace(doc, 240);
-
-      const qx = xLeft(doc);
-      const qy = doc.y;
-
-      doc.save();
-      doc.roundedRect(qx, qy, 180, 180, 16).fill("#FFFFFF").stroke(PALETTE.line);
-      doc.restore();
-
-      doc.image(qrDataUrl, qx + 22, qy + 22, { width: 136 });
-
-      doc
-        .font("Helvetica")
-        .fontSize(9.6)
-        .fillColor(PALETTE.muted)
-        .text("Scan to verify", qx + 0, qy + 190, { width: 180, align: "center" });
 
       addFooter(doc, meta, integrityHash);
 

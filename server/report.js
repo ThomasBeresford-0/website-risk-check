@@ -5,6 +5,7 @@
 // ✅ Risk register rendered on LANDSCAPE page(s) with repeated header row
 // ✅ Verification page with QR + integrity explanation
 // ✅ Uses deterministic structured findings[] when present; deterministic legacy fallback otherwise
+// ✅ Fixes: NO blank/ghost pages, NO table overflow, NO footer poisoning doc.y
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
@@ -99,7 +100,7 @@ function xRight(doc) {
 
 /**
  * Always keep doc.y in a sane place after page creation.
- * IMPORTANT: This is what fixes your “content starts halfway down” issue.
+ * IMPORTANT: This is what fixes mid-page starts & "ghost pages".
  */
 function normalizeBodyCursor(doc) {
   if (doc.y < CONTENT_TOP_Y) doc.y = CONTENT_TOP_Y;
@@ -114,8 +115,6 @@ function ensureSpace(doc, minSpace = 120) {
   const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
   if (doc.y + minSpace > bottom) {
     doc.addPage();
-    // pageAdded handler will run and normalize doc.y,
-    // but normalize here too to be ultra-safe.
     normalizeBodyCursor(doc);
   }
 }
@@ -368,6 +367,7 @@ function addHeader(doc, data) {
   const right = xRight(doc);
   const width = right - left;
 
+  // top divider
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(left, 52).lineTo(right, 52).stroke();
@@ -408,7 +408,7 @@ function addFooter(doc, meta, integrityHash) {
   const verifyUrl = base ? `${base}/verify/${integrityHash}` : `/verify/${integrityHash}`;
 
   const scanId = meta?.scanId ? String(meta.scanId) : "—";
-  const ts = meta?.scannedAt ? iso(meta.scannedAt) : ""; // DO NOT Date.now() (avoid layout entropy)
+  const ts = meta?.scannedAt ? iso(meta.scannedAt) : ""; // DO NOT Date.now()
 
   // IMPORTANT: prevent footer rendering from poisoning doc.y
   const prevY = doc.y;
@@ -570,6 +570,8 @@ function drawCover(doc, meta, risk, integrityHash) {
 
 /* =========================
    RISK REGISTER TABLE (LANDSCAPE, repeated header)
+   ✅ Fixes overflow by deriving widths from margins every page
+   ✅ Fixes blank pages by never adding a page without drawing content
 ========================= */
 
 function scoreBand(score) {
@@ -580,12 +582,13 @@ function scoreBand(score) {
   return { fill: "#D1FAE5", ink: "#065F46" };
 }
 
-function drawRiskRegister_landscape(doc, rows) {
+function drawRiskRegister_landscape(doc, rows, { meta, integrityHash, dataForHeader }) {
+  // Always compute from margins so it can NEVER hang off the page.
   const left = xLeft(doc);
   const right = xRight(doc);
   const tableW = right - left;
 
-  // Tuned for A4 landscape readability
+  // Landscape tuning
   const headerH = 34;
   const minRowH = 92;
 
@@ -660,23 +663,30 @@ function drawRiskRegister_landscape(doc, rows) {
     return Math.min(170, Math.max(minRowH, h));
   }
 
-  // Start table at current doc.y, but never above CONTENT_TOP_Y
   normalizeBodyCursor(doc);
   let y = doc.y;
 
   drawHeaderRow(y);
   y += headerH;
 
+  const bottom = () => doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
+
   rows.forEach((r, idx) => {
     const rowH = calcRowHeight(r);
 
     // page break with header repetition
-    const bottom = doc.page.height - doc.page.margins.bottom - FOOTER_SAFE_PAD;
-    if (y + rowH > bottom) {
-      addFooter(doc, r.__metaForFooter, r.__hashForFooter); // safe no-op if missing
+    if (y + rowH > bottom()) {
+      // Close current page cleanly
+      addFooter(doc, meta, integrityHash);
+
       doc.addPage({ layout: "landscape" });
-      // pageAdded will add header + normalize cursor
+      // pageAdded handler already ran header + normalized cursor
+      // but on some PDFKit versions, layout pages can start at y=0
+      if (dataForHeader) addHeader(doc, dataForHeader);
+
+      normalizeBodyCursor(doc);
       y = doc.y;
+
       drawHeaderRow(y);
       y += headerH;
     }
@@ -884,7 +894,7 @@ function buildRiskRegister(meta, coverage, signals) {
       prob: prob >= 4 ? "Likely (4)" : prob >= 3 ? "Possible (3)" : "Unlikely (1)",
       impact: impact >= 3 ? "Moderate (3)" : impact === 2 ? "Minor (2)" : "Low (1)",
       scoreNum: score,
-      trigger: "Alt text missing for a portion of detected images (heurical scan).",
+      trigger: "Alt text missing for a portion of detected images (heuristic scan).",
       response:
         "Add alt text to meaningful images on key pages. Prioritise conversion and policy pages first.",
     });
@@ -949,13 +959,9 @@ export async function generateReport(data, outputPath) {
       // Risk register rows
       const findings = safeArr(data?.findings || data?.meta?.findings);
       const structuredRows = rowsFromFindings(findings);
-      const riskRows = structuredRows.length ? structuredRows : buildRiskRegister(meta, coverage, signals);
-
-      // Attach footer context to rows for multi-page landscape rendering (no effect on hash)
-      riskRows.forEach((r) => {
-        r.__metaForFooter = meta;
-        r.__hashForFooter = integrityHash;
-      });
+      const riskRows = structuredRows.length
+        ? structuredRows
+        : buildRiskRegister(meta, coverage, signals);
 
       const doc = new PDFDocument({
         margin: 54,
@@ -970,13 +976,15 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      // Page number tracking
+      // Page number tracking (stable, no manual increments elsewhere)
       doc._wrcPageNo = 1;
 
       doc.on("pageAdded", () => {
         doc._wrcPageNo = (doc._wrcPageNo || 1) + 1;
+
         // Header on all pages except cover (page 1)
         if (doc._wrcPageNo >= 2) addHeader(doc, data);
+
         // ALWAYS normalize cursor (prevents mid-page starts & ghost pages)
         normalizeBodyCursor(doc);
       });
@@ -987,12 +995,17 @@ export async function generateReport(data, outputPath) {
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      doc.addPage(); // page 2 will get header + normalized cursor automatically
+      // Always add a real next page and immediately render content (prevents blank pages)
+      doc.addPage(); // page 2 gets header + normalized cursor via pageAdded
 
       /* ======================================================
          PAGE 2 — EXEC SUMMARY (cards + narrative + key facts)
       ====================================================== */
-      sectionTitle(doc, "Executive summary", "Client-ready snapshot of observable website signals at a fixed timestamp.");
+      sectionTitle(
+        doc,
+        "Executive summary",
+        "Client-ready snapshot of observable website signals at a fixed timestamp."
+      );
 
       // Risk badge
       const tone = toneForRisk(risk.level);
@@ -1014,7 +1027,10 @@ export async function generateReport(data, outputPath) {
       const y0 = doc.y;
 
       card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
-      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
+      card(doc, left + colW + gap, y0, colW, cardH, {
+        title: "Timestamp (UTC)",
+        value: tsVal,
+      });
 
       card(doc, left, y0 + cardH + gap, colW, cardH, {
         title: "Coverage",
@@ -1040,17 +1056,25 @@ export async function generateReport(data, outputPath) {
       const keyFindings = [];
 
       keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
-      keyFindings.push(`Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Consent banner indicator: ${signals?.consent?.bannerDetected ? "Detected" : "Not detected"} (heuristic)`
+        `Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`
+      );
+      keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
+      keyFindings.push(
+        `Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`
+      );
+      keyFindings.push(
+        `Consent banner indicator: ${
+          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
+        } (heuristic)`
       );
 
       keyFindings.push(
         `Tracking scripts: ${
           trackers.length
-            ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
+            ? `Detected (${trackers.slice(0, 4).join(", ")}${
+                trackers.length > 4 ? "…" : ""
+              })`
             : "None detected"
         }`
       );
@@ -1058,15 +1082,23 @@ export async function generateReport(data, outputPath) {
       keyFindings.push(
         `Cookie vendor signals: ${
           vendors.length
-            ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
+            ? `Detected (${vendors.slice(0, 4).join(", ")}${
+                vendors.length > 4 ? "…" : ""
+              })`
             : "None detected"
         }`
       );
 
       keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
-      keyFindings.push(`Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`);
+      keyFindings.push(
+        `Potential personal-data field signals: ${num(
+          signals?.forms?.personalDataSignals
+        )} (heuristic)`
+      );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
+      keyFindings.push(
+        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
+      );
 
       bulletList(doc, keyFindings.slice(0, 12));
 
@@ -1075,7 +1107,7 @@ export async function generateReport(data, outputPath) {
       /* ======================================================
          PAGE 3+ — RISK REGISTER (LANDSCAPE, repeat header)
       ====================================================== */
-      doc.addPage({ layout: "landscape" }); // pageAdded -> header + normalized cursor
+      doc.addPage({ layout: "landscape" }); // pageAdded => header + normalize
 
       sectionTitle(
         doc,
@@ -1084,7 +1116,11 @@ export async function generateReport(data, outputPath) {
       );
       doc.moveDown(0.2);
 
-      drawRiskRegister_landscape(doc, riskRows);
+      drawRiskRegister_landscape(doc, riskRows, {
+        meta,
+        integrityHash,
+        dataForHeader: data,
+      });
 
       doc
         .font("Helvetica")
@@ -1104,11 +1140,18 @@ export async function generateReport(data, outputPath) {
       ====================================================== */
       doc.addPage();
 
-      sectionTitle(doc, "Findings by category", "What was detected on the scanned surface (scope-locked).");
+      sectionTitle(
+        doc,
+        "Findings by category",
+        "What was detected on the scanned surface (scope-locked)."
+      );
 
       subTitle(doc, "Connection");
       bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
-      bodyText(doc, "HTTPS reduces interception risk and is commonly expected for customer-facing websites.");
+      bodyText(
+        doc,
+        "HTTPS reduces interception risk and is commonly expected for customer-facing websites."
+      );
       hr(doc);
 
       subTitle(doc, "Policies (public-path detection)");
@@ -1128,12 +1171,20 @@ export async function generateReport(data, outputPath) {
         `Tracking scripts: ${trackers.length ? trackers.join(", ") : "None detected"}`,
         `Cookie vendor signals: ${vendors.length ? vendors.join(", ") : "None detected"}`,
       ]);
-      bodyText(doc, "Detections are based on observable HTML/script references. Interaction-gated or dynamically loaded tags may not be detected.");
+      bodyText(
+        doc,
+        "Detections are based on observable HTML/script references. Interaction-gated or dynamically loaded tags may not be detected."
+      );
       hr(doc);
 
       subTitle(doc, "Consent indicators (heuristic)");
-      bulletList(doc, [`Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`]);
-      bodyText(doc, "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee.");
+      bulletList(doc, [
+        `Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`,
+      ]);
+      bodyText(
+        doc,
+        "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee."
+      );
       hr(doc);
 
       subTitle(doc, "Forms & data capture (heuristic)");
@@ -1141,7 +1192,10 @@ export async function generateReport(data, outputPath) {
         `Forms detected: ${num(signals?.forms?.detected)}`,
         `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)}`,
       ]);
-      bodyText(doc, "Personal-data signals are heuristic counts based on common field names. They are not legal classifications.");
+      bodyText(
+        doc,
+        "Personal-data signals are heuristic counts based on common field names. They are not legal classifications."
+      );
       hr(doc);
 
       subTitle(doc, "Accessibility signals (heuristic)");
@@ -1151,12 +1205,18 @@ export async function generateReport(data, outputPath) {
           ? safeArr(signals?.accessibility?.notes).map((n) => `Note: ${n}`)
           : ["No accessibility notes recorded by this scan."]),
       ]);
-      bodyText(doc, "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing.");
+      bodyText(
+        doc,
+        "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing."
+      );
       hr(doc);
 
       subTitle(doc, "Contact & identity signals");
       bulletList(doc, [`Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`]);
-      bodyText(doc, "Detected using simple patterns (email/phone/contact link) on the scanned surface only.");
+      bodyText(
+        doc,
+        "Detected using simple patterns (email/phone/contact link) on the scanned surface only."
+      );
 
       addFooter(doc, meta, integrityHash);
 

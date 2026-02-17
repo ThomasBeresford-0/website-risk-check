@@ -24,7 +24,10 @@
   <link rel="stylesheet" href="/style.css?v=13" />
 
   <!-- Page-specific -->
-  <link rel="stylesheet" href="/sample-report.css?v=3" />
+  <link rel="stylesheet" href="/sample-report.css?v=4" />
+
+  <!-- Small page-only a11y polish (no layout fights with CSS file) -->
+  <meta name="theme-color" content="#0b1220">
 </head>
 <body>
   <!-- Keep your existing header/nav pattern -->
@@ -56,6 +59,7 @@
         </p>
 
         <div class="srCtas" role="group" aria-label="Primary actions">
+          <!-- These are wired by sample-report.js (href set at runtime) -->
           <a class="btnPrimary" id="openPdfBtn" href="#" role="button">Open sample PDF</a>
           <a class="btnSoft" id="openVerifyBtn" href="#" role="button">Open verification</a>
           <a class="btnGhost" href="/" role="button">Run a scan</a>
@@ -93,6 +97,18 @@
             <li>Open verification to confirm the report fingerprint matches.</li>
           </ul>
         </div>
+
+        <!-- Tiny trust strip (subtle, not salesy) -->
+        <div class="srTrust" aria-label="Trust statement">
+          <div class="srTrustRow">
+            <span class="srTrustDot" aria-hidden="true"></span>
+            <span>Exact paid deliverable — no “demo” formatting.</span>
+          </div>
+          <div class="srTrustRow">
+            <span class="srTrustDot" aria-hidden="true"></span>
+            <span>Public verification confirms integrity only (not compliance).</span>
+          </div>
+        </div>
       </div>
 
       <!-- FLIPBOOK VIEWER -->
@@ -115,7 +131,7 @@
             </div>
           </div>
 
-          <div class="flipStage" id="flipStage" aria-label="PDF page preview">
+          <div class="flipStage" id="flipStage" aria-label="PDF page preview" tabindex="0">
             <div class="flipPage isFront" id="frontPage">
               <canvas id="frontCanvas"></canvas>
               <div class="flipShadow" aria-hidden="true"></div>
@@ -126,7 +142,7 @@
               <div class="flipShadow" aria-hidden="true"></div>
             </div>
 
-            <div class="flipLoading" id="loadingState">
+            <div class="flipLoading" id="loadingState" role="status" aria-live="polite">
               <div class="spinner" aria-hidden="true"></div>
               <div>
                 <div class="flipLoadingTitle">Loading sample PDF…</div>
@@ -157,11 +173,17 @@
         <div class="srProof" aria-label="Verification details">
           <div class="srProofRow">
             <div class="srProofK">Verification link</div>
-            <div class="srProofV"><code id="verifyPath">/verify/…</code></div>
+            <div class="srProofV">
+              <code id="verifyPath">/verify/…</code>
+              <button class="miniCopy" id="copyVerifyBtn" type="button" aria-label="Copy verification link">Copy</button>
+            </div>
           </div>
           <div class="srProofRow">
             <div class="srProofK">Report ID</div>
-            <div class="srProofV"><code id="reportId">SAMPLE-001</code></div>
+            <div class="srProofV">
+              <code id="reportId">SAMPLE-001</code>
+              <button class="miniCopy" id="copyReportIdBtn" type="button" aria-label="Copy report ID">Copy</button>
+            </div>
           </div>
         </div>
 
@@ -202,13 +224,32 @@
           compliance or legality.
         </div>
         <div class="srCalloutA">
-          <a class="btnSoft" href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db" target="_blank" rel="noopener">
+          <!-- keep this as a real link fallback even if JS fails -->
+          <a class="btnSoft" id="verifyStaticBtn"
+             href="/verify/9249d48e82bfb13a9283a84a12d18268bdb3d534bafb897ba91bb67c588676db"
+             target="_blank" rel="noopener">
             View verification
           </a>
           <a class="btnGhost" href="/" role="button">Run a scan</a>
         </div>
       </div>
     </section>
+
+    <!-- Footer (tiny, professional) -->
+    <footer class="srFooter" aria-label="Sample report footer">
+      <div class="srFooterInner">
+        <div class="srFooterLeft">
+          <strong>Website Risk Check</strong>
+          <span class="srFooterDot" aria-hidden="true">•</span>
+          <span>Sample verified deliverable</span>
+        </div>
+        <div class="srFooterRight">
+          <a class="srFooterLink" href="/">Run a scan</a>
+          <span class="srFooterDot" aria-hidden="true">•</span>
+          <a class="srFooterLink" href="/agency">For agencies</a>
+        </div>
+      </div>
+    </footer>
   </main>
 
   <!-- PDF.js (LOCAL — avoids CSP/CDN/worker blocking) -->
@@ -220,6 +261,16 @@
   -->
 
   <!-- Page logic -->
-  <script src="/sample-report.js?v=4"></script>
+  <script src="/sample-report.js?v=5"></script>
+
+  <!-- No-JS fallback (kept minimal, hidden from JS users by CSS if you want) -->
+  <noscript>
+    <div class="container" style="padding:16px 20px;">
+      <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;background:#fff;">
+        JavaScript is required for the interactive preview.
+        <a href="/sample-report.pdf" target="_blank" rel="noopener">Open the sample PDF</a>.
+      </div>
+    </div>
+  </noscript>
 </body>
 </html>

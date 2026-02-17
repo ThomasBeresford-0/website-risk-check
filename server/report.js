@@ -1,11 +1,8 @@
 // server/report.js
 // FULL RAMBO — audit-grade, verifiable, point-in-time, immutable PDF (structured model)
-// BOUTIQUE UPGRADE (v2.1): consultancy artifact layout (FIXED BLANK PAGES)
-// ✅ Premium cover + exec summary (proper 2-col)
-// ✅ Risk register on LANDSCAPE with repeated header row
-// ✅ Verification page with QR + integrity explanation
-// ✅ Uses deterministic structured findings[] when present; deterministic legacy fallback otherwise
-// ✅ Fixes: NO blank/ghost pages (footer now drawn INSIDE margins), NO table overflow
+// BOUTIQUE UPGRADE (v2.1): consultancy artifact layout (STABLE)
+// ✅ Fixes: NO blank/ghost pages (footer-safe), NO table overflow, NO footer poisoning doc.y
+// ✅ Premium cover + exec summary + landscape risk register + verification QR
 // ⚠️ Integrity hashing inputs preserved (NO layout entropy in hash inputs)
 
 import PDFDocument from "pdfkit";
@@ -16,7 +13,7 @@ import { computeRisk } from "./risk.js";
 import { computeIntegrityHash } from "./integrity.js";
 
 /* =========================
-   PALETTE
+   PALETTE (refined)
 ========================= */
 const PALETTE = {
   paper: "#E4EAE7",
@@ -42,8 +39,12 @@ const PALETTE = {
 /* =========================
    LAYOUT CONSTANTS (critical)
 ========================= */
-const CONTENT_TOP_Y = 78; // header drawn around 30..52
-const FOOTER_SAFE_PAD = 46; // space reserved above footer
+const CONTENT_TOP_Y = 78;
+
+// Footer must be drawn INSIDE margins, otherwise PDFKit auto-adds pages.
+// Reserve enough space so content never overlaps footer.
+const FOOTER_HEIGHT = 34; // divider + 2 lines
+const FOOTER_GAP = 10; // breathing room above footer reserve
 
 /* =========================
    HELPERS
@@ -95,14 +96,13 @@ function xRight(doc) {
   return doc.page.width - doc.page.margins.right;
 }
 
-function printableBottom(doc) {
-  // PDFKit will auto-page-break if you try to draw beyond this
-  return doc.page.height - doc.page.margins.bottom;
+function contentBottomY(doc) {
+  // Last safe y for flowing content (inside margins, reserving footer area)
+  return doc.page.height - doc.page.margins.bottom - FOOTER_HEIGHT - FOOTER_GAP;
 }
 
 /**
- * Keep doc cursor sane after page creation.
- * Fixes mid-page starts.
+ * Always keep doc.y in a sane place after page creation.
  */
 function normalizeBodyCursor(doc) {
   if (doc.y < CONTENT_TOP_Y) doc.y = CONTENT_TOP_Y;
@@ -110,10 +110,10 @@ function normalizeBodyCursor(doc) {
 }
 
 /**
- * Ensure space for next block.
+ * Ensure there is enough vertical space for the next block.
  */
 function ensureSpace(doc, minSpace = 120) {
-  const bottom = printableBottom(doc) - FOOTER_SAFE_PAD;
+  const bottom = contentBottomY(doc);
   if (doc.y + minSpace > bottom) {
     doc.addPage();
     normalizeBodyCursor(doc);
@@ -121,7 +121,7 @@ function ensureSpace(doc, minSpace = 120) {
 }
 
 /* =========================
-   SHAPE NORMALIZERS (hash + consistent rendering)
+   SHAPE NORMALIZERS (for hash + consistent rendering)
 ========================= */
 
 function getMeta(data) {
@@ -315,47 +315,11 @@ function bodyText(doc, text) {
     .text(text, { lineGap: 4 });
 }
 
-// Controlled bullets (doesn't mess with doc.x/doc.y like doc.list can in columns)
-function bulletListAt(doc, items, x, y, w) {
+function bulletList(doc, items) {
   const safe = safeArr(items).filter(Boolean);
-  if (!safe.length) return y;
-
-  const bulletGap = 10;
-  const bulletX = x;
-  const textX = x + 12;
-
-  doc.save();
-  doc.font("Helvetica").fontSize(10.5).fillColor(PALETTE.body);
-
-  let cy = y;
-  for (const it of safe) {
-    const s = String(it);
-    const h = doc.heightOfString(s, { width: w - 12, lineGap: 3 });
-    doc.fillColor(PALETTE.body).text("•", bulletX, cy, { width: 10 });
-    doc.fillColor(PALETTE.body).text(s, textX, cy, { width: w - 12, lineGap: 3 });
-    cy += h + bulletGap;
-  }
-
-  doc.restore();
-  return cy;
-}
-
-function bodyTextAt(doc, text, x, y, w) {
-  doc.save();
+  if (!safe.length) return;
   doc.font("Helvetica").fontSize(10.8).fillColor(PALETTE.body);
-  doc.text(text, x, y, { width: w, lineGap: 4 });
-  const h = doc.heightOfString(String(text), { width: w, lineGap: 4 });
-  doc.restore();
-  return y + h + 8;
-}
-
-function subTitleAt(doc, title, x, y, w) {
-  doc.save();
-  doc.font("Helvetica-Bold").fontSize(12.5).fillColor(PALETTE.ink);
-  doc.text(title, x, y, { width: w });
-  const h = doc.heightOfString(String(title), { width: w });
-  doc.restore();
-  return y + h + 6;
+  doc.list(safe, { bulletRadius: 2, lineGap: 4 });
 }
 
 function card(doc, x, y, w, h, { title, value, foot } = {}) {
@@ -392,7 +356,7 @@ function card(doc, x, y, w, h, { title, value, foot } = {}) {
 }
 
 /* =========================
-   HEADER / FOOTER (FIXED)
+   HEADER / FOOTER
 ========================= */
 
 function addHeader(doc, data) {
@@ -402,6 +366,7 @@ function addHeader(doc, data) {
   const right = xRight(doc);
   const width = right - left;
 
+  // divider
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
   doc.moveTo(left, 52).lineTo(right, 52).stroke();
@@ -432,8 +397,9 @@ function addHeader(doc, data) {
 
 /**
  * CRITICAL FIX:
- * Footer must be drawn INSIDE printable area (<= page.height - margins.bottom)
- * Otherwise PDFKit will auto-add a new page -> blank page spam.
+ * Footer Y must be inside bottom margin.
+ * If you render footer below doc.page.height - doc.page.margins.bottom,
+ * PDFKit auto-adds a new page -> blank pages.
  */
 function addFooter(doc, meta, integrityHash) {
   const left = xLeft(doc);
@@ -446,17 +412,19 @@ function addFooter(doc, meta, integrityHash) {
   const scanId = meta?.scanId ? String(meta.scanId) : "—";
   const ts = meta?.scannedAt ? iso(meta.scannedAt) : "";
 
-  // preserve cursor
+  // SAFE footer block coordinates (inside margins)
+  const footerTop = doc.page.height - doc.page.margins.bottom - FOOTER_HEIGHT; // inside margins
+  const dividerY = footerTop + 6;
+  const line1Y = footerTop + 12;
+  const line2Y = footerTop + 22;
+
+  // Prevent footer render from affecting flow cursor
   const prevY = doc.y;
   const prevX = doc.x;
 
-  // footer block sits ABOVE bottom margin
-  const bottom = printableBottom(doc);
-  const footerTopY = bottom - 28; // safe height for 2 lines at 8pt
-
   doc.save();
   doc.strokeColor(PALETTE.line).lineWidth(1);
-  doc.moveTo(left, footerTopY - 10).lineTo(right, footerTopY - 10).stroke();
+  doc.moveTo(left, dividerY).lineTo(right, dividerY).stroke();
   doc.restore();
 
   const line1 = `WebsiteRiskCheck.com • Report ID: ${scanId}${ts ? ` • Timestamp (UTC): ${ts}` : ""}`;
@@ -464,11 +432,11 @@ function addFooter(doc, meta, integrityHash) {
 
   doc.save();
   doc.font("Helvetica").fontSize(8).fillColor(PALETTE.muted);
-  doc.text(line1, left, footerTopY, { width, align: "center", lineBreak: false });
-  doc.text(line2, left, footerTopY + 10, { width, align: "center", lineBreak: false });
+  // Render using explicit Y well inside margins (no pagination)
+  doc.text(line1, left, line1Y, { width, align: "center", lineBreak: false });
+  doc.text(line2, left, line2Y, { width, align: "center", lineBreak: false });
   doc.restore();
 
-  // restore content cursor
   doc.y = prevY;
   doc.x = prevX;
 }
@@ -487,7 +455,7 @@ function drawCoverBackground(doc) {
   doc
     .moveTo(0, 0)
     .lineTo(w * 0.42, 0)
-    .lineTo(0, h * 0.20)
+    .lineTo(0, h * 0.2)
     .closePath()
     .fill(PALETTE.tealMid);
 
@@ -499,8 +467,8 @@ function drawCoverBackground(doc) {
     .fill(PALETTE.tealDark);
 
   doc
-    .moveTo(w * 0.40, h)
-    .lineTo(w, h * 0.70)
+    .moveTo(w * 0.4, h)
+    .lineTo(w, h * 0.7)
     .lineTo(w, h * 0.78)
     .lineTo(w * 0.52, h)
     .closePath()
@@ -510,7 +478,7 @@ function drawCoverBackground(doc) {
     .moveTo(w * 0.46, h)
     .lineTo(w, h * 0.74)
     .lineTo(w, h * 0.765)
-    .lineTo(w * 0.50, h)
+    .lineTo(w * 0.5, h)
     .closePath()
     .fill("#FFFFFF");
 
@@ -594,7 +562,7 @@ function drawCover(doc, meta, risk, integrityHash) {
     .text(
       "Informational snapshot only — not legal advice, certification, or monitoring. Applies only at the recorded timestamp.",
       left,
-      doc.page.height - 120,
+      doc.page.height - doc.page.margins.bottom - 60,
       { width, align: "center", lineGap: 3 }
     );
 }
@@ -629,7 +597,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
     { key: "response", w: 0, label: "Mitigation response" },
   ];
 
-  // Guaranteed-fit allocator
+  // guaranteed-fit allocator
   const MIN_LAST = 170;
   const MIN_DESC = 150;
   const MIN_TRIGGER = 120;
@@ -687,6 +655,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
       doc.restore();
       x += c.w;
     });
+
     doc.save();
     doc.strokeColor("#94A3B8").lineWidth(0.8);
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + headerH).stroke();
@@ -725,7 +694,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
   drawHeaderRow(y);
   y += headerH;
 
-  const bottom = () => printableBottom(doc) - FOOTER_SAFE_PAD;
+  const bottom = () => contentBottomY(doc);
 
   rows.forEach((r, idx) => {
     const rowH = calcRowHeight(r);
@@ -769,6 +738,7 @@ function drawRiskRegister_landscape(doc, rows, { meta, integrityHash }) {
       doc.restore();
       vx += c.w;
     });
+
     doc.save();
     doc.strokeColor("#94A3B8").lineWidth(0.6);
     doc.moveTo(left + tableW, y).lineTo(left + tableW, y + rowH).stroke();
@@ -861,7 +831,6 @@ function buildRiskRegister(meta, coverage, signals) {
 
   const rows = [];
 
-  // Compliance policy presence
   {
     const missing =
       (!signals?.policies?.privacy ? 1 : 0) +
@@ -885,7 +854,6 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
-  // Tracking
   {
     const hasTracking = trackers.length > 0 || vendors.length > 0;
     const prob = hasTracking ? 4 : 2;
@@ -905,7 +873,6 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
-  // Forms / data capture
   {
     const forms = num(signals?.forms?.detected);
     const personalSignals = num(signals?.forms?.personalDataSignals);
@@ -926,7 +893,6 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
-  // Accessibility
   {
     const ratio = totalImages > 0 ? missingAlt / totalImages : 0;
     const prob = ratio > 0.3 ? 4 : ratio > 0 ? 3 : 1;
@@ -946,7 +912,6 @@ function buildRiskRegister(meta, coverage, signals) {
     });
   }
 
-  // Trust / identity
   {
     const prob = signals?.contact?.detected ? 1 : 3;
     const impact = signals?.contact?.detected ? 1 : 2;
@@ -986,7 +951,6 @@ export async function generateReport(data, outputPath) {
 
       const risk = computeRisk(data);
 
-      // Attach for downstream compatibility
       data.integrityHash = integrityHash;
       data.riskLevel = risk.level;
       data.riskScore = risk.score;
@@ -1002,7 +966,9 @@ export async function generateReport(data, outputPath) {
 
       const findings = safeArr(data?.findings || data?.meta?.findings);
       const structuredRows = rowsFromFindings(findings);
-      const riskRows = structuredRows.length ? structuredRows : buildRiskRegister(meta, coverage, signals);
+      const riskRows = structuredRows.length
+        ? structuredRows
+        : buildRiskRegister(meta, coverage, signals);
 
       const doc = new PDFDocument({
         margin: 54,
@@ -1017,7 +983,6 @@ export async function generateReport(data, outputPath) {
       const stream = fs.createWriteStream(outputPath);
       doc.pipe(stream);
 
-      // Page number tracking (stable)
       doc._wrcPageNo = 1;
 
       doc.on("pageAdded", () => {
@@ -1026,30 +991,23 @@ export async function generateReport(data, outputPath) {
         normalizeBodyCursor(doc);
       });
 
-      /* ======================================================
-         PAGE 1 — COVER
-      ====================================================== */
+      // PAGE 1 — COVER
       drawCover(doc, meta, risk, integrityHash);
       addFooter(doc, meta, integrityHash);
 
-      doc.addPage(); // PAGE 2
-      normalizeBodyCursor(doc);
+      // PAGE 2 — EXEC SUMMARY
+      doc.addPage();
 
-      /* ======================================================
-         PAGE 2 — EXEC SUMMARY (PROPER 2-COL, NO WEIRD WHITESPACE)
-      ====================================================== */
       sectionTitle(
         doc,
         "Executive summary",
         "Client-ready snapshot of observable website signals at a fixed timestamp."
       );
 
-      // Risk badge
       const tone = toneForRisk(risk.level);
       badge(doc, `Risk level: ${risk.level}`, tone, xLeft(doc), doc.y);
       doc.moveDown(1.0);
 
-      // Summary cards (2x2)
       const left = xLeft(doc);
       const w = widthBetweenMargins(doc);
       const gap = 12;
@@ -1061,94 +1019,75 @@ export async function generateReport(data, outputPath) {
       const scopeVal = `${safeArr(coverage?.checkedPages).length || 0} page(s) checked`;
       const verVal = integrityHash.slice(0, 10) + "…" + integrityHash.slice(-10);
 
-      const yCards = doc.y;
+      const y0 = doc.y;
 
-      card(doc, left, yCards, colW, cardH, { title: "Report ID", value: idVal });
-      card(doc, left + colW + gap, yCards, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
-      card(doc, left, yCards + cardH + gap, colW, cardH, {
+      card(doc, left, y0, colW, cardH, { title: "Report ID", value: idVal });
+      card(doc, left + colW + gap, y0, colW, cardH, { title: "Timestamp (UTC)", value: tsVal });
+
+      card(doc, left, y0 + cardH + gap, colW, cardH, {
         title: "Coverage",
         value: scopeVal,
         foot: "Scope-locked (public paths)",
       });
-      card(doc, left + colW + gap, yCards + cardH + gap, colW, cardH, {
+
+      card(doc, left + colW + gap, y0 + cardH + gap, colW, cardH, {
         title: "Verification fingerprint",
         value: verVal,
         foot: "Public integrity check",
       });
 
-      // Start 2-col content below cards
-      let y = yCards + cardH * 2 + gap * 2 + 16;
-      const bottom = printableBottom(doc) - FOOTER_SAFE_PAD;
+      doc.y = y0 + cardH * 2 + gap * 2 + 8;
 
-      // If tight, new page (shouldn't happen with sample but safe)
-      if (y + 220 > bottom) {
-        addFooter(doc, meta, integrityHash);
-        doc.addPage();
-        normalizeBodyCursor(doc);
-        sectionTitle(doc, "Executive summary", "Client-ready snapshot of observable website signals at a fixed timestamp.");
-        y = doc.y + 6;
-      }
+      bodyText(doc, whatThisMeansFor(risk.level));
+      doc.moveDown(0.6);
 
-      const colLeftX = left;
-      const colRightX = left + colW + gap;
+      subTitle(doc, "Notable observations");
+      bulletList(doc, safeArr(risk.reasons).slice(0, 10));
+      hr(doc);
 
-      // Left column: what this means + key findings
-      let yL = y;
-      yL = subTitleAt(doc, "What this means", colLeftX, yL, colW);
-      yL = bodyTextAt(doc, whatThisMeansFor(risk.level), colLeftX, yL, colW);
-
-      yL = subTitleAt(doc, "Key findings", colLeftX, yL + 6, colW);
-
+      subTitle(doc, "Key findings (detectable signals)");
       const keyFindings = [];
+
       keyFindings.push(`HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
       keyFindings.push(`Privacy policy: ${signals?.policies?.privacy ? "Detected" : "Not detected"}`);
       keyFindings.push(`Terms: ${signals?.policies?.terms ? "Detected" : "Not detected"}`);
       keyFindings.push(`Cookie policy: ${signals?.policies?.cookies ? "Detected" : "Not detected"}`);
       keyFindings.push(
-        `Consent banner indicator: ${signals?.consent?.bannerDetected ? "Detected" : "Not detected"} (heuristic)`
+        `Consent banner indicator: ${
+          signals?.consent?.bannerDetected ? "Detected" : "Not detected"
+        } (heuristic)`
       );
+
       keyFindings.push(
         `Tracking scripts: ${
-          trackers.length ? `Detected (${trackers.slice(0, 3).join(", ")}${trackers.length > 3 ? "…" : ""})` : "None detected"
+          trackers.length
+            ? `Detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
+            : "None detected"
         }`
       );
+
       keyFindings.push(
         `Cookie vendor signals: ${
-          vendors.length ? `Detected (${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""})` : "None detected"
+          vendors.length
+            ? `Detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
+            : "None detected"
         }`
       );
+
       keyFindings.push(`Forms detected: ${num(signals?.forms?.detected)}`);
-      keyFindings.push(`Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`);
+      keyFindings.push(
+        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`
+      );
       keyFindings.push(`Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      keyFindings.push(`Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`);
-
-      yL = bulletListAt(doc, keyFindings.slice(0, 12), colLeftX, yL + 2, colW);
-
-      // Right column: notable observations (tight, executive)
-      let yR = y;
-      yR = subTitleAt(doc, "Notable observations", colRightX, yR, colW);
-
-      const obs = safeArr(risk.reasons).slice(0, 10);
-      yR = bulletListAt(doc, obs.length ? obs : ["No notable observations were generated for this scan."], colRightX, yR, colW);
-
-      // Bring doc.y to below the deepest column
-      doc.y = Math.max(yL, yR) + 8;
-
-      hr(doc, 4);
-      doc.font("Helvetica").fontSize(9.2).fillColor(PALETTE.muted).text(
-        "This executive summary is an informational snapshot (not legal advice, certification, or monitoring).",
-        xLeft(doc),
-        doc.y,
-        { width: widthBetweenMargins(doc), align: "left" }
+      keyFindings.push(
+        `Contact/identity signals: ${signals?.contact?.detected ? "Detected" : "Not detected"}`
       );
 
+      bulletList(doc, keyFindings.slice(0, 12));
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         PAGE 3+ — RISK REGISTER (LANDSCAPE)
-      ====================================================== */
+      // RISK REGISTER — LANDSCAPE
       doc.addPage({ layout: "landscape" });
-      normalizeBodyCursor(doc);
 
       sectionTitle(
         doc,
@@ -1172,23 +1111,22 @@ export async function generateReport(data, outputPath) {
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         FINDINGS BY CATEGORY
-      ====================================================== */
+      // FINDINGS BY CATEGORY
       doc.addPage();
-      normalizeBodyCursor(doc);
 
       sectionTitle(doc, "Findings by category", "What was detected on the scanned surface (scope-locked).");
 
       subTitle(doc, "Connection");
-      bodyText(doc, `HTTPS: ${meta.https ? "Detected" : "Not detected"}`);
+      bulletList(doc, [`HTTPS: ${meta.https ? "Detected" : "Not detected"}`]);
       bodyText(doc, "HTTPS reduces interception risk and is commonly expected for customer-facing websites.");
       hr(doc);
 
       subTitle(doc, "Policies (public-path detection)");
-      bodyText(doc, `Privacy policy present: ${yesNo(!!signals?.policies?.privacy)}`);
-      bodyText(doc, `Terms present: ${yesNo(!!signals?.policies?.terms)}`);
-      bodyText(doc, `Cookie policy present: ${yesNo(!!signals?.policies?.cookies)}`);
+      bulletList(doc, [
+        `Privacy policy present: ${yesNo(!!signals?.policies?.privacy)}`,
+        `Terms present: ${yesNo(!!signals?.policies?.terms)}`,
+        `Cookie policy present: ${yesNo(!!signals?.policies?.cookies)}`,
+      ]);
       bodyText(
         doc,
         "Policy presence is detected using scope-locked discovery (homepage links and standard public paths). Absence of detection is not proof of absence."
@@ -1196,41 +1134,50 @@ export async function generateReport(data, outputPath) {
       hr(doc);
 
       subTitle(doc, "Cookies & tracking (HTML detection)");
-      bodyText(doc, `Tracking scripts: ${trackers.length ? trackers.join(", ") : "None detected"}`);
-      bodyText(doc, `Cookie vendor signals: ${vendors.length ? vendors.join(", ") : "None detected"}`);
-      bodyText(doc, "Detections are based on observable HTML/script references. Interaction-gated or dynamically loaded tags may not be detected.");
+      bulletList(doc, [
+        `Tracking scripts: ${trackers.length ? trackers.join(", ") : "None detected"}`,
+        `Cookie vendor signals: ${vendors.length ? vendors.join(", ") : "None detected"}`,
+      ]);
+      bodyText(
+        doc,
+        "Detections are based on observable HTML/script references. Interaction-gated or dynamically loaded tags may not be detected."
+      );
       hr(doc);
 
       subTitle(doc, "Consent indicators (heuristic)");
-      bodyText(doc, `Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`);
+      bulletList(doc, [`Cookie/consent banner indicator: ${yesNo(!!signals?.consent?.bannerDetected)}`]);
       bodyText(doc, "Heuristic signal based on text/DOM patterns and consent vendor markers. Not a guarantee.");
       hr(doc);
 
       subTitle(doc, "Forms & data capture (heuristic)");
-      bodyText(doc, `Forms detected: ${num(signals?.forms?.detected)}`);
-      bodyText(doc, `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)} (heuristic)`);
+      bulletList(doc, [
+        `Forms detected: ${num(signals?.forms?.detected)}`,
+        `Potential personal-data field signals: ${num(signals?.forms?.personalDataSignals)}`,
+      ]);
       bodyText(doc, "Personal-data signals are heuristic counts based on common field names. They are not legal classifications.");
       hr(doc);
 
       subTitle(doc, "Accessibility signals (heuristic)");
-      bodyText(doc, `Images missing alt text: ${imagesMissingAlt} of ${totalImages}`);
-      const aNotes = safeArr(signals?.accessibility?.notes);
-      if (aNotes.length) aNotes.forEach((n) => bodyText(doc, `Note: ${n}`));
-      else bodyText(doc, "No accessibility notes recorded by this scan.");
-      bodyText(doc, "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing.");
+      bulletList(doc, [
+        `Images missing alt text: ${imagesMissingAlt} of ${totalImages}`,
+        ...(safeArr(signals?.accessibility?.notes).length
+          ? safeArr(signals?.accessibility?.notes).map((n) => `Note: ${n}`)
+          : ["No accessibility notes recorded by this scan."]),
+      ]);
+      bodyText(
+        doc,
+        "Accessibility checks are lightweight and indicative only. A full audit typically requires broader coverage and manual testing."
+      );
       hr(doc);
 
       subTitle(doc, "Contact & identity signals");
-      bodyText(doc, `Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`);
+      bulletList(doc, [`Contact/business identity signals: ${yesNo(!!signals?.contact?.detected)}`]);
       bodyText(doc, "Detected using simple patterns (email/phone/contact link) on the scanned surface only.");
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         COMMON NEXT STEPS
-      ====================================================== */
+      // COMMON NEXT STEPS
       doc.addPage();
-      normalizeBodyCursor(doc);
 
       sectionTitle(doc, "Common next steps", "General orientation only — not legal advice.");
 
@@ -1240,28 +1187,24 @@ export async function generateReport(data, outputPath) {
       );
       doc.moveDown(0.6);
 
-      const nextSteps = [
+      bulletList(doc, [
         "Ensure privacy and terms pages are public and linked from the site footer and/or homepage.",
         "If third-party tracking/cookies are used, review whether consent mechanisms are appropriate for your target regions.",
         "Review forms for minimum necessary fields; confirm storage, access controls, and retention practices.",
         "Add alt text to meaningful images on key pages where missing.",
         "Ensure visitors can easily find contact/business identity information.",
         "Re-run a snapshot after major changes (redesigns, marketing tags, new forms, new third-party embeds).",
-      ];
-      nextSteps.forEach((s) => bodyText(doc, `• ${s}`));
+      ]);
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         METHODOLOGY & LIMITATIONS
-      ====================================================== */
+      // METHODOLOGY & LIMITATIONS
       doc.addPage();
-      normalizeBodyCursor(doc);
 
       sectionTitle(doc, "Methodology & limitations", "How this snapshot is produced, and what it does not do.");
 
       subTitle(doc, "Methodology (this scan)");
-      const meth = [
+      bulletList(doc, [
         "Fetches public HTML from the homepage and standard public policy/contact paths (scope-locked).",
         "Detects common tracking scripts by known HTML/script patterns.",
         "Detects common consent vendors by known markers.",
@@ -1269,39 +1212,33 @@ export async function generateReport(data, outputPath) {
         "Detects consent banner indicators via DOM/text heuristics (heuristic).",
         "Detects forms and likely personal-data field signals via field-name heuristics.",
         "Runs lightweight accessibility checks (alt text counts, basic notes).",
-      ];
-      meth.forEach((s) => bodyText(doc, `• ${s}`));
+      ]);
 
       doc.moveDown(0.6);
 
       subTitle(doc, "Scope and exclusions");
-      const scope = [
+      bulletList(doc, [
         "No full-site crawling.",
         "Public, unauthenticated HTML only (no logins).",
         "No behavioural simulation (no clicking banners, no region toggles).",
         "No legal judgement, certification, or guarantee of compliance.",
         "No monitoring over time; this is a single timestamped snapshot.",
-      ];
-      scope.forEach((s) => bodyText(doc, `• ${s}`));
+      ]);
 
       doc.moveDown(0.6);
 
       subTitle(doc, "Limitations (important)");
-      const lim = [
+      bulletList(doc, [
         "Results apply only at the recorded timestamp; websites can change without notice.",
         "Dynamically loaded or interaction-gated content may not be detected.",
         "Heuristic signals may produce false positives/negatives depending on implementation.",
         "Absence of detection is not proof of absence.",
-      ];
-      lim.forEach((s) => bodyText(doc, `• ${s}`));
+      ]);
 
       addFooter(doc, meta, integrityHash);
 
-      /* ======================================================
-         VERIFICATION
-      ====================================================== */
+      // VERIFICATION
       doc.addPage();
-      normalizeBodyCursor(doc);
 
       sectionTitle(doc, "Report verification", "Public integrity check for this sealed snapshot.");
 
@@ -1320,7 +1257,7 @@ export async function generateReport(data, outputPath) {
       doc.moveDown(0.8);
 
       subTitle(doc, "What the integrity hash covers");
-      const covers = [
+      bulletList(doc, [
         "Target URL/hostname, scan ID, scan timestamp",
         "Scope-locked coverage notes",
         "HTTPS signal",
@@ -1331,8 +1268,7 @@ export async function generateReport(data, outputPath) {
         "Accessibility signals (alt text counts, notes)",
         "Contact/identity signal presence",
         "Per-page coverage (checked/failed paths where available)",
-      ];
-      covers.forEach((s) => bodyText(doc, `• ${s}`));
+      ]);
 
       doc.moveDown(0.8);
 

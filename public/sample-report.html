@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <title>Sample report — what clients receive (PDF) | Website Risk Check</title>
   <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
   <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
@@ -22,291 +23,152 @@
 
   <!-- Global CSS -->
   <link rel="stylesheet" href="/style.css?v=13" />
-  <!-- Page CSS -->
-  <link rel="stylesheet" href="/sample-report.css?v=4" />
 
   <meta name="theme-color" content="#0b1220">
-
-  <!-- Tiny progressive-enhancement hook (no dependencies) -->
-  <script>
-    document.documentElement.classList.add('js');
-  </script>
-
-  <!-- Minimal “don’t look broken” safety net if PDF.js fails:
-       show native iframe, keep flipbook elements for enhancement. -->
-  <style>
-    /* Keep this tiny + non-invasive */
-    .nativePdfFrame{
-      width:100%;
-      height:100%;
-      border:0;
-      border-radius:14px;
-      background:#fff;
-    }
-    .nativePdfWrap{
-      position:absolute;
-      inset:0;
-      padding:18px;
-      display:block;
-    }
-    /* When JS enhances successfully, your sample-report.js can add this class to hide the native viewer */
-    .isFlipReady .nativePdfWrap{ display:none; }
-  </style>
 </head>
-
 <body>
-  <!-- Header / nav -->
-  <header class="topbar">
-    <div class="container topbarInner">
-      <a class="brand" href="/" aria-label="Website Risk Check home">
-        <!-- No emoji. Let CSS handle the mark if you want one. -->
-        <span class="brandMark" aria-hidden="true"></span>
-        <span class="brandName">Website Risk Check</span>
+
+  <!-- =========================
+       HEADER
+  ========================== -->
+
+  <header class="siteHeader">
+    <div class="container headerInner">
+
+      <a href="/" class="logo">
+        <span class="logoText">Website Risk Check</span>
       </a>
 
-      <nav class="topbarNav" aria-label="Primary navigation">
-        <a class="pillBtn isActive" href="/sample-report" aria-current="page">Sample report</a>
-        <a class="pillBtn" href="/">Run a scan</a>
+      <nav class="mainNav">
+        <a href="/" class="navLink">Run a scan</a>
+        <a href="/agency" class="navLink">For agencies</a>
+        <a href="/sample-report" class="navLink active">Sample report</a>
       </nav>
+
+      <a href="/" class="headerCta">Start scan</a>
+
     </div>
   </header>
 
-  <main class="container srWrap">
-    <!-- HERO / SHOWCASE -->
-    <section class="srHero" aria-label="Sample report showcase">
+  <!-- =========================
+       MAIN
+  ========================== -->
+
+  <main class="container" style="padding-top:80px;">
+
+    <section class="srHero" style="display:grid;grid-template-columns:1fr 1.2fr;gap:60px;align-items:start;">
+
       <!-- LEFT -->
-      <div class="srHeroLeft">
-        <div class="srEyebrow">Sample verified report</div>
+      <div>
 
-        <h1 class="srTitle">This is the PDF your client receives after payment.</h1>
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-bottom:16px;">
+          Sample verified report
+        </div>
 
-        <p class="srLead">
-          A point-in-time snapshot, sealed and timestamped at capture time.
-          Verification confirms the PDF’s integrity (not legal compliance).
+        <h1 style="font-size:40px;line-height:1.15;margin-bottom:20px;">
+          This is the PDF your client receives after payment.
+        </h1>
+
+        <p style="font-size:16px;color:#6b7280;max-width:520px;margin-bottom:28px;">
+          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint,
+          and publicly verifiable. This is the exact paid deliverable — not a demo.
         </p>
 
-        <div class="srCtas" role="group" aria-label="Primary actions">
-          <!-- wired by sample-report.js -->
-          <a class="btnPrimary" id="openPdfBtn" href="#" role="button">Open sample PDF</a>
-          <a class="btnSoft" id="openVerifyBtn" href="#" role="button">Open verification</a>
-          <a class="btnGhost" href="/" role="button">Run a scan</a>
+        <div style="display:flex;gap:14px;margin-bottom:40px;">
+          <a href="/sample-report.pdf" target="_blank" class="primaryBtn">Open sample PDF</a>
+          <a href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" class="secondaryBtn">Open verification</a>
         </div>
 
-        <!-- Tight facts (same content, less “form”) -->
-        <div class="srFacts" aria-label="Key facts">
-          <div class="srFact">
-            <div class="srFactK">Deliverable</div>
-            <div class="srFactV">Client-ready PDF</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:30px;max-width:520px;">
+          <div>
+            <div class="factLabel">Deliverable</div>
+            <div class="factValue">Client-ready PDF</div>
           </div>
-          <div class="srFact">
-            <div class="srFactK">Timestamp</div>
-            <div class="srFactV">Captured in UTC</div>
+          <div>
+            <div class="factLabel">Timestamp</div>
+            <div class="factValue">Captured in UTC</div>
           </div>
-          <div class="srFact">
-            <div class="srFactK">Scope</div>
-            <div class="srFactV">Up to 6 pages</div>
+          <div>
+            <div class="factLabel">Scope</div>
+            <div class="factValue">Up to 6 pages</div>
           </div>
-          <div class="srFact">
-            <div class="srFactK">Verification</div>
-            <div class="srFactV">Public integrity check</div>
+          <div>
+            <div class="factLabel">Verification</div>
+            <div class="factValue">Public integrity check</div>
           </div>
         </div>
 
-        <div class="srNote" role="note">
-          Informational snapshot only — not legal advice, certification, or monitoring. Findings are limited to scanned scope
-          and observable signals during capture.
+        <div style="font-size:14px;color:#9ca3af;max-width:520px;">
+          Informational snapshot only — not legal advice, certification, or monitoring.
+          Verification confirms integrity only (not compliance).
         </div>
 
-        <!-- Make “how to preview” smaller + less boxy (still useful) -->
-        <div class="srMiniHelp" aria-label="Preview instructions">
-          <div class="srMiniHelpT">Preview tips</div>
-          <ul class="srMiniHelpList">
-            <li>Use ← → to move pages (interactive mode), or scroll in the native preview.</li>
-            <li>Open the PDF to see the verification code inside the report.</li>
-            <li>Open verification to confirm the fingerprint matches.</li>
-          </ul>
-        </div>
-
-        <div class="srTrust" aria-label="Trust statement">
-          <div class="srTrustRow">
-            <span class="srTrustDot" aria-hidden="true"></span>
-            <span>Exact paid deliverable — no “demo” formatting.</span>
-          </div>
-          <div class="srTrustRow">
-            <span class="srTrustDot" aria-hidden="true"></span>
-            <span>Verification confirms integrity only (not compliance).</span>
-          </div>
-        </div>
       </div>
 
       <!-- RIGHT -->
-      <div class="srHeroRight">
-        <div class="flipShell" aria-label="Sample report preview">
-          <div class="flipTopBar">
-            <div class="flipLabel">
-              <span class="dot" aria-hidden="true"></span>
-              <span>Sample PDF (preview)</span>
-            </div>
 
-            <div class="flipControls" role="group" aria-label="Flipbook controls">
-              <button class="iconBtn" id="prevBtn" type="button" title="Previous page" aria-label="Previous page">←</button>
-              <div class="pageReadout" aria-live="polite">
-                <span id="pageNum">–</span>
-                <span class="muted" aria-hidden="true">/</span>
-                <span id="pageCount">–</span>
-              </div>
-              <button class="iconBtn" id="nextBtn" type="button" title="Next page" aria-label="Next page">→</button>
-            </div>
-          </div>
+      <div style="border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,0.04);">
 
-          <!-- IMPORTANT CHANGE:
-               Native PDF viewer is ALWAYS present so the page never looks “broken”.
-               Your pdf.js flip canvases remain so JS can enhance when available. -->
-          <div class="flipStage" id="flipStage" aria-label="PDF preview" tabindex="0" style="position:relative;">
-            <!-- Native fallback (always visible unless JS adds .isFlipReady on <body>) -->
-            <div class="nativePdfWrap" id="nativePdfWrap" aria-label="Native PDF preview">
-              <iframe
-                class="nativePdfFrame"
-                id="nativePdfFrame"
-                title="Sample report PDF"
-                loading="lazy"
-                src="/sample-report.pdf#view=FitH"
-              ></iframe>
-            </div>
-
-            <!-- Flipbook layer (progressive enhancement) -->
-            <div class="flipPage isFront" id="frontPage" aria-hidden="true">
-              <canvas id="frontCanvas"></canvas>
-              <div class="flipShadow" aria-hidden="true"></div>
-            </div>
-
-            <div class="flipPage isBack" id="backPage" aria-hidden="true">
-              <canvas id="backCanvas"></canvas>
-              <div class="flipShadow" aria-hidden="true"></div>
-            </div>
-
-            <div class="flipLoading" id="loadingState" role="status" aria-live="polite" hidden>
-              <div class="spinner" aria-hidden="true"></div>
-              <div>
-                <div class="flipLoadingTitle">Loading sample PDF…</div>
-                <div class="flipLoadingSub">Rendering pages for interactive preview.</div>
-              </div>
-            </div>
-
-            <!-- If your JS still uses this, keep it — but it no longer nukes the whole UI. -->
-            <div class="flipError" id="errorState" hidden>
-              <div class="flipErrorTitle">Interactive preview unavailable.</div>
-              <div class="flipErrorSub">
-                The native preview still works. If you want interactive flipping, check PDF.js worker path/CSP.
-              </div>
-              <div class="flipErrorActions">
-                <a class="btnPrimary" id="directPdfLink" href="/sample-report.pdf" target="_blank" rel="noopener">Open sample PDF</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="flipFooter">
-            <div class="flipHint">Tip: open the PDF for the verification code.</div>
-            <div class="flipZoom" role="group" aria-label="Zoom controls">
-              <button class="miniBtn" id="zoomOutBtn" type="button" aria-label="Zoom out">–</button>
-              <button class="miniBtn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
-            </div>
-          </div>
+        <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#6b7280;">
+          Sample PDF preview
         </div>
 
-        <div class="srProof" aria-label="Verification details">
-          <div class="srProofRow">
-            <div class="srProofK">Verification link</div>
-            <div class="srProofV">
-              <code id="verifyPath">/verify/…</code>
-              <button class="miniCopy" id="copyVerifyBtn" type="button" aria-label="Copy verification link">Copy</button>
-            </div>
-          </div>
-          <div class="srProofRow">
-            <div class="srProofK">Report ID</div>
-            <div class="srProofV">
-              <code id="reportId">SAMPLE-001</code>
-              <button class="miniCopy" id="copyReportIdBtn" type="button" aria-label="Copy report ID">Copy</button>
-            </div>
-          </div>
-        </div>
+        <iframe
+          src="/sample-report.pdf#view=FitH"
+          style="width:100%;height:780px;border:0;background:#fff;"
+          loading="lazy"
+          title="Sample report PDF preview">
+        </iframe>
 
-        <div class="srBelowCtas" role="group" aria-label="Secondary actions">
-          <a class="btnSoft" id="openVerifyBtn2" href="#" role="button">Open verification page</a>
-          <a class="btnGhost" id="openPdfBtn2" href="#" role="button">Open PDF (shows code)</a>
-        </div>
       </div>
+
     </section>
 
-    <section class="srSection" aria-label="What clients receive">
-      <h2 class="srH2">What your client receives</h2>
-      <div class="srGrid">
-        <div class="srCard">
-          <div class="srCardT">Executive summary</div>
-          <div class="srCardP">Client-facing overview: risk level, key drivers, and recommended next steps.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Risk register</div>
-          <div class="srCardP">Structured findings: category, likelihood, impact, triggers, and recommendations.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Coverage snapshot</div>
-          <div class="srCardP">Exactly which pages were checked (scope-locked), plus limitations and failures.</div>
-        </div>
-        <div class="srCard">
-          <div class="srCardT">Verification</div>
-          <div class="srCardP">Fingerprint + QR linking to a public integrity verification page.</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="srSection" aria-label="Verification explanation">
-      <div class="srCallout">
-        <div class="srCalloutT">Why verification matters</div>
-        <div class="srCalloutP">
-          If the PDF is altered after generation, verification fails. This confirms integrity only — it does not certify
-          compliance or legality.
-        </div>
-        <div class="srCalloutA">
-          <a class="btnSoft" id="verifyStaticBtn"
-             href="/verify/b50d49f57a066f6cc6274c743a896f6bea7c56f54d993c6f7848c6988eeb5319"
-             target="_blank" rel="noopener">
-            View verification
-          </a>
-          <a class="btnGhost" href="/" role="button">Run a scan</a>
-        </div>
-      </div>
-    </section>
-
-    <footer class="srFooter" aria-label="Sample report footer">
-      <div class="srFooterInner">
-        <div class="srFooterLeft">
-          <strong>Website Risk Check</strong>
-          <span class="srFooterDot" aria-hidden="true">•</span>
-          <span>Sample verified deliverable</span>
-        </div>
-        <div class="srFooterRight">
-          <a class="srFooterLink" href="/">Run a scan</a>
-          <span class="srFooterDot" aria-hidden="true">•</span>
-          <a class="srFooterLink" href="/agency">For agencies</a>
-        </div>
-      </div>
-    </footer>
   </main>
 
-  <!-- PDF.js (LOCAL) -->
-  <script src="/vendor/pdfjs/pdf.min.js?v=1"></script>
+  <!-- =========================
+       FOOTER
+  ========================== -->
 
-  <!-- Page logic -->
-  <script src="/sample-report.js?v=5"></script>
+  <footer class="siteFooter">
 
-  <noscript>
-    <div class="container" style="padding:16px 20px;">
-      <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;background:#fff;">
-        JavaScript is required for the interactive preview.
-        <a href="/sample-report.pdf" target="_blank" rel="noopener">Open the sample PDF</a>.
+    <div class="container footerInner">
+
+      <div class="footerLeft">
+        <div class="footerBrand">Website Risk Check</div>
+        <div class="footerTag">
+          Point-in-time website risk snapshot with public verification.
+        </div>
       </div>
+
+      <div class="footerRight">
+
+        <div class="footerCol">
+          <div class="footerHeading">Product</div>
+          <a href="/" class="footerLink">Run a scan</a>
+          <a href="/sample-report" class="footerLink">Sample report</a>
+          <a href="/agency" class="footerLink">For agencies</a>
+        </div>
+
+        <div class="footerCol">
+          <div class="footerHeading">Legal</div>
+          <a href="/terms" class="footerLink">Terms</a>
+          <a href="/privacy" class="footerLink">Privacy</a>
+        </div>
+
+      </div>
+
     </div>
-  </noscript>
+
+    <div class="footerBottom">
+      © <span id="year"></span> Website Risk Check. All rights reserved.
+    </div>
+
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
 </body>
 </html>

@@ -28,7 +28,7 @@
   <!-- Global BASE -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <!-- Homepage page-owned styles (BUST CACHE) -->
-  <link rel="stylesheet" href="/index.css?v=7" />
+  <link rel="stylesheet" href="/index.css?v=8" />
 </head>
 
 <body class="pageHome">
@@ -103,9 +103,13 @@
           </div>
         </div>
 
+        <!-- RIGHT: CONSOLE (header removed) -->
+        <aside class="console" aria-label="Run a scan">
+
           <div class="consoleBody">
             <form id="check-form" class="scanForm" autocomplete="off">
               <label class="fieldLabel" for="url-input">Website URL</label>
+
               <div class="fieldRow">
                 <input id="url-input" type="url" inputmode="url" placeholder="https://example.com" required />
                 <button id="scanBtn" type="submit" class="btnMain">Generate preview</button>
@@ -116,15 +120,11 @@
               </div>
             </form>
 
+            <!-- REPLACED: no bubbles, no chips -->
             <div class="coverage" aria-label="Coverage areas">
-              <div class="coverageTitle">Signals captured</div>
-              <div class="coverageList">
-                <span>Policies</span>
-                <span>Consent</span>
-                <span>Trackers</span>
-                <span>Forms</span>
-                <span>Accessibility</span>
-                <span>Coverage</span>
+              <div class="coverageInline">
+                <span class="coverageK">Signals:</span>
+                <span class="coverageV">Policies · Consent · Trackers · Forms · Accessibility · Coverage</span>
               </div>
             </div>
 

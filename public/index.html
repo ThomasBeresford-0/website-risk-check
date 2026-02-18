@@ -7,9 +7,8 @@
 
   <meta
     name="description"
-    content="Client-ready website compliance & risk documentation for agencies and consultants. Generate a timestamped, immutable PDF with permanent share link and public cryptographic verification."
+    content="Client-ready website compliance & risk documentation for agencies and consultants. Generate a timestamped, immutable PDF with a permanent share link and public cryptographic verification."
   />
-
   <meta name="theme-color" content="#0b1220" />
 
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -25,13 +24,15 @@
     rel="stylesheet"
   >
 
-  <!-- Global BASE only -->
+  <!-- Global BASE -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <!-- Homepage page-owned styles -->
-  <link rel="stylesheet" href="/index.css?v=5" />
+  <link rel="stylesheet" href="/index.css?v=6" />
 </head>
 
-<body>
+<body class="pageHome">
+  <a class="skipLink" href="#scan">Skip to scan</a>
+
   <div class="bg" aria-hidden="true"></div>
 
   <nav class="nav" role="navigation" aria-label="Primary">
@@ -51,7 +52,8 @@
       </div>
 
       <div class="navCtas">
-        <a class="navBtn" href="#scan">Run a scan</a>
+        <a class="navBtn navBtnGhost" href="/sample-report">View sample</a>
+        <a class="navBtn navBtnPrimary" href="#scan">Run a scan</a>
       </div>
     </div>
   </nav>
@@ -60,9 +62,14 @@
 
     <!-- HERO -->
     <header class="hero" id="scan">
-      <div class="container heroWrap">
+      <div class="container heroGrid">
 
-        <div class="heroTop">
+        <!-- LEFT: COPY -->
+        <div class="heroCopy">
+          <div class="eyebrow">
+            <span class="eyebrowDot" aria-hidden="true"></span>
+            Point-in-time website documentation
+          </div>
 
           <h1 class="heroTitle">
             Verifiable compliance & risk documentation — issued as a sealed PDF.
@@ -71,9 +78,25 @@
           <p class="heroSub">
             Generate a timestamped snapshot of observable signals. Includes a permanent share link and public integrity verification.
           </p>
+
+          <div class="heroBadges" aria-label="Highlights">
+            <span class="badge">Immutable artifact</span>
+            <span class="badge">UTC timestamp</span>
+            <span class="badge">Public verification</span>
+            <span class="badge">Scope-locked crawl</span>
+          </div>
+
+          <div class="heroMiniCtas">
+            <a class="linkBtn" href="/sample-report">Open sample report</a>
+            <a class="linkBtn" href="#verification">How verification works</a>
+          </div>
+
+          <p class="heroDisclaimer">
+            Documentation only. Not legal advice, certification, or a guarantee of compliance.
+          </p>
         </div>
 
-        <!-- TOOL CARD -->
+        <!-- RIGHT: TOOL -->
         <section class="toolCard" aria-label="Run a scan">
           <div class="toolHead">
             <div class="toolHeadLeft">
@@ -134,31 +157,30 @@
           </div>
         </section>
 
-        <div class="credStrip" aria-label="What this is">
-          <div class="credItem">
-            <div class="credK">Deliverable</div>
-            <div class="credV">Client-ready PDF artifact</div>
-          </div>
-          <div class="credItem">
-            <div class="credK">Purpose</div>
-            <div class="credV">Evidence for remediation scope</div>
-          </div>
-          <div class="credItem">
-            <div class="credK">Integrity</div>
-            <div class="credV">Public verification endpoint</div>
-          </div>
-          <div class="credItem">
-            <div class="credK">Positioning</div>
-            <div class="credV">Documentation, not monitoring</div>
-          </div>
-        </div>
-
-        <p class="heroDisclaimer">
-          Documentation only. Not legal advice, certification, or a guarantee of compliance.
-        </p>
-
       </div>
     </header>
+
+    <!-- TRUST STRIP -->
+    <section class="trustStrip" aria-label="What this is">
+      <div class="container trustGrid">
+        <div class="trustItem">
+          <div class="trustK">Deliverable</div>
+          <div class="trustV">Client-ready PDF artifact</div>
+        </div>
+        <div class="trustItem">
+          <div class="trustK">Primary use</div>
+          <div class="trustV">Evidence for remediation scope</div>
+        </div>
+        <div class="trustItem">
+          <div class="trustK">Integrity</div>
+          <div class="trustV">Public verification endpoint</div>
+        </div>
+        <div class="trustItem">
+          <div class="trustK">Positioning</div>
+          <div class="trustV">Documentation, not monitoring</div>
+        </div>
+      </div>
+    </section>
 
     <!-- FOR AGENCIES -->
     <section class="section" id="agencies">
@@ -227,12 +249,15 @@
           </p>
         </div>
 
-        <div class="card">
-          Anyone can verify the report’s integrity via:
-          <br><br>
-          <strong>/verify/&lt;hash&gt;</strong>
-          <br><br>
-          If the file is altered, verification fails.
+        <div class="card monoCard">
+          <div class="monoRow">
+            <div class="monoK">Verify URL pattern</div>
+            <div class="monoV"><code>/verify/&lt;hash&gt;</code></div>
+          </div>
+          <div class="monoRow">
+            <div class="monoK">Tamper detection</div>
+            <div class="monoV">If the file is altered, verification fails.</div>
+          </div>
         </div>
       </div>
     </section>

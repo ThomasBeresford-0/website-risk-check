@@ -148,7 +148,7 @@ body{
   display:grid;
   grid-template-columns: 1.06fr .94fr;
   gap: 22px;
-  align-items:start;
+  align-items: stretch; /* ✅ forces both columns to equal height */
 }
 
 /* LEFT */
@@ -234,8 +234,23 @@ body{
   border: 1px solid rgba(15,23,42,.12);
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
-  min-height: 0px;       /* ✅ “extended a bit” */
+  height: 100%;           /* ✅ match left column height */
+  display: flex;
 }
+
+.consoleBody{
+  padding: 18px 18px 18px;
+  width: 100%;
+  display: flex;          /* ✅ let form stretch */
+  flex-direction: column;
+}
+
+.scanForm{
+  display: flex;          /* ✅ pushes buttons to bottom */
+  flex-direction: column;
+  flex: 1;
+}
+
 
 .consoleBody{
   padding: 18px 18px 18px; /* slightly more premium spacing */
@@ -315,6 +330,18 @@ body{
 .btnAlt:hover{ border-color: rgba(15,23,42,.34); transform: translateY(-1px); }
 
 .btnWide{ width:100%; height: 46px; }
+
+.heroActions{
+  margin-top: auto;       /* ✅ pushes to bottom of hero console */
+  padding-top: 14px;
+  border-top: 1px solid rgba(15,23,42,.10);
+  display: grid;
+  gap: 10px;
+}
+
+.heroActions .payNote{
+  text-align: center;
+}
 
 .consentLine{
   margin-top: 10px;

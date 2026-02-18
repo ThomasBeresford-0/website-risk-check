@@ -7,7 +7,7 @@
 
   <meta
     name="description"
-    content="Client-ready website compliance & risk documentation for agencies and consultants. Generate a timestamped, immutable PDF with permanent share link and public cryptographic verification."
+    content="Enter a website URL, get a structured risk preview, then purchase a sealed, verifiable PDF snapshot with a permanent share link and public verification."
   />
 
   <meta name="theme-color" content="#0b1220" />
@@ -17,7 +17,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- Font (professional / audit) -->
+  <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -25,16 +25,14 @@
     rel="stylesheet"
   >
 
-  <!-- Global BASE -->
   <link rel="stylesheet" href="/style.css?v=14" />
-  <!-- Homepage page-owned styles (BUST CACHE) -->
-  <link rel="stylesheet" href="/index.css?v=8" />
+  <link rel="stylesheet" href="/index.css?v=10" />
 </head>
 
 <body class="pageHome">
   <a class="skipLink" href="#scan">Skip to scan</a>
 
-  <!-- TOP AUDIT BAND -->
+  <!-- DARK HEADER (KEEP) -->
   <header class="topBand" role="banner">
     <div class="container topBandInner">
       <a class="brand" href="/" aria-label="Website Risk Check Home">
@@ -60,42 +58,42 @@
 
   <main>
 
-    <!-- HERO / CONSOLE -->
-    <section class="hero" id="scan" aria-label="Generate a structured preview">
+    <!-- HERO -->
+    <section class="hero" id="scan" aria-label="Run a scan">
       <div class="container heroGrid">
 
-        <!-- LEFT: STATEMENT / POSITIONING -->
+        <!-- LEFT -->
         <div class="heroLeft">
-          <div class="stampRow" aria-hidden="true">
-            <div class="stamp">SEALED SNAPSHOT</div>
-            <div class="stampMeta">Documentation • Not monitoring</div>
+          <div class="eyebrow">
+            <span class="eyedot" aria-hidden="true"></span>
+            Sealed, verifiable website snapshot — built for client work
           </div>
 
           <h1 class="headline">
-            A verifiable website risk snapshot your client can file.
+            Turn any website into a client-ready risk report.
           </h1>
 
           <p class="lead">
-            Generate a point-in-time record of observable compliance and risk signals, issued as a sealed PDF with a public verification path.
+            Enter a URL. Get a free structured preview. If you want the deliverable, purchase a sealed PDF snapshot with a permanent share link and public verification.
           </p>
 
-          <div class="proofGrid" aria-label="What you get">
-            <div class="proofItem">
-              <div class="proofK">Artifact</div>
-              <div class="proofV">Timestamped PDF deliverable</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofK">Integrity</div>
-              <div class="proofV">SHA-256 hash + public verify URL</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofK">Coverage</div>
-              <div class="proofV">Scope-locked crawl + limitations</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofK">Use case</div>
-              <div class="proofV">Proposals • scope • due diligence</div>
-            </div>
+          <div class="how">
+            <div class="howTitle">How it works</div>
+            <ol class="howSteps">
+              <li><strong>Scan</strong> a website URL (public pages only).</li>
+              <li><strong>Preview</strong> key signals in a structured summary.</li>
+              <li><strong>Purchase</strong> the sealed PDF artefact (£99) with verification.</li>
+            </ol>
+          </div>
+
+          <div class="what">
+            <div class="whatTitle">What you receive</div>
+            <ul class="whatList">
+              <li><strong>Timestamped PDF</strong> written like a real deliverable (scope + limitations included).</li>
+              <li><strong>Integrity seal</strong> (SHA-256 hash embedded in the PDF).</li>
+              <li><strong>Permanent share link</strong> for clients, proposals, or audit trails.</li>
+              <li><strong>Public verification</strong> endpoint: <span class="mono">/verify/&lt;hash&gt;</span>.</li>
+            </ul>
           </div>
 
           <div class="finePrint">
@@ -103,10 +101,14 @@
           </div>
         </div>
 
-        <!-- RIGHT: CONSOLE (header removed) -->
-        <aside class="console" aria-label="Run a scan">
-
+        <!-- RIGHT (CONSOLE) -->
+        <aside class="console" aria-label="Generate preview and purchase report">
           <div class="consoleBody">
+            <div class="consoleTop">
+              <div class="consoleK">Free structured preview</div>
+              <div class="consoleV">Full sealed PDF: <strong>£99</strong> · 3 reports: <strong>£199</strong></div>
+            </div>
+
             <form id="check-form" class="scanForm" autocomplete="off">
               <label class="fieldLabel" for="url-input">Website URL</label>
 
@@ -118,27 +120,23 @@
               <div class="consentLine">
                 You confirm you have permission to assess this website.
               </div>
-            </form>
 
-            <!-- REPLACED: no bubbles, no chips -->
-            <div class="coverage" aria-label="Coverage areas">
-              <div class="coverageInline">
-                <span class="coverageK">Signals:</span>
-                <span class="coverageV">Policies · Consent · Trackers · Forms · Accessibility · Coverage</span>
+              <div class="signalsLine" aria-label="Signals assessed">
+                Signals assessed: <span>Policies</span> · <span>Consent</span> · <span>Trackers</span> · <span>Forms</span> · <span>Accessibility</span> · <span>Coverage</span>
               </div>
-            </div>
+            </form>
 
             <div id="preview" class="preview" aria-live="polite">
               <div class="previewTop">
                 <div class="previewTitle">Preview findings</div>
-                <div class="previewHint">Full report adds breakdown, scoring rationale, and verification page.</div>
+                <div class="previewHint">Full report includes breakdown, scoring rationale, and verification page.</div>
               </div>
 
               <ul id="findings" class="findings"></ul>
 
               <div class="actions">
                 <button id="pay-button" type="button" class="btnMain btnWide">
-                  Issue full report (£99)
+                  Issue sealed report (£99)
                 </button>
 
                 <button id="threepack-button" type="button" class="btnAlt btnWide">
@@ -150,6 +148,7 @@
                 </div>
               </div>
             </div>
+
           </div>
         </aside>
 
@@ -160,7 +159,7 @@
     <section class="section" id="agencies">
       <div class="container sectionGrid">
         <div class="sectionHead">
-          <h2>Built for billable client work</h2>
+          <h2>Designed for billable client work</h2>
           <p>
             Use the report to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
             The output is a sealed artefact with a verification path clients can check independently.
@@ -169,12 +168,12 @@
 
         <div class="tiles">
           <article class="tile">
-            <h3>Baseline before work</h3>
-            <p>Capture a timestamped record before changes so scope and outcomes are defensible.</p>
+            <h3>Pre-project baseline</h3>
+            <p>Capture a timestamped record before work begins so scope and outcomes are defensible.</p>
           </article>
           <article class="tile">
-            <h3>Risk & compliance discussion</h3>
-            <p>Document policies, consent indicators, and tracking signals without vague claims.</p>
+            <h3>Compliance discussion</h3>
+            <p>Summarise policies, consent indicators, and tracking signals without vague claims.</p>
           </article>
           <article class="tile">
             <h3>Due diligence snapshot</h3>

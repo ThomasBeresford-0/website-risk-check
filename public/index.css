@@ -1,17 +1,18 @@
-/* public/index.css?v=8
-   UPGRADE — dark band stays, remove cheap “bubble chips”, tighten console UI.
+/* public/index.css?v=10
+   FULL RAMBO: aligned hero + clear “what this does” messaging + money-first copy.
+   - Dark header kept
+   - No chips/bubbles
+   - Left side reads like a service deliverable, not a template
 */
 
 :root{
   --ink:#0b1220;
   --ink2:#111a2b;
-  --muted:#54637a;
 
   --band:#0b1220;
   --band2:#0e1730;
 
   --paper:#f6f7fb;
-  --sheet:#ffffff;
 
   --line: rgba(15,23,42,.12);
   --line2: rgba(15,23,42,.18);
@@ -37,10 +38,8 @@ body{
   margin: 0 auto;
   padding: 0 26px;
 }
-
 .sectionGrid.narrow{ max-width: 920px; margin: 0 auto; }
 
-/* Skip link */
 .skipLink{
   position:absolute;
   left:-999px;
@@ -58,7 +57,6 @@ body{
   background: linear-gradient(180deg, var(--band), var(--band2));
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
-
 .topBandInner{
   height: 78px;
   display:flex;
@@ -66,7 +64,6 @@ body{
   justify-content:space-between;
   gap: 18px;
 }
-
 .brand{
   display:flex;
   align-items:center;
@@ -131,11 +128,9 @@ body{
 
 /* HERO */
 .hero{
-  padding: 42px 0 26px;
+  padding: 44px 0 26px;
   position: relative;
 }
-
-/* Paper surface behind hero */
 .hero::before{
   content:"";
   position:absolute;
@@ -143,8 +138,8 @@ body{
   top:0;
   height: 320px;
   background:
-    radial-gradient(1200px 360px at 10% 0%, rgba(255,255,255,.55), rgba(255,255,255,0)),
-    radial-gradient(1100px 420px at 90% 0%, rgba(255,255,255,.45), rgba(255,255,255,0));
+    radial-gradient(1200px 360px at 12% 0%, rgba(255,255,255,.58), rgba(255,255,255,0)),
+    radial-gradient(1100px 420px at 88% 0%, rgba(255,255,255,.46), rgba(255,255,255,0));
   pointer-events:none;
   opacity: .85;
 }
@@ -152,84 +147,83 @@ body{
 .heroGrid{
   position: relative;
   display:grid;
-  grid-template-columns: 1.05fr .95fr;
+  grid-template-columns: 1.06fr .94fr;
   gap: 22px;
-  align-items:start;
+  align-items:start; /* key: baseline alignment */
 }
 
-/* LEFT */
+/* LEFT — aligned to console top */
 .heroLeft{
-  padding: 10px 2px 0;
+  padding-top: 0; /* alignment fix */
 }
 
-.stampRow{
-  display:flex;
-  align-items:center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.stamp{
+.eyebrow{
   display:inline-flex;
   align-items:center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(11,18,32,.92);
-  color: #fff;
+  gap: 10px;
+  font-size: 12.5px;
   font-weight: 950;
-  font-size: 12px;
-  letter-spacing: .06em;
+  color: rgba(11,18,32,.66);
+  letter-spacing: .02em;
+  margin-top: 2px; /* nudges into alignment */
 }
-.stampMeta{
-  color: rgba(11,18,32,.65);
-  font-weight: 800;
-  font-size: 13px;
+.eyedot{
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(11,18,32,.55);
 }
 
 .headline{
-  margin: 0 0 10px;
+  margin: 12px 0 10px;
   font-size: 52px;
   line-height: 1.03;
-  letter-spacing: -1.4px;
+  letter-spacing: -1.35px;
   color: var(--ink);
-  max-width: 20ch;
+  max-width: 22ch;
 }
 .lead{
-  margin: 0;
+  margin: 0 0 18px;
   font-size: 16.5px;
   line-height: 1.75;
   color: rgba(11,18,32,.72);
-  max-width: 70ch;
+  max-width: 72ch;
 }
 
-.proofGrid{
-  margin-top: 18px;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  max-width: 680px;
+/* “How it works” + “What you receive” (money clarity) */
+.how, .what{
+  border-top: 1px solid rgba(15,23,42,.10);
+  padding-top: 14px;
+  margin-top: 14px;
+  max-width: 760px;
 }
-
-.proofItem{
-  background: rgba(255,255,255,.82);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  padding: 14px 14px;
-  box-shadow: var(--shadowSoft);
-}
-
-.proofK{
-  font-size: 12px;
+.howTitle, .whatTitle{
+  font-size: 13px;
   font-weight: 950;
-  color: rgba(11,18,32,.56);
-  letter-spacing: .02em;
+  color: rgba(11,18,32,.82);
+  letter-spacing: -.1px;
 }
-.proofV{
-  margin-top: 6px;
-  font-size: 13.5px;
+.howSteps{
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: rgba(11,18,32,.74);
+  line-height: 1.7;
+  font-size: 14px;
+}
+.whatList{
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: rgba(11,18,32,.74);
+  line-height: 1.7;
+  font-size: 14px;
+}
+.whatList strong, .howSteps strong{
+  color: rgba(11,18,32,.90);
+}
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 900;
-  color: rgba(11,18,32,.92);
-  letter-spacing: -.2px;
-  line-height: 1.35;
+  font-size: 12.5px;
 }
 
 .finePrint{
@@ -237,10 +231,10 @@ body{
   font-size: 12.5px;
   color: rgba(11,18,32,.58);
   line-height: 1.55;
-  max-width: 70ch;
+  max-width: 72ch;
 }
 
-/* RIGHT CONSOLE */
+/* CONSOLE */
 .console{
   border-radius: var(--r-xl);
   overflow:hidden;
@@ -248,8 +242,25 @@ body{
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
 }
-
 .consoleBody{ padding: 16px 16px 16px; }
+
+/* top line inside console (replaces “Scan console / £99 box”) */
+.consoleTop{
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+}
+.consoleK{
+  font-size: 13px;
+  font-weight: 950;
+  color: rgba(11,18,32,.82);
+}
+.consoleV{
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: rgba(11,18,32,.62);
+  line-height: 1.45;
+}
 
 .fieldLabel{
   display:block;
@@ -261,7 +272,7 @@ body{
 
 .fieldRow{
   display:grid;
-  grid-template-columns: 1fr 180px;
+  grid-template-columns: 1fr 190px;
   gap: 10px;
   align-items:stretch;
 }
@@ -291,7 +302,6 @@ body{
   user-select:none;
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
 }
-
 .btnMain{
   border: 1px solid var(--ink);
   background: var(--ink);
@@ -316,28 +326,17 @@ body{
   color: rgba(11,18,32,.58);
 }
 
-/* COVERAGE — FULL RAMBO: no chips, no bubbles, just clean text */
-.coverage{
-  margin-top: 14px;
+.signalsLine{
+  margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid rgba(15,23,42,.10);
-}
-.coverageInline{
-  display:flex;
-  align-items:baseline;
-  gap: 10px;
-  flex-wrap:wrap;
-}
-.coverageK{
   font-size: 12.5px;
-  font-weight: 950;
-  color: rgba(11,18,32,.62);
+  color: rgba(11,18,32,.64);
+  line-height: 1.55;
 }
-.coverageV{
-  font-size: 13px;
-  font-weight: 800;
-  color: rgba(11,18,32,.78);
-  letter-spacing: -.1px;
+.signalsLine span{
+  color: rgba(11,18,32,.82);
+  font-weight: 850;
 }
 
 /* Preview */
@@ -346,10 +345,7 @@ body{
   padding-top: 14px;
   border-top: 1px solid rgba(15,23,42,.10);
 }
-.previewTop{
-  display:grid;
-  gap: 4px;
-}
+.previewTop{ display:grid; gap: 4px; }
 .previewTitle{
   font-size: 14px;
   font-weight: 950;
@@ -378,35 +374,22 @@ body{
   line-height: 1.45;
 }
 
-.actions{
-  display:grid;
-  gap: 10px;
-}
+.actions{ display:grid; gap: 10px; }
 
 .payNote{
   font-size: 12px;
   color: rgba(11,18,32,.56);
 }
 
-/* SECTIONS */
-.section{
-  padding: 64px 0;
-}
-
+/* SECTIONS (rest unchanged) */
+.section{ padding: 64px 0; }
 .sectionPaper{
   background: rgba(255,255,255,.60);
   border-top: 1px solid rgba(15,23,42,.08);
   border-bottom: 1px solid rgba(15,23,42,.08);
 }
-
-.sectionGrid{
-  display:grid;
-  gap: 18px;
-}
-
-.sectionHead{
-  max-width: 880px;
-}
+.sectionGrid{ display:grid; gap: 18px; }
+.sectionHead{ max-width: 880px; }
 .sectionHead h2{
   margin: 0;
   font-size: 30px;
@@ -432,16 +415,8 @@ body{
   padding: 18px;
   box-shadow: var(--shadowSoft);
 }
-.tile h3{
-  margin:0 0 10px;
-  color: var(--ink);
-  letter-spacing: -.2px;
-}
-.tile p{
-  margin:0;
-  color: rgba(11,18,32,.70);
-  line-height: 1.65;
-}
+.tile h3{ margin:0 0 10px; color: var(--ink); letter-spacing: -.2px; }
+.tile p{ margin:0; color: rgba(11,18,32,.70); line-height: 1.65; }
 
 .twoCol{
   display:grid;
@@ -455,17 +430,8 @@ body{
   padding: 18px;
   box-shadow: var(--shadowSoft);
 }
-.panelK{
-  font-weight: 950;
-  color: var(--ink);
-  letter-spacing: -.1px;
-}
-.panelV{
-  margin-top: 8px;
-  color: rgba(11,18,32,.70);
-  line-height: 1.65;
-  font-size: 14px;
-}
+.panelK{ font-weight: 950; color: var(--ink); letter-spacing: -.1px; }
+.panelV{ margin-top: 8px; color: rgba(11,18,32,.70); line-height: 1.65; font-size: 14px; }
 
 .verifyBox{
   background: rgba(255,255,255,.90);
@@ -488,10 +454,7 @@ body{
   color: rgba(11,18,32,.60);
   min-width: 160px;
 }
-.verifyV{
-  color: rgba(11,18,32,.80);
-  line-height: 1.55;
-}
+.verifyV{ color: rgba(11,18,32,.80); line-height: 1.55; }
 .verifyV code{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 12.5px;
@@ -516,7 +479,6 @@ body{
   font-size: 14px;
 }
 
-/* FAQ */
 .qa{
   border: 1px solid rgba(15,23,42,.10);
   border-radius: var(--r-lg);
@@ -539,7 +501,6 @@ body{
 .qa summary::-webkit-details-marker{ display:none; }
 .qa summary::after{ content:"+"; font-weight: 900; color: rgba(15,23,42,.55); }
 .qa[open] summary::after{ content:"–"; }
-
 .qaBody{
   padding: 0 14px 14px;
   font-size: 13.5px;
@@ -547,40 +508,24 @@ body{
   line-height: 1.7;
 }
 
-/* FOOTER */
 .footer{
   border-top: 1px solid rgba(15,23,42,.10);
   padding: 54px 0;
   background: rgba(255,255,255,.72);
 }
-.footerInner{
-  display:flex;
-  justify-content:center;
-  text-align:center;
-}
-.footerBrand{
-  font-weight: 950;
-  letter-spacing: -.2px;
-  color: var(--ink);
-}
-.footerTag{
-  font-size: 13px;
-  color: rgba(11,18,32,.64);
-  margin-top: 6px;
-  line-height: 1.55;
-}
+.footerInner{ display:flex; justify-content:center; text-align:center; }
+.footerBrand{ font-weight: 950; letter-spacing: -.2px; color: var(--ink); }
+.footerTag{ font-size: 13px; color: rgba(11,18,32,.64); margin-top: 6px; line-height: 1.55; }
 
-/* RESPONSIVE */
+/* Responsive */
 @media (max-width: 1060px){
   .topNav{ display:none; }
   .heroGrid{ grid-template-columns: 1fr; }
   .headline{ font-size: 44px; max-width: 24ch; }
   .fieldRow{ grid-template-columns: 1fr; }
-  .proofGrid{ grid-template-columns: 1fr; }
   .tiles{ grid-template-columns: 1fr; }
   .twoCol{ grid-template-columns: 1fr; }
 }
-
 @media (max-width: 560px){
   .headline{ font-size: 36px; }
   .topBandInner{ height:auto; padding: 14px 0; }

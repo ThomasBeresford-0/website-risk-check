@@ -16,13 +16,16 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
+  <!-- Canonical -->
   <link rel="canonical" href="https://websiteriskcheck.com/" />
 
+  <!-- Social -->
   <meta property="og:title" content="Website Risk Check — sealed, verifiable website snapshots" />
   <meta property="og:description" content="Run a free structured preview. Purchase a sealed PDF snapshot with permanent share link and public verification." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://websiteriskcheck.com/" />
 
+  <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -30,6 +33,7 @@
     rel="stylesheet"
   >
 
+  <!-- Global site CSS -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <link rel="stylesheet" href="/index.css?v=11" />
 </head>
@@ -144,7 +148,7 @@
                 Results will appear below. Checkout unlocks the sealed PDF + verification.
               </div>
 
-              <!-- ✅ HERO CHECKOUT BUTTONS (BACK) -->
+              <!-- ✅ HERO ACTIONS (pushed DOWN via CSS, so no dead space under them) -->
               <div id="heroActions" class="heroActions" aria-label="Checkout actions">
                 <!-- IMPORTANT: Only ONE set of these IDs on the page (app.js expects them) -->
                 <button id="pay-button" type="button" class="btnMain btnWide" disabled>
@@ -191,7 +195,7 @@
           <div id="findings" aria-label="Preview highlights"></div>
         </div>
 
-        <!-- ✅ RESULTS CTA (ONLY AFTER SCAN) — proxies hero buttons -->
+        <!-- ✅ RESULTS BUTTONS: DO NOT SHOW until scan completes -->
         <div id="resultsActions" class="resultsActions" aria-label="Checkout actions" hidden>
           <button id="results-pay-proxy" type="button" class="btnMain btnWide" disabled>
             Download full PDF report (£99)
@@ -349,7 +353,7 @@
 
   <script src="/app.js?v=5" defer></script>
 
-  <!-- ✅ UX glue (front-end only): show results buttons after scan + proxy clicks + sync disabled state -->
+  <!-- ✅ UX glue (front-end only): show results CTAs only after scan + proxy clicks + sync disabled state -->
   <script>
   (function(){
     const preview = document.getElementById('preview');
@@ -362,13 +366,15 @@
     const proxyPay = document.getElementById('results-pay-proxy');
     const proxyThree = document.getElementById('results-threepack-proxy');
 
-    function setResultsVisibleAfterScan(){
-      // app.js flips preview to display:block/none; we treat “visible preview” as “scan completed”
-      const isVisible = preview && preview.style && preview.style.display !== 'none';
-      if (isVisible){
-        if (resultsEmpty) resultsEmpty.style.display = 'none';
-        if (resultsActions) resultsActions.hidden = false;
-      }
+    function scanComplete(){
+      // Treat "preview visible" as completion (app.js flips display)
+      return preview && preview.style && preview.style.display !== 'none';
+    }
+
+    function applyVisibility(){
+      const done = scanComplete();
+      if (resultsEmpty) resultsEmpty.style.display = done ? 'none' : '';
+      if (resultsActions) resultsActions.hidden = !done;
     }
 
     function syncDisabled(){
@@ -378,26 +384,19 @@
     }
 
     function wireProxyClicks(){
-      if (proxyPay && heroPay){
-        proxyPay.addEventListener('click', () => heroPay.click());
-      }
-      if (proxyThree && heroThree){
-        proxyThree.addEventListener('click', () => heroThree.click());
-      }
+      if (proxyPay && heroPay) proxyPay.addEventListener('click', () => heroPay.click());
+      if (proxyThree && heroThree) proxyThree.addEventListener('click', () => heroThree.click());
     }
 
     wireProxyClicks();
+    applyVisibility();
     syncDisabled();
 
-    // Observe the preview element for style changes (scan completion)
     if (preview){
-      const obs = new MutationObserver(() => {
-        setResultsVisibleAfterScan();
-      });
+      const obs = new MutationObserver(() => applyVisibility());
       obs.observe(preview, { attributes: true, attributeFilter: ['style', 'class'] });
     }
 
-    // Observe hero buttons for enabled/disabled changes (checkout unlock)
     if (heroPay){
       const obsBtn = new MutationObserver(syncDisabled);
       obsBtn.observe(heroPay, { attributes: true, attributeFilter: ['disabled'] });
@@ -407,11 +406,8 @@
       obsBtn2.observe(heroThree, { attributes: true, attributeFilter: ['disabled'] });
     }
 
-    // Fallback tick (covers any edge cases where app.js mutates without style attr changes)
-    setInterval(() => {
-      setResultsVisibleAfterScan();
-      syncDisabled();
-    }, 500);
+    // Fallback tick
+    setInterval(() => { applyVisibility(); syncDisabled(); }, 500);
   })();
   </script>
 </body>

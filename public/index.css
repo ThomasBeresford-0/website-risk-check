@@ -1,8 +1,8 @@
 /* public/index.css?v=11
    Alignment + stronger headline.
-   - Hero buttons restored (no dead whitespace)
-   - Everything below “Designed for billable client work” centered
-   - Results buttons appear only after scan
+   - Hero checkout buttons pushed to bottom (no dead space below)
+   - Center everything from “Designed for billable client work” down
+   - Results buttons hidden until scan completes (HTML controls visibility)
 */
 
 :root{
@@ -153,9 +153,7 @@ body{
 }
 
 /* LEFT */
-.heroLeft{
-  padding-top: 0;
-}
+.heroLeft{ padding-top: 0; }
 
 .eyebrow{
   display:inline-flex;
@@ -226,9 +224,8 @@ body{
 }
 
 /* RIGHT (CONSOLE) */
-.heroRight{
-  margin-top: 26px;
-}
+.heroRight{ margin-top: 26px; }
+
 .console{
   border-radius: var(--r-xl);
   overflow:hidden;
@@ -249,7 +246,7 @@ body{
 .scanForm{
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 1; /* lets us push heroActions downward */
 }
 
 .consoleTop{
@@ -346,7 +343,6 @@ body{
   font-weight: 850;
 }
 
-/* ✅ HERO ACTIONS (no dead whitespace) */
 .consoleHint{
   margin-top: 12px;
   font-size: 12.5px;
@@ -354,17 +350,16 @@ body{
   line-height: 1.55;
 }
 
+/* ✅ HERO ACTIONS: push them down to kill dead space underneath */
 .heroActions{
-  margin-top: 14px;
+  margin-top: auto;                 /* 👈 key change */
   padding-top: 14px;
   border-top: 1px solid rgba(15,23,42,.10);
   display: grid;
   gap: 10px;
 }
 
-.heroActions .payNote{
-  text-align: center;
-}
+.heroActions .payNote{ text-align: center; }
 
 .payNote{
   font-size: 12px;
@@ -508,12 +503,10 @@ body{
 .footerTag{ font-size: 13px; color: rgba(11,18,32,.64); margin-top: 6px; line-height: 1.55; }
 
 /* =========================
-   RESULTS (FULL WIDTH)
+   RESULTS
 ========================= */
 
-.resultsSection{
-  padding: 10px 0 64px;
-}
+.resultsSection{ padding: 10px 0 64px; }
 
 .resultsHead{
   margin-top: 6px;
@@ -561,10 +554,7 @@ body{
   text-align: left;
 }
 
-.resultsEmptyTitle{
-  font-weight: 950;
-  color: rgba(11,18,32,.90);
-}
+.resultsEmptyTitle{ font-weight: 950; color: rgba(11,18,32,.90); }
 
 .resultsEmptyText{
   margin-top: 6px;
@@ -589,13 +579,12 @@ body{
   text-align: center;
 }
 
-.resultsActions .btnWide{
-  width: 100%;
-  height: 50px;
-}
+.resultsActions .btnWide{ width: 100%; height: 50px; }
+.resultsActions .payNote{ text-align: center; }
 
-.resultsActions .payNote{
-  text-align: center;
+@media (max-width: 560px){
+  .resultsTitle{ font-size: 22px; }
+  .resultsActions{ max-width: none; }
 }
 
 /* =========================
@@ -633,12 +622,9 @@ body{
   justify-content: center;
   text-align: center;
 }
-.sectionCentered .verifyK{
-  min-width: 0;
-}
-.sectionCentered .verifyV{
-  text-align: center;
-}
+
+.sectionCentered .verifyK{ min-width: 0; }
+.sectionCentered .verifyV{ text-align: center; }
 
 .sectionCentered .methodBox ul{
   list-style-position: inside;
@@ -667,4 +653,5 @@ body{
   .topBandInner{ height:auto; padding: 14px 0; }
   .topCtas{ width:100%; justify-content:flex-end; }
   .verifyRow{ flex-direction:column; }
+  .verifyK{ min-width: 0; }
 }

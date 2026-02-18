@@ -865,6 +865,91 @@ body{
   border-radius: 12px;
 }
 
+/* =========================
+   RESULTS (FULL WIDTH)
+========================= */
+
+.consoleHint{
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: rgba(11,18,32,.60);
+  line-height: 1.55;
+}
+
+.resultsSection{
+  padding: 10px 0 64px;
+}
+
+.resultsHead{
+  margin-top: 6px;
+  margin-bottom: 14px;
+  max-width: 860px;
+}
+
+.resultsKicker{
+  font-size: 12px;
+  font-weight: 950;
+  color: rgba(11,18,32,.62);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.resultsTitle{
+  margin: 8px 0 8px;
+  font-size: 26px;
+  letter-spacing: -.6px;
+  color: var(--ink);
+}
+
+.resultsSub{
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: rgba(11,18,32,.70);
+  max-width: 78ch;
+}
+
+.resultsEmpty{
+  border: 1px dashed rgba(15,23,42,.18);
+  background: rgba(255,255,255,.82);
+  border-radius: var(--r-xl);
+  padding: 16px 16px;
+  box-shadow: var(--shadowSoft);
+  max-width: 920px;
+}
+
+.resultsEmptyTitle{
+  font-weight: 950;
+  color: rgba(11,18,32,.90);
+}
+
+.resultsEmptyText{
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: rgba(11,18,32,.70);
+  line-height: 1.65;
+}
+
+.previewWide{
+  margin-top: 14px;
+}
+
+.resultsActions{
+  margin-top: 14px;
+  display:grid;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.resultsActions .btnWide{
+  height: 50px;
+}
+
+@media (max-width: 560px){
+  .resultsTitle{ font-size: 22px; }
+  .resultsActions{ max-width: none; }
+}
+
 /* Collapsible technical details */
 .wrcDetails{
   margin-top: 10px;

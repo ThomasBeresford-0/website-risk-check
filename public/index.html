@@ -9,7 +9,6 @@
     name="description"
     content="Enter a website URL, get a structured risk preview, then purchase a sealed, verifiable PDF snapshot with a permanent share link and public verification."
   />
-
   <meta name="theme-color" content="#0b1220" />
 
   <link rel="icon" href="/favicon.ico" sizes="any">
@@ -116,7 +115,7 @@
           <div class="consoleBody">
             <div class="consoleTop">
               <div class="consoleK">Free structured preview</div>
-              <div class="consoleV">Full sealed PDF: <strong>£99</strong> · 3 reports: <strong>£199</strong></div>
+              <div class="consoleV">Full sealed PDF: <strong>£99</strong> · Best value: <strong>3 reports £199</strong></div>
             </div>
 
             <form id="check-form" class="scanForm" autocomplete="off" novalidate>
@@ -143,38 +142,56 @@
               <div class="signalsLine" aria-label="Signals assessed">
                 Signals assessed: <span>Policies</span> · <span>Consent</span> · <span>Trackers</span> · <span>Forms</span> · <span>Accessibility</span> · <span>Coverage</span>
               </div>
+
+              <div class="consoleHint">
+                Results will appear below. Checkout unlocks the sealed PDF + verification.
+              </div>
             </form>
-
-            <!-- Preview (shell + highlights injected by app.js) -->
-            <div id="preview" class="preview" aria-live="polite" aria-label="Free preview results" style="display:none;">
-              <div class="previewTop">
-                <div class="previewTitle">Free preview results</div>
-                <div class="previewHint">
-                  This is a limited preview. The paid report generates a sealed PDF, permanent share link, and public verification page.
-                </div>
-              </div>
-
-              <!-- app.js replaces this with “Preview highlights” + collapsible technical details -->
-              <div id="findings" aria-label="Preview highlights"></div>
-              
-              <div class="actions">
-                <button id="pay-button" type="button" class="btnMain btnWide">
-                  Download full PDF report (£99)
-                </button>
-
-                <button id="threepack-button" type="button" class="btnAlt btnWide">
-                  Best value: 3 reports (£199)
-                </button>
-
-                <div class="payNote">
-                  Secure checkout via Stripe · One-time payment · No subscription
-                </div>
-              </div>
-            </div>
-
           </div>
         </aside>
 
+      </div>
+    </section>
+
+    <!-- RESULTS (FULL WIDTH) -->
+    <section class="resultsSection" id="results" aria-label="Scan results">
+      <div class="container">
+        <div class="resultsHead">
+          <div class="resultsKicker">Results</div>
+          <h2 class="resultsTitle">Free preview results</h2>
+          <p class="resultsSub">
+            Run a scan to populate a client-safe preview. The sealed report generates an immutable PDF, permanent share link, and public verification page.
+          </p>
+        </div>
+
+        <!-- Empty state (visible until first scan) -->
+        <div id="resultsEmpty" class="resultsEmpty" aria-live="polite">
+          <div class="resultsEmptyTitle">No scan yet</div>
+          <div class="resultsEmptyText">
+            Enter a website URL above and click <strong>Run free scan</strong>.
+            Your preview will render here, full-width.
+          </div>
+        </div>
+
+        <!-- Preview (app.js injects premium shell + highlights) -->
+        <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results" style="display:none;">
+          <!-- app.js injects the premium shell before #findings -->
+          <ul id="findings" class="findings" aria-label="Preview highlights"></ul>
+
+          <div class="resultsActions" aria-label="Checkout actions">
+            <button id="pay-button" type="button" class="btnMain btnWide" disabled>
+              Download full PDF report (£99)
+            </button>
+
+            <button id="threepack-button" type="button" class="btnAlt btnWide" disabled>
+              Best value: 3 reports (£199)
+            </button>
+
+            <div class="payNote">
+              Secure checkout via Stripe · One-time payment · No subscription
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -317,6 +334,6 @@
 
   </main>
 
-  <script src="app.js?v=5" defer></script>
+  <script src="/app.js?v=5" defer></script>
 </body>
 </html>

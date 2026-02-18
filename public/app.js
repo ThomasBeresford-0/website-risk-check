@@ -784,6 +784,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const payButton = document.getElementById("pay-button");
   const threepackButton = document.getElementById("threepack-button");
+  const heroActions = document.getElementById("heroActions");
 
   let scannedUrl = null;
   let isScanning = false;
@@ -827,6 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial state
   setPayButtonsEnabled(false);
   resetPayButtonsText();
+  if (heroActions) heroActions.hidden = true;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -919,6 +921,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       preview.style.display = "block";
       setPayButtonsEnabled(true);
+      if (heroActions) heroActions.hidden = false;
 
       try {
         (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" });

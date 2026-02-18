@@ -127,7 +127,7 @@ body{
 
 /* HERO */
 .hero{
-  padding: 44px 0 26px;
+  padding: 32px 0 20px;
   position: relative;
 }
 .hero::before{
@@ -135,7 +135,7 @@ body{
   position:absolute;
   left:0; right:0;
   top:0;
-  height: 320px;
+  height: 220px;
   background:
     radial-gradient(1200px 360px at 12% 0%, rgba(255,255,255,.58), rgba(255,255,255,0)),
     radial-gradient(1100px 420px at 88% 0%, rgba(255,255,255,.46), rgba(255,255,255,0));
@@ -332,12 +332,14 @@ body{
 .btnWide{ width:100%; height: 46px; }
 
 .heroActions{
-  margin-top: auto;       /* ✅ pushes to bottom of hero console */
+  margin-top: 14px; /* ✅ no more huge middle gap */
   padding-top: 14px;
   border-top: 1px solid rgba(15,23,42,.10);
   display: grid;
   gap: 10px;
 }
+
+.heroActions[hidden]{ display:none !important; }
 
 .heroActions .payNote{
   text-align: center;

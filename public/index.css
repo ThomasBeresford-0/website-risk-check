@@ -327,17 +327,27 @@ body{
   color: rgba(11,18,32,.58);
 }
 
+/* ✅ UPDATED: Signals line — quiet + editorial (no dot list vibe)
+   NOTE: update your HTML to:
+   <div class="signalsLine" aria-label="Signals assessed">
+     <span class="signalsLabel">Coverage includes:</span>
+     <span class="signalsItems">Policies, consent, trackers, forms, accessibility.</span>
+   </div>
+*/
 .signalsLine{
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid rgba(15,23,42,.10);
   font-size: 12.5px;
-  color: rgba(11,18,32,.64);
-  line-height: 1.55;
+  color: rgba(11,18,32,.62);
+  line-height: 1.5;
 }
-.signalsLine span{
-  color: rgba(11,18,32,.82);
-  font-weight: 850;
+.signalsLabel{
+  font-weight: 950;
+  color: rgba(11,18,32,.78);
+}
+.signalsItems{
+  color: rgba(11,18,32,.62);
 }
 
 .consoleHint{
@@ -399,6 +409,7 @@ body{
   margin-right: auto;
 }
 
+/* ✅ UPDATED: Empty state centered */
 .resultsEmpty{
   border: 1px dashed rgba(15,23,42,.18);
   background: rgba(255,255,255,.82);
@@ -408,7 +419,13 @@ body{
   max-width: 920px;
   margin-left: auto;
   margin-right: auto;
-  text-align: left;
+  text-align: center;
+}
+.resultsEmptyTitle{
+  text-align: center;
+}
+.resultsEmptyText{
+  text-align: center;
 }
 
 .previewWide{

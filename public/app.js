@@ -1,11 +1,11 @@
 // public/app.js
-// FULL RAMBO — elite audit-style preview renderer + locked conversion flow (single + 3-pack)
-// ✅ Consumes structured /preview-scan payload { ok, meta, coverage, signals, risk }
-// ✅ Backwards-compatible with legacy flat payloads.
-// ✅ No inline styles — relies on index.css classes.
-// ✅ Renders: FREE PREVIEW banner + paywall box + risk badge + drivers + evidence cards + coverage log + limitations.
-// ✅ Findings: highlights only (max 5) + collapsible technical details (no more ugly dump).
-// ✅ Proposal Mode: captures prepared_for / project / scope_note and passes into checkout endpoints.
+// FULL RAMBO — boutique audit-style preview renderer + locked conversion flow (single + 3-pack)
+// ✅ Structured payload { ok, meta, coverage, signals, risk } + legacy compat
+// ✅ No alerts — inline notice only
+// ✅ No inline styles — relies on index.css classes
+// ✅ Renders: premium preview shell + risk badge + drivers + evidence + coverage + limitations
+// ✅ Findings: client-safe highlights (max 5) + collapsible technical details
+// ✅ Proposal Mode: prepared_for / project / scope_note passed into checkout endpoints
 
 function getSid() {
   const key = "wrc_sid";
@@ -92,7 +92,6 @@ function escapeHtml(s = "") {
 }
 
 function formatUtc(tsLike) {
-  // Accept ISO string, seconds, or ms. Render: "18 Feb 2026, 20:04 UTC"
   const raw = safeStr(tsLike).trim();
   if (!raw) return "—";
 
@@ -136,7 +135,6 @@ function getProposalPayload(formEl) {
   const scope_note =
     safeStr(formEl.querySelector('input[name="scope_note"]')?.value).trim();
 
-  // Keep payload deterministic and small
   return {
     prepared_for: prepared_for.slice(0, 120),
     project: project.slice(0, 120),
@@ -194,7 +192,6 @@ function hideNotice(previewEl) {
 ========================= */
 
 function normalizePreviewPayload(data, fallbackUrl) {
-  // Structured response (new)
   if (data && data.ok === true && data.meta && data.signals) {
     const meta = data.meta || {};
     const cov = data.coverage || {};
@@ -202,7 +199,6 @@ function normalizePreviewPayload(data, fallbackUrl) {
     const risk = data.risk || {};
 
     return {
-      // meta
       url: safeStr(meta.url) || safeStr(fallbackUrl),
       hostname:
         safeStr(meta.hostname) ||
@@ -211,14 +207,12 @@ function normalizePreviewPayload(data, fallbackUrl) {
       scanId: safeStr(meta.scanId),
       https: bool(meta.https),
 
-      // risk
       riskLevel: safeStr(risk.level) || "Medium",
       riskScore: num(risk.score, 0),
       riskReasons: safeArr(risk.reasons)
         .map((s) => safeStr(s))
         .filter(Boolean),
 
-      // coverage
       checkedPages: safeArr(cov.checkedPages),
       failedPages: safeArr(cov.failedPages),
       scanCoverageNotes: safeArr(cov.notes)
@@ -227,7 +221,6 @@ function normalizePreviewPayload(data, fallbackUrl) {
       fetchOk: safeArr(cov.checkedPages).length > 0,
       fetchStatus: num(cov.fetchStatus, 0),
 
-      // signals (compat fields)
       hasPrivacyPolicy: bool(sig?.policies?.privacy),
       hasTerms: bool(sig?.policies?.terms),
       hasCookiePolicy: bool(sig?.policies?.cookies),
@@ -249,7 +242,6 @@ function normalizePreviewPayload(data, fallbackUrl) {
     };
   }
 
-  // Legacy response (old)
   const url = safeStr(data?.url) || safeStr(fallbackUrl);
   return {
     url,
@@ -295,7 +287,7 @@ function normalizePreviewPayload(data, fallbackUrl) {
 }
 
 /* =========================
-   CLIENT-FACING HIGHLIGHTS (FREE PREVIEW)
+   PREVIEW HIGHLIGHTS (CLIENT SAFE)
 ========================= */
 
 function buildHighlightsFromScan(scan) {
@@ -303,93 +295,61 @@ function buildHighlightsFromScan(scan) {
 
   const level = safeStr(scan.riskLevel || "").toLowerCase();
   if (level === "high")
-    highlights.push(
-      "Overall risk is HIGH based on detectable signals and coverage."
-    );
+    highlights.push("Overall risk is HIGH based on detectable signals and coverage.");
   else if (level === "medium")
-    highlights.push(
-      "Overall risk is MEDIUM based on detectable signals and coverage."
-    );
+    highlights.push("Overall risk is MEDIUM based on detectable signals and coverage.");
   else if (level === "low")
-    highlights.push(
-      "Overall risk is LOW based on detectable signals and coverage."
-    );
+    highlights.push("Overall risk is LOW based on detectable signals and coverage.");
 
   const checked = safeArr(scan.checkedPages).length;
   const failed = safeArr(scan.failedPages).length;
 
   if (checked === 0) {
-    highlights.push(
-      "We couldn’t retrieve enough public HTML to generate a reliable preview."
-    );
+    highlights.push("We couldn’t retrieve enough public HTML to generate a reliable preview.");
   } else {
     highlights.push(
-      `Coverage: ${checked} page${checked === 1 ? "" : "s"} checked${
-        failed ? ` • ${failed} failed` : ""
-      }.`
+      `Coverage: ${checked} page${checked === 1 ? "" : "s"} checked${failed ? ` • ${failed} failed` : ""}.`
     );
   }
 
-  if (!scan.hasPrivacyPolicy)
-    highlights.push("Privacy policy not detected on scanned surface.");
-  if (!scan.hasTerms)
-    highlights.push("Terms not detected on scanned surface.");
+  if (!scan.hasPrivacyPolicy) highlights.push("Privacy policy not detected on scanned surface.");
+  if (!scan.hasTerms) highlights.push("Terms not detected on scanned surface.");
 
-  if (scan.hasCookieBanner)
-    highlights.push("Consent banner indicator detected (heuristic).");
-  else
-    highlights.push(
-      "No consent banner indicator detected on scanned surface (heuristic)."
-    );
+  if (scan.hasCookieBanner) highlights.push("Consent banner indicator detected (heuristic).");
+  else highlights.push("No consent banner indicator detected on scanned surface (heuristic).");
 
   const trackers = safeArr(scan.trackingScriptsDetected)
     .map((s) => safeStr(s))
     .filter(Boolean);
 
-  if (trackers.length)
+  if (trackers.length) {
     highlights.push(
-      `Tracking scripts detected: ${trackers.slice(0, 2).join(", ")}${
-        trackers.length > 2 ? "…" : ""
-      }.`
+      `Tracking scripts detected: ${trackers.slice(0, 2).join(", ")}${trackers.length > 2 ? "…" : ""}.`
     );
-  else highlights.push("No tracking scripts detected on scanned surface.");
+  } else {
+    highlights.push("No tracking scripts detected on scanned surface.");
+  }
 
   return highlights.slice(0, 5);
 }
 
-function renderFindingsFreePreview(findingsEl, scan, rawData) {
-  // findingsEl is a DIV in your new HTML (not a UL)
-  findingsEl.innerHTML = "";
-
-  const wrap = document.createElement("div");
-  wrap.className = "wrcFindingsWrap";
-
-  const head = document.createElement("div");
-  head.className = "wrcFindingsHead";
-  head.innerHTML = `
-    <div class="wrcFindingsTitle">Preview highlights</div>
-    <div class="wrcFindingsHint">Client-safe summary. The sealed PDF contains full register, evidence, and verification.</div>
-  `;
-  wrap.appendChild(head);
-
-  const list = document.createElement("ul");
-  list.className = "findings wrcFindingsTight";
+function renderFindingsFreePreview(findingsUl, scan, rawData) {
+  // findingsUl is <ul id="findings">
+  findingsUl.innerHTML = "";
+  findingsUl.classList.add("wrcFindingsTight");
 
   const highlights = buildHighlightsFromScan(scan);
   highlights.forEach((t) => {
     const li = document.createElement("li");
     li.textContent = safeStr(t);
-    list.appendChild(li);
+    findingsUl.appendChild(li);
   });
 
-  wrap.appendChild(list);
-  findingsEl.appendChild(wrap);
-
-  // Remove any prior technical details (sibling block)
-  const stale = findingsEl.parentNode?.querySelector(".wrcDetails");
+  // Remove any prior technical details block
+  const stale = findingsUl.parentNode?.querySelector(".wrcDetails");
   if (stale) stale.remove();
 
-  // Technical details (collapsed) – sibling block after findingsEl
+  // Technical details (collapsed) inserted after findings
   const checked = safeArr(scan.checkedPages);
   const failed = safeArr(scan.failedPages);
   const notes = safeArr(scan.scanCoverageNotes);
@@ -411,8 +371,8 @@ function renderFindingsFreePreview(findingsEl, scan, rawData) {
   const reasons = safeArr(rawData?.risk?.reasons)
     .map((s) => safeStr(s))
     .filter(Boolean);
-  const fallbackReasons = safeArr(scan.riskReasons);
-  const driverList = reasons.length ? reasons : fallbackReasons;
+
+  const driverList = reasons.length ? reasons : safeArr(scan.riskReasons);
 
   const details = document.createElement("details");
   details.className = "wrcDetails";
@@ -425,15 +385,11 @@ function renderFindingsFreePreview(findingsEl, scan, rawData) {
       <div class="wrcDetailsGrid">
         <div class="wrcDetailsBlock">
           <div class="wrcDetailsK">Checked</div>
-          <div class="wrcDetailsV mono">${
-            checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"
-          }</div>
+          <div class="wrcDetailsV mono">${checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"}</div>
         </div>
         <div class="wrcDetailsBlock">
           <div class="wrcDetailsK">Failed</div>
-          <div class="wrcDetailsV mono">${
-            failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"
-          }</div>
+          <div class="wrcDetailsV mono">${failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"}</div>
         </div>
         <div class="wrcDetailsBlock">
           <div class="wrcDetailsK">Drivers</div>
@@ -465,17 +421,21 @@ function renderFindingsFreePreview(findingsEl, scan, rawData) {
     </div>
   `;
 
-  findingsEl.insertAdjacentElement("afterend", details);
+  findingsUl.insertAdjacentElement("afterend", details);
 }
 
 /* =========================
-   PREMIUM AUDIT PREVIEW SHELL
+   PREMIUM PREVIEW SHELL (inside #preview)
 ========================= */
 
-function ensurePreviewShell(previewEl, findingsEl) {
-  if (previewEl.querySelector("[data-wrc-shell='1']")) return;
+function ensurePreviewShell(previewEl) {
+  // keep notice node, replace the rest
+  const notice = ensureNotice(previewEl);
 
-  const shell = document.createElement("div");
+  let shell = previewEl.querySelector("[data-wrc-shell='1']");
+  if (shell) return shell;
+
+  shell = document.createElement("div");
   shell.setAttribute("data-wrc-shell", "1");
   shell.className = "wrcShell";
 
@@ -537,11 +497,14 @@ function ensurePreviewShell(previewEl, findingsEl) {
       <div id="wrcCoverage" class="wrcCoverage" aria-label="Coverage summary"></div>
       <div id="wrcConfidence" class="wrcConfidence" aria-label="Limitations"></div>
     </section>
-
-    <div class="wrcDivider"></div>
   `;
 
-  findingsEl.parentNode.insertBefore(shell, findingsEl);
+  // Reset preview content but keep notice first
+  previewEl.innerHTML = "";
+  previewEl.appendChild(notice);
+  previewEl.appendChild(shell);
+
+  return shell;
 }
 
 function setRiskBadge(previewEl, level) {
@@ -656,9 +619,7 @@ function renderGrid(previewEl, scan) {
       lines: [
         `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"} (heuristic)`,
         vendors.length
-          ? `Vendors: ${vendors.slice(0, 3).join(", ")}${
-              vendors.length > 3 ? "…" : ""
-            }`
+          ? `Vendors: ${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""}`
           : "Vendors: none detected",
       ],
     },
@@ -668,11 +629,9 @@ function renderGrid(previewEl, scan) {
       tone: trackers.length || vendors.length ? "warn" : "ok",
       lines: [
         trackers.length
-          ? `Scripts: ${trackers.slice(0, 3).join(", ")}${
-              trackers.length > 3 ? "…" : ""
-            }`
+          ? `Scripts: ${trackers.slice(0, 3).join(", ")}${trackers.length > 3 ? "…" : ""}`
           : "Scripts: none detected",
-        vendors.length ? `Vendor signals: ${vendors.length}` : "Vendor signals: 0",
+        `Vendor signals: ${vendors.length}`,
       ],
     },
     {
@@ -713,19 +672,15 @@ function renderGrid(previewEl, scan) {
   for (const c of cells) {
     const card = document.createElement("div");
     card.className = `wrcCard wrcCard--${c.tone}`;
-
     card.innerHTML = `
       <div class="wrcCardTop">
         <div class="wrcCardTitle">${escapeHtml(c.title)}</div>
         <div class="wrcCardPill">${escapeHtml(c.status)}</div>
       </div>
       <div class="wrcCardBody">
-        ${c.lines
-          .map((ln) => `<div class="wrcCardLine">${escapeHtml(ln)}</div>`)
-          .join("")}
+        ${c.lines.map((ln) => `<div class="wrcCardLine">${escapeHtml(ln)}</div>`).join("")}
       </div>
     `;
-
     grid.appendChild(card);
   }
 }
@@ -738,10 +693,7 @@ function renderCoverage(previewEl, scan) {
   const failed = safeArr(scan.failedPages);
   const notes = safeArr(scan.scanCoverageNotes);
 
-  const checkedPaths = checked
-    .map((p) => pathOf(p?.url))
-    .filter(Boolean)
-    .slice(0, 10);
+  const checkedPaths = checked.map((p) => pathOf(p?.url)).filter(Boolean).slice(0, 10);
 
   const failedPaths = failed
     .map((p) => {
@@ -752,10 +704,7 @@ function renderCoverage(previewEl, scan) {
     .filter(Boolean)
     .slice(0, 10);
 
-  const noteItems = notes
-    .map((n) => safeStr(n))
-    .filter(Boolean)
-    .slice(0, 6);
+  const noteItems = notes.map((n) => safeStr(n)).filter(Boolean).slice(0, 6);
 
   box.innerHTML = `
     <div class="wrcCoverageTop">
@@ -766,16 +715,12 @@ function renderCoverage(previewEl, scan) {
     <div class="wrcCoverageGrid">
       <div class="wrcCoverageBlock">
         <div class="wrcCoverageK">Checked</div>
-        <div class="wrcCoverageV mono">${
-          checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"
-        }</div>
+        <div class="wrcCoverageV mono">${checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"}</div>
       </div>
 
       <div class="wrcCoverageBlock">
         <div class="wrcCoverageK">Failed</div>
-        <div class="wrcCoverageV mono">${
-          failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"
-        }</div>
+        <div class="wrcCoverageV mono">${failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"}</div>
       </div>
 
       <div class="wrcCoverageBlock">
@@ -783,9 +728,7 @@ function renderCoverage(previewEl, scan) {
         <div class="wrcCoverageV">
           ${
             noteItems.length
-              ? `<ul class="wrcList">${noteItems
-                  .map((x) => `<li>${escapeHtml(x)}</li>`)
-                  .join("")}</ul>`
+              ? `<ul class="wrcList">${noteItems.map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
               : `<div class="wrcEmpty">No additional coverage notes were recorded for this scan.</div>`
           }
         </div>
@@ -827,7 +770,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("check-form");
   const input = document.getElementById("url-input");
   const preview = document.getElementById("preview");
-  const findingsEl = document.getElementById("findings");
+  const findingsUl = document.getElementById("findings");
   const resultsSection = document.getElementById("results");
   const resultsEmpty = document.getElementById("resultsEmpty");
 
@@ -835,7 +778,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const threepackButton = document.getElementById("threepack-button");
   const resultsActions = document.getElementById("resultsActions");
 
-  if (!form || !input || !preview || !findingsEl || !payButton) return;
+  if (!form || !input || !preview || !findingsUl || !payButton) return;
 
   let scannedUrl = null;
   let isScanning = false;
@@ -847,11 +790,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function setPayButtonsEnabled(enabled) {
     payButton.disabled = !enabled;
     if (threepackButton) threepackButton.disabled = !enabled;
-  }
-
-  function resetPayButtonsText() {
-    payButton.textContent = "Download sealed PDF report (£99)";
-    if (threepackButton) threepackButton.textContent = "Best value: 3 reports (£199)";
   }
 
   function setScanningUi(isBusy) {
@@ -874,12 +812,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Initial state: results are hidden, pay buttons disabled, resultsActions hidden
+  function resetActions() {
+    findingsUl.innerHTML = "";
+    const stale = findingsUl.parentNode?.querySelector(".wrcDetails");
+    if (stale) stale.remove();
+  }
+
+  // Initial state
   preview.style.display = "none";
   if (resultsEmpty) resultsEmpty.style.display = "block";
   if (resultsActions) resultsActions.hidden = true;
   setPayButtonsEnabled(false);
-  resetPayButtonsText();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -887,21 +830,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const url = normalizeInputUrl(input.value);
     if (!url) {
-      // preview is hidden initially, so we need to show it briefly for inline notice container
       preview.style.display = "block";
-      showNotice(
-        preview,
-        "warn",
-        "Enter a website URL",
-        "Type a domain (e.g. example.com) and run the free scan."
-      );
-      try {
-        (resultsSection || preview).scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      } catch {}
-      // don't show actions
+      ensurePreviewShell(preview);
+      showNotice(preview, "warn", "Enter a website URL", "Type a domain (e.g. example.com) and run the free scan.");
       if (resultsActions) resultsActions.hidden = true;
       setPayButtonsEnabled(false);
       return;
@@ -911,21 +842,17 @@ document.addEventListener("DOMContentLoaded", () => {
     scannedUrl = url;
 
     track("preview_started", {});
-
-    // Reset UI
-    if (resultsEmpty) resultsEmpty.style.display = "none";
-    if (resultsActions) resultsActions.hidden = true; // MUST stay hidden until scan completes
-    setPayButtonsEnabled(false);
-    resetPayButtonsText();
     setScanningUi(true);
 
-    findingsEl.innerHTML = "";
-    preview.style.display = "block"; // show container so notice/shell can render
+    // Reset UI
+    resetActions();
+    preview.style.display = "block";
+    ensurePreviewShell(preview);
     hideNotice(preview);
 
-    // Remove any previous technical details
-    const staleDetails = findingsEl.parentNode?.querySelector(".wrcDetails");
-    if (staleDetails) staleDetails.remove();
+    if (resultsEmpty) resultsEmpty.style.display = "none";
+    if (resultsActions) resultsActions.hidden = true; // stay hidden until success
+    setPayButtonsEnabled(false);
 
     try {
       const res = await fetch("/preview-scan", {
@@ -941,29 +868,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!res.ok) {
-        showNotice(
-          preview,
-          "err",
-          "Preview unavailable",
-          "We couldn’t generate a preview for that URL. Please double-check the address and try again."
-        );
+        showNotice(preview, "err", "Preview unavailable", "We couldn’t generate a preview for that URL. Please check the address and try again.");
         track("preview_failed", { status: res.status });
         return;
       }
 
       const data = await res.json();
-
-      ensurePreviewShell(preview, findingsEl);
-
       const scan = normalizePreviewPayload(data, url);
 
       if (scan.fetchOk === false || safeArr(scan.checkedPages).length === 0) {
-        showNotice(
-          preview,
-          "warn",
-          "Limited coverage",
-          "We couldn’t retrieve enough public HTML to run a reliable preview. Try again, verify the URL, or test a different page."
-        );
+        showNotice(preview, "warn", "Limited coverage", "We couldn’t retrieve enough public HTML to run a reliable preview. Try again, verify the URL, or test a different page.");
       } else {
         hideNotice(preview);
       }
@@ -976,22 +890,14 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCoverage(preview, scan);
       renderConfidence(preview, scan);
 
-      // Remove old details again (in case shell exists already)
-      const oldDetails = findingsEl.parentNode?.querySelector(".wrcDetails");
-      if (oldDetails) oldDetails.remove();
+      renderFindingsFreePreview(findingsUl, scan, data);
 
-      renderFindingsFreePreview(findingsEl, scan, data);
-
-      // Show results + enable checkout
-      if (resultsEmpty) resultsEmpty.style.display = "none";
+      // Enable checkout + reveal actions
       setPayButtonsEnabled(true);
       if (resultsActions) resultsActions.hidden = false;
 
       try {
-        (resultsSection || preview).scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" });
       } catch {}
 
       track("preview_completed", {
@@ -1018,7 +924,6 @@ document.addEventListener("DOMContentLoaded", () => {
     hideNotice(preview);
 
     const proposal = getProposalPayload(form);
-
     track("checkout_started", { kind: "single" });
 
     try {
@@ -1069,7 +974,6 @@ document.addEventListener("DOMContentLoaded", () => {
       hideNotice(preview);
 
       const proposal = getProposalPayload(form);
-
       track("checkout_started", { kind: "threepack" });
 
       try {

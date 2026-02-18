@@ -7,6 +7,9 @@
    ✅ Results actions truly hidden until scan
 */
 
+/* =========================
+   TOKENS
+========================= */
 :root{
   /* Paper + ink */
   --paper: #f4f2ed;           /* warm paper */
@@ -46,6 +49,9 @@ body{
     linear-gradient(180deg, var(--paper2), var(--paper));
 }
 
+a{ color: inherit; }
+img{ max-width: 100%; height: auto; display:block; }
+
 .container{
   max-width: 1160px;
   margin: 0 auto;
@@ -77,17 +83,22 @@ body{
 /* =========================
    HEADER (boutique / light)
 ========================= */
-.siteHeader{
+/* supports both <header class="topBand"> (old) and <header class="siteHeader"> (new) */
+.siteHeader,
+.topBand{
   position: sticky;
   top: 0;
   z-index: 80;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  background: rgba(244,242,237,.72);
+  background:
+    linear-gradient(180deg, rgba(47,93,80,.16), rgba(244,242,237,.72)),
+    rgba(244,242,237,.72);
   border-bottom: 1px solid rgba(15,23,42,.10);
 }
 
-.headerInner{
+.headerInner,
+.topBandInner{
   height: 74px;
   display:flex;
   align-items:center;
@@ -115,6 +126,7 @@ body{
   box-shadow: var(--shadowSoft);
 }
 
+/* if you don't have brandMark wrapper, this still looks fine */
 .brandLogo{
   width: 18px;
   height: 18px;
@@ -229,14 +241,15 @@ body{
   box-shadow: 0 0 0 3px rgba(47,93,80,.10);
 }
 
+/* headline fit — clamp so it never feels awkward */
 .headline{
   margin: 12px 0 10px;
   font-family: "Playfair Display", ui-serif, Georgia, "Times New Roman", Times, serif;
-  font-size: 54px;
-  line-height: 1.03;
-  letter-spacing: -1.1px;
+  font-size: clamp(38px, 4.2vw, 56px);
+  line-height: 1.08;
+  letter-spacing: -0.6px;
   color: var(--ink);
-  max-width: 24ch;
+  max-width: 18ch;
 }
 
 .lead{
@@ -284,18 +297,17 @@ body{
 }
 .heroBtnGhost:hover{ transform: translateY(-1px); border-color: rgba(15,23,42,.22); }
 
+/* supports both heroMeta (new) and heroValueGrid/cards (old) */
 .heroMeta{
   display:grid;
   gap: 10px;
   max-width: 760px;
   margin-top: 4px;
 }
-
 .metaItem{
   border-left: 2px solid rgba(47,93,80,.45);
   padding-left: 12px;
 }
-
 .metaK{
   font-size: 12px;
   font-weight: 950;
@@ -303,12 +315,39 @@ body{
   text-transform: uppercase;
   color: rgba(11,18,32,.62);
 }
-
 .metaV{
   margin-top: 4px;
   font-size: 14px;
   color: rgba(11,18,32,.72);
   line-height: 1.6;
+}
+
+.heroValueGrid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+  max-width: 760px;
+  margin-top: 8px;
+}
+.heroValueCard{
+  background: rgba(255,255,255,.52);
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: var(--r-xl);
+  padding: 16px;
+  box-shadow: var(--shadowSoft);
+}
+.hvK{
+  font-size: 12px;
+  font-weight: 950;
+  color: rgba(11,18,32,.62);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.hvV{
+  margin-top: 6px;
+  font-size: 13.8px;
+  color: rgba(11,18,32,.72);
+  line-height: 1.55;
 }
 
 .mono{
@@ -416,7 +455,10 @@ body{
   color: #fff;
   box-shadow: 0 16px 26px rgba(15,23,42,.12);
 }
-.btnMain:hover{ transform: translateY(-1px); background: linear-gradient(180deg, rgba(17,26,43,.98), rgba(11,18,32,.94)); }
+.btnMain:hover{
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, rgba(17,26,43,.98), rgba(11,18,32,.94));
+}
 
 .btnAlt{
   border: 1px solid rgba(15,23,42,.16);
@@ -580,9 +622,7 @@ body{
 }
 
 /* ✅ key fix: hidden MUST win */
-.resultsActions[hidden]{
-  display: none !important;
-}
+.resultsActions[hidden]{ display: none !important; }
 
 /* =========================
    SECTIONS
@@ -858,7 +898,6 @@ body{
 @media (max-width: 1060px){
   .topNav{ display:none; }
   .heroGrid{ grid-template-columns: 1fr; }
-  .headline{ font-size: 46px; max-width: 26ch; }
   .heroRight{ margin-top: 10px; }
   .fieldRow{ grid-template-columns: 1fr; }
   .proposalGrid{ grid-template-columns: 1fr; }
@@ -870,8 +909,8 @@ body{
 }
 
 @media (max-width: 560px){
-  .headline{ font-size: 38px; }
-  .headerInner{ height:auto; padding: 12px 0; }
+  .headerInner,
+  .topBandInner{ height:auto; padding: 12px 0; }
   .brand{ min-width: 0; }
   .topCtas{ width:100%; justify-content:flex-end; }
 }

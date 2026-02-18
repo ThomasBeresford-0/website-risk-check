@@ -1,3 +1,4 @@
+<!-- public/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,20 +27,27 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Editorial + modern -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Homepage CSS ONLY (avoid style.css overriding index.css) -->
-  <link rel="stylesheet" href="/index.css?v=12" />
+  <!-- Homepage CSS only -->
+  <link rel="stylesheet" href="/index.css?v=13" />
 </head>
 
 <body class="pageHome">
   <a class="skipLink" href="#scan">Skip to scan</a>
 
-  <header class="topBand" role="banner">
-    <div class="container topBandInner">
+  <!-- HEADER -->
+  <header class="siteHeader" role="banner">
+    <div class="container headerInner">
       <a class="brand" href="/" aria-label="Website Risk Check Home">
-        <img class="brandLogo" src="/favicon.svg?v=1" alt="">
-        <span class="brandText">Website Risk Check</span>
+        <span class="brandMark" aria-hidden="true">
+          <img class="brandLogo" src="/favicon.svg?v=1" alt="">
+        </span>
+        <span class="brandText">
+          <span class="brandName">Website Risk Check</span>
+          <span class="brandSub">Verifiable documentation · point-in-time snapshot</span>
+        </span>
       </a>
 
       <nav class="topNav" aria-label="Primary">
@@ -67,13 +75,14 @@
         <div class="heroLeft">
           <div class="eyebrow">
             <span class="eyedot" aria-hidden="true"></span>
-            Built for agencies & consultants · client-ready documentation
+            Built for agencies & consultants · client-ready evidence
           </div>
 
-          <h1 class="headline">Generate a sealed, verifiable website risk snapshot.</h1>
+          <h1 class="headline">Issue a sealed, verifiable website compliance snapshot.</h1>
 
           <p class="lead">
-            Run a free structured preview, then purchase an immutable PDF artefact you can attach to proposals, audits, and client handovers — complete with a permanent share link and public verification.
+            Run a free structured preview, then generate an immutable PDF artefact you can attach to proposals,
+            audits, and client handovers — complete with a permanent share link and public verification.
           </p>
 
           <div class="heroPrimaryActions" aria-label="Primary actions">
@@ -81,22 +90,18 @@
             <a class="heroBtn heroBtnGhost" href="/sample-report">View sample deliverable</a>
           </div>
 
-          <div class="heroValueGrid" aria-label="What you get">
-            <div class="heroValueCard">
-              <div class="hvK">Free preview</div>
-              <div class="hvV">Structured highlights + coverage notes (safe to show clients).</div>
+          <div class="heroMeta" aria-label="Trust notes">
+            <div class="metaItem">
+              <div class="metaK">Point-in-time</div>
+              <div class="metaV">Not monitoring. A timestamped snapshot of observable signals.</div>
             </div>
-            <div class="heroValueCard">
-              <div class="hvK">Sealed PDF</div>
-              <div class="hvV">Timestamped, immutable report with integrity hash and QR.</div>
+            <div class="metaItem">
+              <div class="metaK">Defensible scope</div>
+              <div class="metaV">Scope + limitations included so the document stays professional.</div>
             </div>
-            <div class="heroValueCard">
-              <div class="hvK">Share link</div>
-              <div class="hvV">Permanent <span class="mono">/r/&lt;token&gt;</span> link for client delivery.</div>
-            </div>
-            <div class="heroValueCard">
-              <div class="hvK">Public verification</div>
-              <div class="hvV">Anyone can verify: <span class="mono">/verify/&lt;hash&gt;</span>.</div>
+            <div class="metaItem">
+              <div class="metaK">Public verification</div>
+              <div class="metaV">Integrity hash + <span class="mono">/verify/&lt;hash&gt;</span> tamper detection.</div>
             </div>
           </div>
 
@@ -108,11 +113,13 @@
         <!-- CONSOLE -->
         <aside class="console heroRight" aria-label="Generate preview and purchase report">
           <div class="consoleBody">
+
             <div class="consoleTop">
-              <div class="consoleK">Generate a free preview</div>
-              <div class="consoleV">Unlock the sealed artefact after preview · One-time payment</div>
+              <div class="consoleK">Free structured preview</div>
+              <div class="consoleV">Checkout unlocks the sealed PDF artefact + permanent share link + verification.</div>
             </div>
 
+            <!-- REQUIRED IDs for app.js -->
             <form id="check-form" class="scanForm" autocomplete="off" novalidate>
               <label class="fieldLabel" for="url-input">Website URL</label>
 
@@ -132,8 +139,8 @@
 
               <div class="proposalBox" aria-label="Proposal mode">
                 <div class="proposalTop">
-                  <div class="proposalK">Proposal mode (optional)</div>
-                  <div class="proposalV">These fields help you generate a client-ready artefact.</div>
+                  <div class="proposalK">Proposal cover details (optional)</div>
+                  <div class="proposalV">These fields help generate a cleaner client-facing artefact.</div>
                 </div>
 
                 <div class="proposalGrid">
@@ -149,7 +156,7 @@
 
                   <label class="miniField miniFieldFull">
                     <span>Scope note</span>
-                    <input id="proposal_scope_note" type="text" name="scope_note" placeholder="e.g. Public pages only, point-in-time snapshot" />
+                    <input id="proposal_scope_note" type="text" name="scope_note" placeholder="e.g. Public pages only · point-in-time snapshot" />
                   </label>
                 </div>
               </div>
@@ -164,9 +171,10 @@
               </div>
 
               <div class="consoleHint">
-                After your preview, checkout unlocks the sealed PDF artefact and permanent share link.
+                After preview, checkout issues the sealed artefact (PDF) and permanent client link.
               </div>
             </form>
+
           </div>
         </aside>
 
@@ -188,15 +196,15 @@
           <div class="resultsEmptyTitle">No scan yet</div>
           <div class="resultsEmptyText">
             Enter a website URL above and click <strong>Run free scan</strong>.
-            Your preview will render here, full-width.
+            Your preview will render here.
           </div>
         </div>
 
-        <!-- app.js fills these -->
+        <!-- app.js fills these (REQUIRED IDs) -->
         <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results"></div>
         <ul id="findings" class="findings" aria-label="Preview highlights"></ul>
 
-        <!-- ✅ ONLY appears after scan (controlled by app.js) -->
+        <!-- appears after scan -->
         <div id="resultsActions" class="resultsActions" aria-label="Checkout actions" hidden>
           <button id="pay-button" type="button" class="btnMain btnWide" disabled>
             Download sealed PDF report (£99)
@@ -219,7 +227,7 @@
         <div class="sectionHead">
           <h2>Designed for billable client work</h2>
           <p>
-            Use the sealed snapshot to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
+            Formalise risk discussions, justify remediation scope, and attach evidence to proposals.
             The deliverable is verifiable and defensible — with explicit scope and limitations.
           </p>
         </div>
@@ -227,15 +235,15 @@
         <div class="tiles">
           <article class="tile">
             <h3>Proposal & scoping</h3>
-            <p>Attach a verifiable artefact to proposals so scope discussions start with evidence, not opinions.</p>
+            <p>Anchor scope discussions in evidence — not opinions.</p>
           </article>
           <article class="tile">
             <h3>Baseline before work</h3>
-            <p>Capture a timestamped record before changes to support accountability and reduce disputes.</p>
+            <p>Capture a timestamped record pre-change to reduce disputes.</p>
           </article>
           <article class="tile">
             <h3>Due diligence</h3>
-            <p>Document observable signals during procurement, migration, handover, or vendor review.</p>
+            <p>Document observable signals during procurement, migration, or handover.</p>
           </article>
         </div>
       </div>
@@ -246,7 +254,7 @@
       <div class="container sectionGrid">
         <div class="sectionHead">
           <h2>Simple one-time pricing</h2>
-          <p>No subscriptions. Pay per sealed artefact. Perfect for agencies and consultants.</p>
+          <p>No subscriptions. Pay per sealed artefact. Built for agencies and consultants.</p>
         </div>
 
         <div class="pricingGrid">
@@ -276,7 +284,7 @@
             </div>
             <ul class="priceList">
               <li>Everything in single report</li>
-              <li>Perfect for retainers</li>
+              <li>Ideal for retainers</li>
               <li>Run previews first</li>
               <li>Use across clients/projects</li>
             </ul>
@@ -294,7 +302,7 @@
             <ul class="priceList">
               <li>Prepared-for / project fields</li>
               <li>Cleaner client handover</li>
-              <li>Upsell offered after purchase</li>
+              <li>Offered after purchase</li>
               <li>No subscription</li>
             </ul>
             <div class="priceCTA">

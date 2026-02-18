@@ -109,11 +109,20 @@
               <div class="consoleV">Full sealed PDF: <strong>£99</strong> · 3 reports: <strong>£199</strong></div>
             </div>
 
-            <form id="check-form" class="scanForm" autocomplete="off">
+            <form id="check-form" class="scanForm" autocomplete="off" novalidate>
               <label class="fieldLabel" for="url-input">Website URL</label>
 
               <div class="fieldRow">
-                <input id="url-input" type="url" inputmode="url" placeholder="https://example.com" required />
+              <input
+                id="url-input"
+                type="text"
+                inputmode="url"
+                autocomplete="url"
+                autocapitalize="none"
+                spellcheck="false"
+                placeholder="example.com or https://example.com"
+                required
+              />
                 <button id="scanBtn" type="submit" class="btnMain">Generate preview</button>
               </div>
 

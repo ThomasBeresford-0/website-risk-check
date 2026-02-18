@@ -9,24 +9,33 @@
   <meta name="description" content="Preview the exact PDF clients receive after payment: timestamped, immutable, and publicly verifiable via an integrity fingerprint." />
   <link rel="canonical" href="https://websiteriskcheck.com/sample-report" />
 
+  <meta name="theme-color" content="#0b1220">
+
+  <!-- Font (match homepage) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
   <!-- Base + page CSS -->
   <link rel="stylesheet" href="/style.css?v=14" />
-  <link rel="stylesheet" href="/sample-report.css?v=13" />
-
-  <meta name="theme-color" content="#0b1220">
+  <link rel="stylesheet" href="/sample-report.css?v=15" />
 </head>
 
 <body class="pageSampleReport">
+  <div class="srBg" aria-hidden="true"></div>
 
   <!-- =========================
-       HEADER (matches sample-report.css)
+       HEADER
   ========================== -->
   <header class="siteHeader">
     <div class="container headerInner">
 
       <a href="/" class="brand" aria-label="Website Risk Check home">
-        <span class="brandDot" aria-hidden="true"></span>
-        <span>Website Risk Check</span>
+        <img class="brandLogo" src="/favicon.svg?v=1" alt="">
+        <span class="brandText">Website Risk Check</span>
       </a>
 
       <nav class="headerNav" aria-label="Primary">
@@ -47,15 +56,15 @@
 
     <section class="srHero">
 
-      <!-- LEFT -->
-      <div class="srLeft">
+      <!-- CENTERED HERO TEXT -->
+      <div class="srIntro">
         <div class="srEyebrow">Sample verified report</div>
 
-        <h1 class="srTitle">This is the PDF your client receives after payment.</h1>
+        <h1 class="srTitle">This is the exact PDF your client receives after payment.</h1>
 
         <p class="srLead">
-          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint
-          and publicly verifiable. This is the exact paid deliverable — not a demo.
+          A point-in-time snapshot captured in UTC, sealed with an integrity fingerprint and publicly verifiable.
+          This is the paid deliverable — not a demo.
         </p>
 
         <div class="srCtas">
@@ -66,13 +75,13 @@
             href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
             target="_blank"
             rel="noopener"
-            class="btnSoft"
+            class="btnGhost"
           >
             Open verification
           </a>
         </div>
 
-        <div class="srFacts">
+        <div class="srFacts" aria-label="Report facts">
           <div class="srFact">
             <div class="srFactK">Deliverable</div>
             <div class="srFactV">Client-ready PDF</div>
@@ -97,67 +106,59 @@
         </div>
       </div>
 
-      <!-- RIGHT -->
-      <div class="srRight">
+      <!-- ARTIFACT VIEWER CARD -->
+      <div class="artifactFrame">
 
-        <div class="artifactFrame">
-          <div class="artifactTop">
-            <div class="artifactLabel">Sample PDF preview</div>
-            <div class="artifactActions">
-              <a class="artifactBtn" href="/sample-report.pdf" target="_blank" rel="noopener">Open PDF</a>
-              <a
-                class="artifactBtn isSoft"
-                href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
-                target="_blank"
-                rel="noopener"
-              >
-                Verify
-              </a>
+        <div class="artifactTop">
+          <div class="artifactLabel">Sample PDF preview</div>
+
+          <div class="artifactActions">
+            <a class="artifactBtn" href="/sample-report.pdf" target="_blank" rel="noopener">Open PDF</a>
+            <a
+              class="artifactBtn isSoft"
+              href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c"
+              target="_blank"
+              rel="noopener"
+            >
+              Verify
+            </a>
+          </div>
+        </div>
+
+        <a class="artifactPreview" href="/sample-report.pdf" target="_blank" rel="noopener">
+          <img
+            class="artifactImg"
+            src="/sample-report-cover.png?v=1"
+            alt="Sample report preview"
+            loading="eager"
+          />
+          <div class="artifactOverlay" aria-hidden="true">
+            <div class="artifactOverlayInner">
+              <div class="artifactOverlayTitle">Open the full PDF</div>
+              <div class="artifactOverlaySub">Exact paid deliverable · includes verification code</div>
             </div>
           </div>
+        </a>
 
-          <a class="artifactPreview" href="/sample-report.pdf" target="_blank" rel="noopener">
-            <img
-              class="artifactImg"
-              src="/sample-report-cover.png?v=1"
-              alt="Sample report preview"
-              loading="eager"
-            />
-
-            <div class="artifactOverlay">
-              <div class="artifactOverlayInner">
-                <div class="artifactOverlayTitle">Open the full PDF</div>
-                <div class="artifactOverlaySub">Exact paid deliverable · includes verification code</div>
-              </div>
-            </div>
-          </a>
-
-        <!-- Optional proof panel (only include if you actually add it to HTML) -->
-        <!--
-        <div class="proofPanel">
+        <div class="proofPanel" aria-label="Verification details">
           <div class="proofRow">
             <div class="proofK">Integrity hash</div>
             <div class="proofV"><code>c7eb98c3…8db8c</code></div>
           </div>
           <div class="proofRow">
             <div class="proofK">Verification</div>
-            <div class="proofV"><code>/verify/…</code></div>
+            <div class="proofV"><code>/verify/&lt;hash&gt;</code></div>
           </div>
         </div>
-        -->
 
       </div>
 
     </section>
 
-    <!-- If you add below-sections later, your CSS is already ready:
-         .srSection .srGrid .srCard etc.
-    -->
-
   </main>
 
   <!-- =========================
-       FOOTER (matches sample-report.css)
+       FOOTER
   ========================== -->
   <footer class="siteFooter">
     <div class="container footerTop">

@@ -234,7 +234,7 @@ body{
   border: 1px solid rgba(15,23,42,.12);
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
-  min-height: 520px;       /* ✅ “extended a bit” */
+  min-height: 0px;       /* ✅ “extended a bit” */
 }
 
 .consoleBody{
@@ -935,12 +935,19 @@ body{
 }
 
 .resultsActions{
-  margin-top: 14px;
-  display:grid;
+  margin: 14px auto 0;     /* ✅ centers the whole block */
+  display: grid;
   gap: 10px;
   max-width: 520px;
-  justify-items: center;
-  text-align: center;
+  justify-items: center;   /* ✅ centers the buttons inside */
+}
+
+.resultsActions .btnWide{
+  width: 100%;
+}
+
+.resultsActions .payNote{
+  text-align: center;      /* ✅ centers the note text */
 }
 
 .resultsActions .btnWide{

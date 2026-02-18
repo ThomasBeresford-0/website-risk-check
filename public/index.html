@@ -173,25 +173,26 @@
           </div>
         </div>
 
-        <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results" style="display:none;">
-          <!-- app.js injects the premium shell before #findings -->
-          <ul id="findings" class="findings" aria-label="Preview highlights"></ul>
-        </div>
-
-        <!-- ALWAYS VISIBLE ACTIONS (disabled until scan completes) -->
-        <div class="resultsActions" aria-label="Checkout actions">
-          <button id="pay-button" type="button" class="btnMain btnWide" disabled>
-            Download full PDF report (£99)
-          </button>
-
-          <button id="threepack-button" type="button" class="btnAlt btnWide" disabled>
-            Best value: 3 reports (£199)
-          </button>
-
-          <div class="payNote">
-            Secure checkout via Stripe · One-time payment · No subscription
+          <!-- Preview (app.js injects premium shell + highlights) -->
+          <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results" style="display:none;">
+            <!-- app.js injects the premium shell before #findings -->
+            <div id="findings" aria-label="Preview highlights"></div>
           </div>
-        </div>
+
+          <!-- Checkout actions (ALWAYS VISIBLE, disabled until scan completes) -->
+          <div class="resultsActions" aria-label="Checkout actions">
+            <button id="pay-button" type="button" class="btnMain btnWide" disabled>
+              Download full PDF report (£99)
+            </button>
+
+            <button id="threepack-button" type="button" class="btnAlt btnWide" disabled>
+              Best value: 3 reports (£199)
+            </button>
+
+            <div class="payNote">
+              Secure checkout via Stripe · One-time payment · No subscription
+            </div>
+          </div>
         </div>
       </div>
     </section>

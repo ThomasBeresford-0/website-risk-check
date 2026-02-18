@@ -1,3 +1,4 @@
+<!-- public/sample-report.html -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -10,50 +11,57 @@
 
   <meta name="theme-color" content="#0b1220">
 
-  <!-- Font (match homepage) -->
+  <!-- Fonts (match homepage) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&display=swap"
     rel="stylesheet"
   >
 
-  <!-- Base + page CSS -->
+  <!-- Global system + page CSS -->
   <link rel="stylesheet" href="/style.css?v=14" />
-  <link rel="stylesheet" href="/sample-report.css?v=16" />
+  <link rel="stylesheet" href="/sample-report.css?v=17" />
 </head>
 
 <body class="pageSampleReport">
   <a class="skipLink" href="#artifact">Skip to preview</a>
 
-  <!-- DARK HEADER (match homepage) -->
-  <header class="topBand" role="banner">
-    <div class="container topBandInner">
+  <!-- ✅ SAME HEADER AS HOMEPAGE (uses your global system classes) -->
+  <header class="siteHeader" role="banner">
+    <div class="container headerInner">
       <a class="brand" href="/" aria-label="Website Risk Check home">
-        <img class="brandLogo" src="/favicon.svg?v=1" alt="">
-        <span class="brandText">Website Risk Check</span>
+        <span class="brandMark" aria-hidden="true">
+          <img class="brandLogo" src="/favicon.svg?v=1" alt="">
+        </span>
+        <span class="brandText">
+          <span class="brandName">Website Risk Check</span>
+          <span class="brandSub">Verifiable documentation · point-in-time snapshot</span>
+        </span>
       </a>
 
       <nav class="topNav" aria-label="Primary">
         <a href="/">Run a scan</a>
         <a href="/agency">For agencies</a>
-        <a class="isActive" href="/sample-report" aria-current="page">Sample report</a>
+        <a class="isActive" href="/sample-report" aria-current="page">Sample deliverable</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/verification">Verification</a>
       </nav>
 
       <div class="topCtas">
         <a class="ctaGhost" href="/verify/c7eb98c339a3aa9785668b1735f5d685da13c22caabbfe470679e2452ef8db8c" target="_blank" rel="noopener">
           Verify sample
         </a>
-        <a class="ctaPrimary" href="/">Start scan</a>
+        <a class="ctaPrimary" href="/">Run a scan</a>
       </div>
     </div>
   </header>
 
   <main class="srMain">
-    <section class="srHero">
+    <section class="srHero" aria-label="Sample deliverable">
       <div class="container srGrid">
 
-        <!-- LEFT: SELL THE ARTEFACT -->
+        <!-- LEFT -->
         <div class="srLeft">
           <div class="eyebrow">
             <span class="eyedot" aria-hidden="true"></span>
@@ -61,7 +69,7 @@
           </div>
 
           <h1 class="srTitle">
-            This is the exact sealed PDF your client receives after payment.
+            The exact sealed PDF your client receives after payment.
           </h1>
 
           <p class="srLead">
@@ -72,10 +80,10 @@
           <div class="srBlock">
             <div class="srBlockTitle">What this proves</div>
             <ul class="srList">
-              <li><strong>Professional artefact:</strong> structured, fileable, client-ready.</li>
-              <li><strong>Integrity:</strong> SHA-256 hash embedded + server-stored.</li>
-              <li><strong>Verification:</strong> anyone can confirm the PDF hasn’t been altered.</li>
-              <li><strong>Scope:</strong> explicit crawl boundaries and limitations.</li>
+              <li><strong>Client-ready artefact:</strong> structured, fileable, proposal-safe.</li>
+              <li><strong>Integrity sealed:</strong> SHA-256 fingerprint embedded + server-stored.</li>
+              <li><strong>Public verification:</strong> anyone can confirm the PDF hasn’t been altered.</li>
+              <li><strong>Defensible scope:</strong> boundaries + limitations recorded in the document.</li>
             </ul>
           </div>
 
@@ -107,7 +115,7 @@
           </div>
         </div>
 
-        <!-- RIGHT: ARTEFACT VIEWER -->
+        <!-- RIGHT -->
         <aside class="srRight" id="artifact" aria-label="Sample PDF preview">
           <div class="artifactFrame">
 
@@ -130,13 +138,13 @@
             <a class="artifactPreview" href="/sample-report.pdf" target="_blank" rel="noopener">
               <img
                 class="artifactImg"
-                src="/sample-report-cover.png?v=1"
+                src="/sample-report-cover.png?v=2"
                 alt="Sample report preview"
                 loading="eager"
               />
               <div class="artifactOverlay" aria-hidden="true">
                 <div class="artifactOverlayInner">
-                  <div class="artifactOverlayTitle">Open the full PDF</div>
+                  <div class="artifactOverlayTitle">Open the full sealed PDF</div>
                   <div class="artifactOverlaySub">Exact paid deliverable · sealed + verifiable</div>
                 </div>
               </div>
@@ -163,32 +171,14 @@
       </div>
     </section>
 
-    <!-- FOOTER -->
-    <footer class="siteFooter">
-      <div class="container footerTop">
-        <div class="footerLeft">
+    <!-- Footer (reuse your global footer if it exists; otherwise this keeps it clean) -->
+    <footer class="footer">
+      <div class="container footerInner">
+        <div>
           <div class="footerBrand">Website Risk Check</div>
           <div class="footerTag">Point-in-time website risk snapshot with public verification.</div>
+          <div class="footerTag" style="margin-top:10px">© <span id="year"></span> Website Risk Check. All rights reserved.</div>
         </div>
-
-        <div class="footerRight">
-          <div class="footerCol">
-            <div class="footerHeading">Product</div>
-            <a href="/" class="footerLink">Run a scan</a>
-            <a href="/sample-report" class="footerLink">Sample report</a>
-            <a href="/agency" class="footerLink">For agencies</a>
-          </div>
-
-          <div class="footerCol">
-            <div class="footerHeading">Legal</div>
-            <a href="/terms" class="footerLink">Terms</a>
-            <a href="/privacy" class="footerLink">Privacy</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="footerBottom">
-        © <span id="year"></span> Website Risk Check. All rights reserved.
       </div>
     </footer>
   </main>

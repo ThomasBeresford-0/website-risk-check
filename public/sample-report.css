@@ -6,6 +6,13 @@
    ✅ Premium, calm, no bubbly UI
 */
 
+/* safety net — prevents giant images if any CSS fails to apply */
+.pageSampleReport img{
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 :root{
   --srLine: rgba(15,23,42,.12);
   --srLine2: rgba(15,23,42,.18);

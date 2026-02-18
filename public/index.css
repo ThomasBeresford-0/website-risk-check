@@ -1,8 +1,7 @@
-/* public/index.css?v=10
-   FULL RAMBO: aligned hero + clear “what this does” messaging + money-first copy.
-   - Dark header kept
-   - No chips/bubbles
-   - Left side reads like a service deliverable, not a template
+/* public/index.css?v=11
+   Alignment + stronger headline.
+   - Right console extended and baseline-aligned with left
+   - Clear, premium, audit tone
 */
 
 :root{
@@ -149,12 +148,12 @@ body{
   display:grid;
   grid-template-columns: 1.06fr .94fr;
   gap: 22px;
-  align-items:start; /* key: baseline alignment */
+  align-items:start;
 }
 
-/* LEFT — aligned to console top */
+/* LEFT */
 .heroLeft{
-  padding-top: 0; /* alignment fix */
+  padding-top: 0;
 }
 
 .eyebrow{
@@ -165,7 +164,7 @@ body{
   font-weight: 950;
   color: rgba(11,18,32,.66);
   letter-spacing: .02em;
-  margin-top: 2px; /* nudges into alignment */
+  margin-top: 2px;
 }
 .eyedot{
   width: 8px;
@@ -190,7 +189,6 @@ body{
   max-width: 72ch;
 }
 
-/* “How it works” + “What you receive” (money clarity) */
 .how, .what{
   border-top: 1px solid rgba(15,23,42,.10);
   padding-top: 14px;
@@ -203,23 +201,15 @@ body{
   color: rgba(11,18,32,.82);
   letter-spacing: -.1px;
 }
-.howSteps{
+.howSteps, .whatList{
   margin: 10px 0 0;
   padding-left: 18px;
   color: rgba(11,18,32,.74);
   line-height: 1.7;
   font-size: 14px;
 }
-.whatList{
-  margin: 10px 0 0;
-  padding-left: 18px;
-  color: rgba(11,18,32,.74);
-  line-height: 1.7;
-  font-size: 14px;
-}
-.whatList strong, .howSteps strong{
-  color: rgba(11,18,32,.90);
-}
+.howSteps strong, .whatList strong{ color: rgba(11,18,32,.90); }
+
 .mono{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-weight: 900;
@@ -234,17 +224,23 @@ body{
   max-width: 72ch;
 }
 
-/* CONSOLE */
+/* RIGHT (CONSOLE) — alignment + extension */
+.heroRight{
+  margin-top: 26px;        /* ✅ extends down and aligns visually with left H1 block */
+}
 .console{
   border-radius: var(--r-xl);
   overflow:hidden;
   border: 1px solid rgba(15,23,42,.12);
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
+  min-height: 520px;       /* ✅ “extended a bit” */
 }
-.consoleBody{ padding: 16px 16px 16px; }
 
-/* top line inside console (replaces “Scan console / £99 box”) */
+.consoleBody{
+  padding: 18px 18px 18px; /* slightly more premium spacing */
+}
+
 .consoleTop{
   padding-bottom: 12px;
   margin-bottom: 12px;
@@ -381,7 +377,7 @@ body{
   color: rgba(11,18,32,.56);
 }
 
-/* SECTIONS (rest unchanged) */
+/* SECTIONS */
 .section{ padding: 64px 0; }
 .sectionPaper{
   background: rgba(255,255,255,.60);
@@ -522,9 +518,11 @@ body{
   .topNav{ display:none; }
   .heroGrid{ grid-template-columns: 1fr; }
   .headline{ font-size: 44px; max-width: 24ch; }
+  .heroRight{ margin-top: 10px; }
   .fieldRow{ grid-template-columns: 1fr; }
   .tiles{ grid-template-columns: 1fr; }
   .twoCol{ grid-template-columns: 1fr; }
+  .console{ min-height: 0; }
 }
 @media (max-width: 560px){
   .headline{ font-size: 36px; }

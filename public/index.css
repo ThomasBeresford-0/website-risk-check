@@ -1041,3 +1041,28 @@ body{
   .wrcMetaRow{ grid-template-columns: 1fr; }
   .wrcGrid{ grid-template-columns: 1fr; }
 }
+
+/* RESULTS: center-align block + keep a premium readable width */
+.resultsHead{
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#resultsEmpty,
+#preview{
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 920px;
+}
+
+.resultsActions{
+  margin-left: auto;
+  margin-right: auto;
+  justify-items: center;
+  text-align: center;
+}
+
+.resultsEmpty{
+  text-align: left; /* keeps the empty-state copy readable */
+}

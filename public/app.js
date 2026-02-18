@@ -784,7 +784,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const payButton = document.getElementById("pay-button");
   const threepackButton = document.getElementById("threepack-button");
-  const heroActions = document.getElementById("heroActions");
+  const resultsActions = document.getElementById("resultsActions");
 
   let scannedUrl = null;
   let isScanning = false;
@@ -793,7 +793,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   track("landing_view", { path: location.pathname });
 
+
   if (!form || !input || !preview || !findingsEl || !payButton) return;
+  if (preview) preview.style.display = "none";
+  if (resultsEmpty) resultsEmpty.style.display = "block";
+  setPayButtonsEnabled(false);
+  resetPayButtonsText();
+  if (resultsActions) resultsActions.hidden = true;
 
   function setPayButtonsEnabled(enabled) {
     payButton.disabled = !enabled;
@@ -847,11 +853,10 @@ document.addEventListener("DOMContentLoaded", () => {
     track("preview_started", {});
 
     if (resultsEmpty) resultsEmpty.style.display = "none";
-    showNotice(preview, "ok", "Scan started", "Fetching public pages and assembling your preview…");
-    preview.style.display = "block";
-    try { (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+    if (preview) preview.style.display = "none"; // keep hidden until we have data
+    if (resultsActions) resultsActions.hidden = true; // hide checkout buttons until scan completes
 
-    preview.style.display = "none";
+
     findingsEl.innerHTML = "";
     setPayButtonsEnabled(false);
     resetPayButtonsText();
@@ -870,6 +875,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (res.status === 429) {
+      if (preview) preview.style.display = "none";
         showNotice(preview, "warn", "You’re scanning too quickly", "Please wait a moment and try again.");
         track("preview_rate_limited", {});
         return;
@@ -921,7 +927,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       preview.style.display = "block";
       setPayButtonsEnabled(true);
-      if (heroActions) heroActions.hidden = false;
+      if (resultsActions) resultsActions.hidden = false;
 
       try {
         (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" });

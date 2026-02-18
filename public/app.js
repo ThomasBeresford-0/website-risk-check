@@ -5,6 +5,7 @@
 // ✅ No inline styles — relies on index.css classes.
 // ✅ Renders: FREE PREVIEW banner + paywall box + risk badge + drivers + evidence cards + coverage log + limitations.
 // ✅ Findings: highlights only (max 5) + collapsible technical details (no more ugly dump).
+// ✅ Proposal Mode: captures prepared_for / project / scope_note and passes into checkout endpoints.
 
 function getSid() {
   const key = "wrc_sid";
@@ -119,6 +120,28 @@ function formatUtc(tsLike) {
   } catch {
     return d.toISOString();
   }
+}
+
+/* =========================
+   PROPOSAL MODE (CAPTURE)
+========================= */
+
+function getProposalPayload(formEl) {
+  if (!formEl) return { prepared_for: "", project: "", scope_note: "" };
+
+  const prepared_for =
+    safeStr(formEl.querySelector('input[name="prepared_for"]')?.value).trim();
+  const project =
+    safeStr(formEl.querySelector('input[name="project"]')?.value).trim();
+  const scope_note =
+    safeStr(formEl.querySelector('input[name="scope_note"]')?.value).trim();
+
+  // Keep payload deterministic and small
+  return {
+    prepared_for: prepared_for.slice(0, 120),
+    project: project.slice(0, 120),
+    scope_note: scope_note.slice(0, 180),
+  };
 }
 
 /* =========================
@@ -288,13 +311,17 @@ function buildHighlightsFromScan(scan) {
       "Overall risk is MEDIUM based on detectable signals and coverage."
     );
   else if (level === "low")
-    highlights.push("Overall risk is LOW based on detectable signals and coverage.");
+    highlights.push(
+      "Overall risk is LOW based on detectable signals and coverage."
+    );
 
   const checked = safeArr(scan.checkedPages).length;
   const failed = safeArr(scan.failedPages).length;
 
   if (checked === 0) {
-    highlights.push("We couldn’t retrieve enough public HTML to generate a reliable preview.");
+    highlights.push(
+      "We couldn’t retrieve enough public HTML to generate a reliable preview."
+    );
   } else {
     highlights.push(
       `Coverage: ${checked} page${checked === 1 ? "" : "s"} checked${
@@ -303,15 +330,22 @@ function buildHighlightsFromScan(scan) {
     );
   }
 
-  if (!scan.hasPrivacyPolicy) highlights.push("Privacy policy not detected on scanned surface.");
-  if (!scan.hasTerms) highlights.push("Terms not detected on scanned surface.");
+  if (!scan.hasPrivacyPolicy)
+    highlights.push("Privacy policy not detected on scanned surface.");
+  if (!scan.hasTerms)
+    highlights.push("Terms not detected on scanned surface.");
 
-  if (scan.hasCookieBanner) highlights.push("Consent banner indicator detected (heuristic).");
-  else highlights.push("No consent banner indicator detected on scanned surface (heuristic).");
+  if (scan.hasCookieBanner)
+    highlights.push("Consent banner indicator detected (heuristic).");
+  else
+    highlights.push(
+      "No consent banner indicator detected on scanned surface (heuristic)."
+    );
 
   const trackers = safeArr(scan.trackingScriptsDetected)
     .map((s) => safeStr(s))
     .filter(Boolean);
+
   if (trackers.length)
     highlights.push(
       `Tracking scripts detected: ${trackers.slice(0, 2).join(", ")}${
@@ -324,31 +358,38 @@ function buildHighlightsFromScan(scan) {
 }
 
 function renderFindingsFreePreview(findingsEl, scan, rawData) {
-  // IMPORTANT: findingsEl is a <ul>. Only <li> children are valid.
+  // findingsEl is a DIV in your new HTML (not a UL)
   findingsEl.innerHTML = "";
-  findingsEl.classList.add("wrcFindingsTight");
+
+  const wrap = document.createElement("div");
+  wrap.className = "wrcFindingsWrap";
+
+  const head = document.createElement("div");
+  head.className = "wrcFindingsHead";
+  head.innerHTML = `
+    <div class="wrcFindingsTitle">Preview highlights</div>
+    <div class="wrcFindingsHint">Client-safe summary. The sealed PDF contains full register, evidence, and verification.</div>
+  `;
+  wrap.appendChild(head);
+
+  const list = document.createElement("ul");
+  list.className = "findings wrcFindingsTight";
 
   const highlights = buildHighlightsFromScan(scan);
-
-  // LI: Header (title + hint) — NO INLINE STYLES
-  const liHead = document.createElement("li");
-  liHead.className = "wrcFindingsHeadItem";
-  liHead.innerHTML = `
-    <div class="wrcFindingsHead">
-      <div class="wrcFindingsTitle">Preview highlights</div>
-      <div class="wrcFindingsHint">Client-safe summary. The sealed PDF contains full register, evidence, and verification.</div>
-    </div>
-  `;
-  findingsEl.appendChild(liHead);
-
-  // LI: Each highlight
   highlights.forEach((t) => {
     const li = document.createElement("li");
     li.textContent = safeStr(t);
-    findingsEl.appendChild(li);
+    list.appendChild(li);
   });
 
-  // Technical details (collapsed) – inserted AFTER the list as a sibling block (not inside UL)
+  wrap.appendChild(list);
+  findingsEl.appendChild(wrap);
+
+  // Remove any prior technical details (sibling block)
+  const stale = findingsEl.parentNode?.querySelector(".wrcDetails");
+  if (stale) stale.remove();
+
+  // Technical details (collapsed) – sibling block after findingsEl
   const checked = safeArr(scan.checkedPages);
   const failed = safeArr(scan.failedPages);
   const notes = safeArr(scan.scanCoverageNotes);
@@ -554,7 +595,9 @@ function renderDrivers(previewEl, scan, rawData) {
     .map((s) => safeStr(s))
     .filter(Boolean);
 
-  const reasons = structuredReasons.length ? structuredReasons : safeArr(scan.riskReasons);
+  const reasons = structuredReasons.length
+    ? structuredReasons
+    : safeArr(scan.riskReasons);
 
   el.innerHTML = "";
 
@@ -613,7 +656,9 @@ function renderGrid(previewEl, scan) {
       lines: [
         `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"} (heuristic)`,
         vendors.length
-          ? `Vendors: ${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""}`
+          ? `Vendors: ${vendors.slice(0, 3).join(", ")}${
+              vendors.length > 3 ? "…" : ""
+            }`
           : "Vendors: none detected",
       ],
     },
@@ -623,7 +668,9 @@ function renderGrid(previewEl, scan) {
       tone: trackers.length || vendors.length ? "warn" : "ok",
       lines: [
         trackers.length
-          ? `Scripts: ${trackers.slice(0, 3).join(", ")}${trackers.length > 3 ? "…" : ""}`
+          ? `Scripts: ${trackers.slice(0, 3).join(", ")}${
+              trackers.length > 3 ? "…" : ""
+            }`
           : "Scripts: none detected",
         vendors.length ? `Vendor signals: ${vendors.length}` : "Vendor signals: 0",
       ],
@@ -673,7 +720,9 @@ function renderGrid(previewEl, scan) {
         <div class="wrcCardPill">${escapeHtml(c.status)}</div>
       </div>
       <div class="wrcCardBody">
-        ${c.lines.map((ln) => `<div class="wrcCardLine">${escapeHtml(ln)}</div>`).join("")}
+        ${c.lines
+          .map((ln) => `<div class="wrcCardLine">${escapeHtml(ln)}</div>`)
+          .join("")}
       </div>
     `;
 
@@ -786,6 +835,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const threepackButton = document.getElementById("threepack-button");
   const resultsActions = document.getElementById("resultsActions");
 
+  if (!form || !input || !preview || !findingsEl || !payButton) return;
+
   let scannedUrl = null;
   let isScanning = false;
   let isPayingSingle = false;
@@ -793,21 +844,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   track("landing_view", { path: location.pathname });
 
-
-  if (!form || !input || !preview || !findingsEl || !payButton) return;
-  if (preview) preview.style.display = "none";
-  if (resultsEmpty) resultsEmpty.style.display = "block";
-  setPayButtonsEnabled(false);
-  resetPayButtonsText();
-  if (resultsActions) resultsActions.hidden = true;
-
   function setPayButtonsEnabled(enabled) {
     payButton.disabled = !enabled;
     if (threepackButton) threepackButton.disabled = !enabled;
   }
 
   function resetPayButtonsText() {
-    payButton.textContent = "Download full PDF report (£99)";
+    payButton.textContent = "Download sealed PDF report (£99)";
     if (threepackButton) threepackButton.textContent = "Best value: 3 reports (£199)";
   }
 
@@ -822,7 +865,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (kind === "single") {
       payButton.textContent = isBusy
         ? "Redirecting to secure checkout…"
-        : "Download full PDF report (£99)";
+        : "Download sealed PDF report (£99)";
     }
     if (kind === "threepack" && threepackButton) {
       threepackButton.textContent = isBusy
@@ -831,10 +874,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Initial state
+  // Initial state: results are hidden, pay buttons disabled, resultsActions hidden
+  preview.style.display = "none";
+  if (resultsEmpty) resultsEmpty.style.display = "block";
+  if (resultsActions) resultsActions.hidden = true;
   setPayButtonsEnabled(false);
   resetPayButtonsText();
-  if (heroActions) heroActions.hidden = true;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -842,8 +887,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const url = normalizeInputUrl(input.value);
     if (!url) {
-      showNotice(preview, "warn", "Enter a website URL", "Type a domain (e.g. example.com) and run the free scan.");
-      try { (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" }); } catch {}
+      // preview is hidden initially, so we need to show it briefly for inline notice container
+      preview.style.display = "block";
+      showNotice(
+        preview,
+        "warn",
+        "Enter a website URL",
+        "Type a domain (e.g. example.com) and run the free scan."
+      );
+      try {
+        (resultsSection || preview).scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      } catch {}
+      // don't show actions
+      if (resultsActions) resultsActions.hidden = true;
+      setPayButtonsEnabled(false);
       return;
     }
 
@@ -852,18 +912,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     track("preview_started", {});
 
+    // Reset UI
     if (resultsEmpty) resultsEmpty.style.display = "none";
-    if (preview) preview.style.display = "none"; // keep hidden until we have data
-    if (resultsActions) resultsActions.hidden = true; // hide checkout buttons until scan completes
-
-
-    findingsEl.innerHTML = "";
+    if (resultsActions) resultsActions.hidden = true; // MUST stay hidden until scan completes
     setPayButtonsEnabled(false);
     resetPayButtonsText();
     setScanningUi(true);
+
+    findingsEl.innerHTML = "";
+    preview.style.display = "block"; // show container so notice/shell can render
     hideNotice(preview);
 
-    // Clear any previous sibling technical details
+    // Remove any previous technical details
     const staleDetails = findingsEl.parentNode?.querySelector(".wrcDetails");
     if (staleDetails) staleDetails.remove();
 
@@ -875,7 +935,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (res.status === 429) {
-      if (preview) preview.style.display = "none";
         showNotice(preview, "warn", "You’re scanning too quickly", "Please wait a moment and try again.");
         track("preview_rate_limited", {});
         return;
@@ -923,14 +982,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderFindingsFreePreview(findingsEl, scan, data);
 
+      // Show results + enable checkout
       if (resultsEmpty) resultsEmpty.style.display = "none";
-
-      preview.style.display = "block";
       setPayButtonsEnabled(true);
       if (resultsActions) resultsActions.hidden = false;
 
       try {
-        (resultsSection || preview).scrollIntoView({ behavior: "smooth", block: "start" });
+        (resultsSection || preview).scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
       } catch {}
 
       track("preview_completed", {
@@ -956,13 +1017,15 @@ document.addEventListener("DOMContentLoaded", () => {
     setCheckoutUi("single", true);
     hideNotice(preview);
 
+    const proposal = getProposalPayload(form);
+
     track("checkout_started", { kind: "single" });
 
     try {
       const res = await fetch("/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: scannedUrl }),
+        body: JSON.stringify({ url: scannedUrl, ...proposal }),
       });
 
       if (!res.ok) {
@@ -1005,13 +1068,15 @@ document.addEventListener("DOMContentLoaded", () => {
       setCheckoutUi("threepack", true);
       hideNotice(preview);
 
+      const proposal = getProposalPayload(form);
+
       track("checkout_started", { kind: "threepack" });
 
       try {
         const res = await fetch("/create-threepack-checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: scannedUrl }),
+          body: JSON.stringify({ url: scannedUrl, ...proposal }),
         });
 
         if (!res.ok) {

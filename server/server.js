@@ -3,6 +3,8 @@
 // ✅ Boutique PDF supported (report.js)
 // ✅ Cryptographic verification is REAL (recomputes integrity hash from stored scanData)
 // ✅ Atomic writes (no partial PDFs/JSON on crash)
+// ✅ Proposal Mode supported: prepared_for / project / scope_note carried through Stripe + stored (NOT part of integrity hash)
+// ✅ 3-pack supported (direct purchase + redemption) + optional upsell checkout (£39)
 
 import express from "express";
 import Stripe from "stripe";
@@ -48,8 +50,9 @@ const stripe = new Stripe(STRIPE_SECRET_KEY);
 const DATA_DIR = path.join(__dirname, "data");
 const REPORT_DIR = path.join(DATA_DIR, "reports");
 const SESSION_DIR = path.join(DATA_DIR, "sessions");
+const PACK_DIR = path.join(DATA_DIR, "packs");
 
-[DATA_DIR, REPORT_DIR, SESSION_DIR].forEach((dir) => {
+[DATA_DIR, REPORT_DIR, SESSION_DIR, PACK_DIR].forEach((dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -58,7 +61,7 @@ function generateToken() {
 }
 
 function isValidToken(token) {
-  return /^[a-zA-Z0-9_-]{8,16}$/.test(token);
+  return /^[a-zA-Z0-9_-]{8,24}$/.test(token);
 }
 
 function tokenPaths(token) {
@@ -91,6 +94,34 @@ function safeReadJson(filePath) {
   } catch {
     return null;
   }
+}
+
+function cap(arr, n = 12) {
+  return Array.isArray(arr) ? arr.slice(0, n) : [];
+}
+
+function safeStr(v) {
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+
+function normalizeUrlInput(raw) {
+  const v = safeStr(raw).trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+
+function scrubProposal(body = {}) {
+  const prepared_for = safeStr(body.prepared_for).trim().slice(0, 120);
+  const project = safeStr(body.project).trim().slice(0, 120);
+  const scope_note = safeStr(body.scope_note).trim().slice(0, 180);
+
+  // keep it clean and small
+  return { prepared_for, project, scope_note };
+}
+
+function proposalIsEmpty(p) {
+  return !p || (!p.prepared_for && !p.project && !p.scope_note);
 }
 
 /* =========================
@@ -145,10 +176,7 @@ app.get("/__assets", (_req, res) => {
       publicDir: PUBLIC_DIR,
       files: {
         "sample-report.pdf": { exists: exists("sample-report.pdf"), bytes: size("sample-report.pdf") },
-        "vendor/pdfjs/pdf.min.js": {
-          exists: exists("vendor/pdfjs/pdf.min.js"),
-          bytes: size("vendor/pdfjs/pdf.min.js"),
-        },
+        "vendor/pdfjs/pdf.min.js": { exists: exists("vendor/pdfjs/pdf.min.js"), bytes: size("vendor/pdfjs/pdf.min.js") },
         "vendor/pdfjs/pdf.worker.min.js": {
           exists: exists("vendor/pdfjs/pdf.worker.min.js"),
           bytes: size("vendor/pdfjs/pdf.worker.min.js"),
@@ -156,9 +184,13 @@ app.get("/__assets", (_req, res) => {
         "sample-report.html": { exists: exists("sample-report.html"), bytes: size("sample-report.html") },
         "sample-report.js": { exists: exists("sample-report.js"), bytes: size("sample-report.js") },
         "sample-report.css": { exists: exists("sample-report.css"), bytes: size("sample-report.css") },
+        "threepack.html": { exists: exists("threepack.html"), bytes: size("threepack.html") },
+        "threepack.js": { exists: exists("threepack.js"), bytes: size("threepack.js") },
+        "success.html": { exists: exists("success.html"), bytes: size("success.html") },
+        "success.js": { exists: exists("success.js"), bytes: size("success.js") },
       },
     });
-  } catch (e) {
+  } catch {
     return res.status(500).json({ ok: false, error: "asset_check_failed" });
   }
 });
@@ -172,7 +204,7 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/__version", (_req, res) => {
-  res.type("text").send("server.js live: sample-report-assets v1");
+  res.type("text").send("server.js live: checkout+proposal+threepack v2");
 });
 
 /* =========================
@@ -189,21 +221,13 @@ function rateLimitPreview(ip) {
   return true;
 }
 
-function cap(arr, n = 12) {
-  return Array.isArray(arr) ? arr.slice(0, n) : [];
-}
-
 // Legacy fallback (only used if scan.js doesn't provide findingsText[])
 function buildFindingsFromFlat(flat) {
   const findings = [];
 
-  findings.push(
-    flat.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected"
-  );
+  findings.push(flat.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected");
   findings.push(flat.hasTerms ? "Terms: detected" : "Terms: not detected");
-  findings.push(
-    flat.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected"
-  );
+  findings.push(flat.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected");
 
   findings.push(
     flat.hasCookieBanner
@@ -233,26 +257,18 @@ function buildFindingsFromFlat(flat) {
 
   if ((flat.formsDetected || 0) > 0) {
     findings.push(`Forms detected: ${flat.formsDetected}`);
-    findings.push(
-      `Potential personal-data field signals: ${flat.formsPersonalDataSignals || 0} (heuristic)`
-    );
+    findings.push(`Potential personal-data field signals: ${flat.formsPersonalDataSignals || 0} (heuristic)`);
   } else {
     findings.push("Forms detected: none");
   }
 
   if ((flat.totalImages || 0) > 0) {
-    findings.push(
-      `Images missing alt text: ${flat.imagesMissingAlt || 0} of ${flat.totalImages || 0}`
-    );
+    findings.push(`Images missing alt text: ${flat.imagesMissingAlt || 0} of ${flat.totalImages || 0}`);
   } else {
     findings.push("Images: none detected on scanned pages");
   }
 
-  findings.push(
-    flat.contactInfoPresent
-      ? "Contact/identity signals: detected"
-      : "Contact/identity signals: not detected"
-  );
+  findings.push(flat.contactInfoPresent ? "Contact/identity signals: detected" : "Contact/identity signals: not detected");
   findings.push(flat.https ? "HTTPS: detected" : "HTTPS: not detected");
 
   return findings.slice(0, 12);
@@ -269,16 +285,16 @@ app.post("/preview-scan", async (req, res) => {
       return res.status(429).json({
         ok: false,
         error: "rate_limited",
-        message:
-          "Preview rate limit reached. Please wait a few seconds before retrying.",
+        message: "Preview rate limit reached. Please wait a few seconds before retrying.",
       });
     }
 
-    const { url } = req.body;
+    const url = normalizeUrlInput(req.body?.url);
     if (!url) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "invalid_request", message: "URL required" });
+      return res.status(400).json({ ok: false, error: "invalid_request", message: "URL required" });
+    }
+    if (url.length > 2048) {
+      return res.status(400).json({ ok: false, error: "invalid_request", message: "URL too long" });
     }
 
     const scan = await scanWebsite(url);
@@ -306,9 +322,7 @@ app.post("/preview-scan", async (req, res) => {
     const cookieVendorsDetected = cap(scan.signals?.consent?.vendors, 12);
 
     const totalImages = Number(scan.signals?.accessibility?.images?.total || 0);
-    const imagesMissingAlt = Number(
-      scan.signals?.accessibility?.images?.missingAlt || 0
-    );
+    const imagesMissingAlt = Number(scan.signals?.accessibility?.images?.missingAlt || 0);
 
     const flat = {
       url: scan.meta?.url,
@@ -330,9 +344,7 @@ app.post("/preview-scan", async (req, res) => {
       cookieVendorsDetected,
 
       formsDetected: Number(scan.signals?.forms?.detected || 0),
-      formsPersonalDataSignals: Number(
-        scan.signals?.forms?.personalDataSignals || 0
-      ),
+      formsPersonalDataSignals: Number(scan.signals?.forms?.personalDataSignals || 0),
 
       totalImages,
       imagesMissingAlt,
@@ -358,21 +370,36 @@ app.post("/preview-scan", async (req, res) => {
     });
   } catch (e) {
     console.error("preview-scan error:", e);
-    return res
-      .status(500)
-      .json({ ok: false, error: "preview_failed", message: "Preview scan failed" });
+    return res.status(500).json({ ok: false, error: "preview_failed", message: "Preview scan failed" });
   }
 });
 
-
 /* =========================
-   STRIPE CHECKOUT (£99)
+   STRIPE CHECKOUT (£99) + 3-PACK (£199) + UPSELL (£39)
+   - Proposal fields stored in Stripe metadata (NOT in integrity hash)
 ========================= */
+
+function buildCheckoutMetadata({ url, kind, proposal }) {
+  const md = {
+    kind: safeStr(kind || "primary"),
+    url: safeStr(url || "").slice(0, 1024),
+  };
+
+  if (proposal && !proposalIsEmpty(proposal)) {
+    md.prepared_for = proposal.prepared_for;
+    md.project = proposal.project;
+    md.scope_note = proposal.scope_note;
+  }
+
+  return md;
+}
 
 app.post("/create-checkout", async (req, res) => {
   try {
-    const { url } = req.body;
+    const url = normalizeUrlInput(req.body?.url);
     if (!url) return res.status(400).json({ error: "URL required" });
+
+    const proposal = scrubProposal(req.body);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -382,12 +409,12 @@ app.post("/create-checkout", async (req, res) => {
           price_data: {
             currency: "gbp",
             unit_amount: 9900,
-            product_data: { name: "Website Risk Check — Verifiable Snapshot" },
+            product_data: { name: "Website Risk Check — Sealed Snapshot" },
           },
           quantity: 1,
         },
       ],
-      metadata: { url, kind: "primary" },
+      metadata: buildCheckoutMetadata({ url, kind: "primary", proposal }),
       success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/`,
     });
@@ -399,17 +426,95 @@ app.post("/create-checkout", async (req, res) => {
   }
 });
 
+// Direct 3-pack purchase → send user to threepack.html for redemption
+app.post("/create-threepack-checkout", async (req, res) => {
+  try {
+    const url = normalizeUrlInput(req.body?.url);
+    if (!url) return res.status(400).json({ error: "URL required" });
+
+    const proposal = scrubProposal(req.body);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "gbp",
+            unit_amount: 19900,
+            product_data: { name: "Website Risk Check — 3 Sealed Snapshots (Bundle)" },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: buildCheckoutMetadata({ url, kind: "threepack", proposal }),
+      success_url: `${BASE_URL}/threepack.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_URL}/`,
+    });
+
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error("threepack checkout error:", err);
+    return res.status(500).json({ error: "checkout_failed" });
+  }
+});
+
+// Optional upsell (e.g. from success page) — requires a paid parent session_id
+app.post("/create-upsell-checkout", async (req, res) => {
+  try {
+    const parent_session_id = safeStr(req.body?.parent_session_id).trim();
+    const url = normalizeUrlInput(req.body?.url);
+
+    if (!parent_session_id) return res.status(400).json({ error: "parent_session_id required" });
+    if (!url) return res.status(400).json({ error: "URL required" });
+
+    const parent = await stripe.checkout.sessions.retrieve(parent_session_id);
+    if (!parent || parent.payment_status !== "paid") {
+      return res.status(403).json({ error: "parent_not_paid" });
+    }
+
+    const proposal = scrubProposal(req.body);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "gbp",
+            unit_amount: 3900,
+            product_data: { name: "Website Risk Check — Add-on (Upsell)" },
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        ...buildCheckoutMetadata({ url, kind: "upsell", proposal }),
+        parent_session_id,
+      },
+      success_url: `${BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}&upsell=1`,
+      cancel_url: `${BASE_URL}/success.html?session_id=${encodeURIComponent(parent_session_id)}`,
+    });
+
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error("upsell checkout error:", err);
+    return res.status(500).json({ error: "checkout_failed" });
+  }
+});
+
 /* =========================
    PAID → IMMUTABLE REPORT (IDEMPOTENT)
 ========================= */
 
 app.get("/download-report", async (req, res) => {
   try {
-    const { session_id } = req.query;
+    const session_id = safeStr(req.query?.session_id).trim();
     if (!session_id) return res.status(400).send("Missing session_id");
 
     const sessionFile = path.join(SESSION_DIR, `${session_id}.json`);
 
+    // idempotent
     if (fs.existsSync(sessionFile)) {
       const existing = safeReadJson(sessionFile);
       if (existing?.token) return res.redirect(`/r/${existing.token}`);
@@ -421,8 +526,14 @@ app.get("/download-report", async (req, res) => {
       return res.status(403).send("Payment not verified");
     }
 
-    const url = session.metadata?.url;
+    const url = normalizeUrlInput(session.metadata?.url);
     if (!url) return res.status(400).send("Missing URL");
+
+    const proposal = scrubProposal({
+      prepared_for: session.metadata?.prepared_for,
+      project: session.metadata?.project,
+      scope_note: session.metadata?.scope_note,
+    });
 
     const token = generateUniqueToken();
     const { pdfPath, jsonPath } = tokenPaths(token);
@@ -430,15 +541,18 @@ app.get("/download-report", async (req, res) => {
     const tmpPdf = `${pdfPath}.tmp-${crypto.randomBytes(6).toString("hex")}`;
     const scanData = await scanWebsite(url);
 
-    const { integrityHash } = await generateReport(
-      { ...scanData, shareToken: token },
-      tmpPdf
-    );
+    // IMPORTANT:
+    // - proposal is passed for rendering purposes only
+    // - proposal is stored OUTSIDE scanData so integrity hash stays objective
+    const scanForPdf = { ...scanData, shareToken: token, proposal };
+
+    const { integrityHash } = await generateReport(scanForPdf, tmpPdf);
 
     const sealed = {
       token,
       createdAt: Date.now(),
       integrityHash,
+      proposal: proposalIsEmpty(proposal) ? null : proposal,
       scanData: {
         ...scanData,
         integrityHash,
@@ -448,11 +562,7 @@ app.get("/download-report", async (req, res) => {
     writeFileAtomic(jsonPath, JSON.stringify(sealed, null, 2), "utf8");
     fs.renameSync(tmpPdf, pdfPath);
 
-    writeFileAtomic(
-      sessionFile,
-      JSON.stringify({ token, createdAt: Date.now() }),
-      "utf8"
-    );
+    writeFileAtomic(sessionFile, JSON.stringify({ token, createdAt: Date.now() }), "utf8");
 
     return res.redirect(`/r/${token}`);
   } catch (e) {
@@ -466,13 +576,147 @@ app.get("/download-report", async (req, res) => {
 ========================= */
 
 app.get("/r/:token", (req, res) => {
-  const { token } = req.params;
+  const token = safeStr(req.params?.token);
   if (!isValidToken(token)) return res.status(400).send("Invalid reference");
 
   const { pdfPath } = tokenPaths(token);
   if (!fs.existsSync(pdfPath)) return res.status(404).send("Not found");
 
   return res.download(pdfPath, "website-risk-check-report.pdf");
+});
+
+/* =========================
+   3-PACK: PACK STORAGE + REDEMPTION
+========================= */
+
+function packPath(sessionId) {
+  return path.join(PACK_DIR, `${sessionId}.json`);
+}
+
+function loadPack(sessionId) {
+  return safeReadJson(packPath(sessionId));
+}
+
+function savePack(sessionId, obj) {
+  writeFileAtomic(packPath(sessionId), JSON.stringify(obj, null, 2), "utf8");
+}
+
+function ensurePack(session, session_id) {
+  const existing = loadPack(session_id);
+  if (existing && existing.session_id === session_id) return existing;
+
+  const proposal = scrubProposal({
+    prepared_for: session.metadata?.prepared_for,
+    project: session.metadata?.project,
+    scope_note: session.metadata?.scope_note,
+  });
+
+  const pack = {
+    session_id,
+    createdAt: Date.now(),
+    paid: true,
+    remaining: 3,
+    used: 0,
+    redeemed: [], // { token, createdAt, url, integrityHash }
+    proposal: proposalIsEmpty(proposal) ? null : proposal,
+  };
+
+  savePack(session_id, pack);
+  return pack;
+}
+
+// Load pack status (client calls this from threepack.js)
+app.get("/api/threepack", async (req, res) => {
+  try {
+    const session_id = safeStr(req.query?.session_id).trim();
+    if (!session_id) return res.status(400).json({ ok: false, error: "missing_session_id" });
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (!session || session.payment_status !== "paid") {
+      return res.status(403).json({ ok: false, error: "not_paid" });
+    }
+    if (safeStr(session.metadata?.kind) !== "threepack") {
+      return res.status(400).json({ ok: false, error: "not_threepack" });
+    }
+
+    const pack = ensurePack(session, session_id);
+    return res.json({ ok: true, pack });
+  } catch (e) {
+    console.error("api/threepack error:", e);
+    return res.status(500).json({ ok: false, error: "threepack_failed" });
+  }
+});
+
+// Redeem one report from the pack
+app.post("/api/threepack/redeem", async (req, res) => {
+  try {
+    const session_id = safeStr(req.body?.session_id).trim();
+    const url = normalizeUrlInput(req.body?.url);
+
+    if (!session_id) return res.status(400).json({ ok: false, error: "missing_session_id" });
+    if (!url) return res.status(400).json({ ok: false, error: "missing_url" });
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    if (!session || session.payment_status !== "paid") {
+      return res.status(403).json({ ok: false, error: "not_paid" });
+    }
+    if (safeStr(session.metadata?.kind) !== "threepack") {
+      return res.status(400).json({ ok: false, error: "not_threepack" });
+    }
+
+    const pack = ensurePack(session, session_id);
+
+    if ((pack.remaining || 0) <= 0) {
+      return res.status(400).json({ ok: false, error: "none_remaining", pack });
+    }
+
+    // Generate report
+    const token = generateUniqueToken();
+    const { pdfPath, jsonPath } = tokenPaths(token);
+    const tmpPdf = `${pdfPath}.tmp-${crypto.randomBytes(6).toString("hex")}`;
+
+    const proposal = pack.proposal || null;
+
+    const scanData = await scanWebsite(url);
+    const scanForPdf = { ...scanData, shareToken: token, proposal: proposal || {} };
+
+    const { integrityHash } = await generateReport(scanForPdf, tmpPdf);
+
+    const sealed = {
+      token,
+      createdAt: Date.now(),
+      integrityHash,
+      proposal,
+      scanData: {
+        ...scanData,
+        integrityHash,
+      },
+      pack: {
+        session_id,
+      },
+    };
+
+    writeFileAtomic(jsonPath, JSON.stringify(sealed, null, 2), "utf8");
+    fs.renameSync(tmpPdf, pdfPath);
+
+    // Update pack
+    const next = {
+      ...pack,
+      remaining: Math.max(0, Number(pack.remaining || 0) - 1),
+      used: Number(pack.used || 0) + 1,
+      redeemed: [
+        ...(Array.isArray(pack.redeemed) ? pack.redeemed : []),
+        { token, createdAt: Date.now(), url, integrityHash },
+      ],
+    };
+
+    savePack(session_id, next);
+
+    return res.json({ ok: true, token, integrityHash, remaining: next.remaining, pack: next });
+  } catch (e) {
+    console.error("api/threepack/redeem error:", e);
+    return res.status(500).json({ ok: false, error: "redeem_failed" });
+  }
 });
 
 /* =========================
@@ -686,5 +930,5 @@ app.get("/sample-report", (_req, res) => {
 ========================= */
 
 app.listen(PORT, () => {
-console.log(`Website Risk Check running on port ${PORT}`);
+  console.log(`Website Risk Check running on port ${PORT}`);
 });

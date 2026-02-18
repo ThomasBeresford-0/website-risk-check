@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Website Risk Check — Verifiable website compliance & risk documentation</title>
+
+  <title>Website Risk Check — Client-ready, verifiable compliance snapshots</title>
 
   <meta
     name="description"
-    content="Enter a website URL, get a structured risk preview, then purchase a sealed, verifiable PDF snapshot with a permanent share link and public verification."
+    content="Generate a sealed, verifiable website compliance & risk snapshot you can attach to proposals and client work. Free preview → one-time checkout → immutable PDF + permanent share link + public verification."
   />
   <meta name="theme-color" content="#0b1220" />
 
@@ -19,18 +20,15 @@
   <link rel="canonical" href="https://websiteriskcheck.com/" />
 
   <meta property="og:title" content="Website Risk Check — sealed, verifiable website snapshots" />
-  <meta property="og:description" content="Run a free structured preview. Purchase a sealed PDF snapshot with permanent share link and public verification." />
+  <meta property="og:description" content="Client-ready compliance & risk documentation. Free preview → sealed PDF snapshot + permanent share link + public verification." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://websiteriskcheck.com/" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="/style.css?v=14" />
+  <!-- Homepage CSS ONLY (avoid style.css overriding index.css) -->
   <link rel="stylesheet" href="/index.css?v=12" />
 </head>
 
@@ -45,11 +43,11 @@
       </a>
 
       <nav class="topNav" aria-label="Primary">
-        <a href="/sample-report">Sample report</a>
+        <a href="/sample-report">Sample deliverable</a>
         <a href="#agencies">For agencies</a>
+        <a href="#pricing">Pricing</a>
         <a href="#report">The report</a>
         <a href="#verification">Verification</a>
-        <a href="#methodology">Methodology</a>
         <a href="#faq">FAQ</a>
       </nav>
 
@@ -62,53 +60,57 @@
 
   <main>
 
+    <!-- HERO -->
     <section class="hero" id="scan" aria-label="Run a scan">
       <div class="container heroGrid">
 
         <div class="heroLeft">
           <div class="eyebrow">
             <span class="eyedot" aria-hidden="true"></span>
-            Sealed, verifiable website snapshot — built for client work
+            Built for agencies & consultants · client-ready documentation
           </div>
 
-          <h1 class="headline">
-            Issue a sealed,
-            verifiable website risk snapshot.
-          </h1>
+          <h1 class="headline">Generate a sealed, verifiable website risk snapshot.</h1>
 
           <p class="lead">
-            Enter a URL. Get a free structured preview. If you want the deliverable, purchase a sealed PDF snapshot with a permanent share link and public verification.
+            Run a free structured preview, then purchase an immutable PDF artefact you can attach to proposals, audits, and client handovers — complete with a permanent share link and public verification.
           </p>
 
-          <div class="how">
-            <div class="howTitle">How it works</div>
-            <ol class="howSteps">
-              <li><strong>Scan</strong> a website URL (public pages only).</li>
-              <li><strong>Preview</strong> key signals in a structured summary.</li>
-              <li><strong>Purchase</strong> the sealed PDF artefact (£99) with verification.</li>
-            </ol>
+          <div class="heroPrimaryActions" aria-label="Primary actions">
+            <a class="heroBtn heroBtnPrimary" href="#scan">Run free scan</a>
+            <a class="heroBtn heroBtnGhost" href="/sample-report">View sample deliverable</a>
           </div>
 
-          <div class="what">
-            <div class="whatTitle">What you receive</div>
-            <ul class="whatList">
-              <li><strong>Timestamped PDF</strong> written like a real deliverable (scope + limitations included).</li>
-              <li><strong>Integrity seal</strong> (SHA-256 hash embedded in the PDF).</li>
-              <li><strong>Permanent share link</strong> for clients, proposals, or audit trails.</li>
-              <li><strong>Public verification</strong> endpoint: <span class="mono">/verify/&lt;hash&gt;</span>.</li>
-            </ul>
+          <div class="heroValueGrid" aria-label="What you get">
+            <div class="heroValueCard">
+              <div class="hvK">Free preview</div>
+              <div class="hvV">Structured highlights + coverage notes (safe to show clients).</div>
+            </div>
+            <div class="heroValueCard">
+              <div class="hvK">Sealed PDF</div>
+              <div class="hvV">Timestamped, immutable report with integrity hash and QR.</div>
+            </div>
+            <div class="heroValueCard">
+              <div class="hvK">Share link</div>
+              <div class="hvV">Permanent <span class="mono">/r/&lt;token&gt;</span> link for client delivery.</div>
+            </div>
+            <div class="heroValueCard">
+              <div class="hvK">Public verification</div>
+              <div class="hvV">Anyone can verify: <span class="mono">/verify/&lt;hash&gt;</span>.</div>
+            </div>
           </div>
 
           <div class="finePrint">
-            Documentation only. Not legal advice, certification, or a guarantee of compliance.
+            Documentation only. Not legal advice, certification, monitoring, or a guarantee of compliance.
           </div>
         </div>
 
+        <!-- CONSOLE -->
         <aside class="console heroRight" aria-label="Generate preview and purchase report">
           <div class="consoleBody">
             <div class="consoleTop">
-              <div class="consoleK">Free structured preview</div>
-              <div class="consoleV">Full sealed PDF: <strong>£99</strong> · Best value: <strong>3 reports £199</strong></div>
+              <div class="consoleK">Generate a free preview</div>
+              <div class="consoleV">Unlock the sealed artefact after preview · One-time payment</div>
             </div>
 
             <form id="check-form" class="scanForm" autocomplete="off" novalidate>
@@ -128,31 +130,41 @@
                 <button id="scanBtn" type="submit" class="btnMain">Run free scan</button>
               </div>
 
+              <div class="proposalBox" aria-label="Proposal mode">
+                <div class="proposalTop">
+                  <div class="proposalK">Proposal mode (optional)</div>
+                  <div class="proposalV">These fields help you generate a client-ready artefact.</div>
+                </div>
+
+                <div class="proposalGrid">
+                  <label class="miniField">
+                    <span>Prepared for</span>
+                    <input id="proposal_prepared_for" type="text" name="prepared_for" placeholder="Client name (optional)" />
+                  </label>
+
+                  <label class="miniField">
+                    <span>Project / engagement</span>
+                    <input id="proposal_project" type="text" name="project" placeholder="e.g. Retainer audit / rebuild" />
+                  </label>
+
+                  <label class="miniField miniFieldFull">
+                    <span>Scope note</span>
+                    <input id="proposal_scope_note" type="text" name="scope_note" placeholder="e.g. Public pages only, point-in-time snapshot" />
+                  </label>
+                </div>
+              </div>
+
               <div class="consentLine">
                 You confirm you have permission to assess this website.
               </div>
 
-              <div class="signalsLine" aria-label="Signals assessed">
+              <div class="signalsLine" aria-label="Coverage summary">
                 <span class="signalsLabel">Coverage includes:</span>
                 <span class="signalsItems">Policies, consent, trackers, forms, accessibility.</span>
               </div>
 
               <div class="consoleHint">
-                Results will appear below. Checkout unlocks the sealed PDF + verification.
-              </div>
-
-              <div id="heroActions" class="heroActions" aria-label="Checkout actions">
-                <button id="pay-button" type="button" class="btnMain btnWide" disabled>
-                  Download full PDF report
-                </button>
-
-                <button id="threepack-button" type="button" class="btnAlt btnWide" disabled>
-                  Best value: 3 reports
-                </button>
-
-                <div class="payNote">
-                  Secure checkout via Stripe · One-time payment · No subscription
-                </div>
+                After your preview, checkout unlocks the sealed PDF artefact and permanent share link.
               </div>
             </form>
           </div>
@@ -161,13 +173,14 @@
       </div>
     </section>
 
+    <!-- RESULTS -->
     <section class="resultsSection" id="results" aria-label="Scan results">
       <div class="container">
         <div class="resultsHead">
           <div class="resultsKicker">Results</div>
           <h2 class="resultsTitle">Free preview results</h2>
           <p class="resultsSub">
-            Run a scan to populate a client-safe preview. The sealed report generates an immutable PDF, permanent share link, and public verification page.
+            Run a scan to generate a client-safe preview. Checkout unlocks the sealed PDF artefact, permanent share link, and public verification.
           </p>
         </div>
 
@@ -179,17 +192,17 @@
           </div>
         </div>
 
-        <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results" style="display:none;">
-          <div id="findings" aria-label="Preview highlights"></div>
-        </div>
+        <!-- app.js fills these -->
+        <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results"></div>
+        <ul id="findings" class="findings" aria-label="Preview highlights"></ul>
 
-        <!-- MUST be invisible until scan completes -->
+        <!-- ✅ ONLY appears after scan (controlled by app.js) -->
         <div id="resultsActions" class="resultsActions" aria-label="Checkout actions" hidden>
-          <button id="results-pay-proxy" type="button" class="btnMain btnWide" disabled>
-            Download full PDF report (£99)
+          <button id="pay-button" type="button" class="btnMain btnWide" disabled>
+            Download sealed PDF report (£99)
           </button>
 
-          <button id="results-threepack-proxy" type="button" class="btnAlt btnWide" disabled>
+          <button id="threepack-button" type="button" class="btnAlt btnWide" disabled>
             Best value: 3 reports (£199)
           </button>
 
@@ -200,34 +213,100 @@
       </div>
     </section>
 
+    <!-- AGENCIES -->
     <section class="section sectionCentered" id="agencies">
       <div class="container sectionGrid">
         <div class="sectionHead">
           <h2>Designed for billable client work</h2>
           <p>
-            Use the report to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
-            The output is a sealed artefact with a verification path clients can check independently.
+            Use the sealed snapshot to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
+            The deliverable is verifiable and defensible — with explicit scope and limitations.
           </p>
         </div>
 
         <div class="tiles">
           <article class="tile">
-            <h3>Pre-project baseline</h3>
-            <p>Capture a timestamped record before work begins so scope and outcomes are defensible.</p>
+            <h3>Proposal & scoping</h3>
+            <p>Attach a verifiable artefact to proposals so scope discussions start with evidence, not opinions.</p>
           </article>
           <article class="tile">
-            <h3>Compliance discussion</h3>
-            <p>Summarise policies, consent indicators, and tracking signals without vague claims.</p>
+            <h3>Baseline before work</h3>
+            <p>Capture a timestamped record before changes to support accountability and reduce disputes.</p>
           </article>
           <article class="tile">
-            <h3>Due diligence snapshot</h3>
-            <p>Generate evidence before migrations, handover, procurement, or vendor changes.</p>
+            <h3>Due diligence</h3>
+            <p>Document observable signals during procurement, migration, handover, or vendor review.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section sectionPaper sectionCentered" id="report">
+    <!-- PRICING -->
+    <section class="section sectionPaper sectionCentered" id="pricing">
+      <div class="container sectionGrid">
+        <div class="sectionHead">
+          <h2>Simple one-time pricing</h2>
+          <p>No subscriptions. Pay per sealed artefact. Perfect for agencies and consultants.</p>
+        </div>
+
+        <div class="pricingGrid">
+          <div class="priceCard">
+            <div class="priceTop">
+              <div class="priceName">Single report</div>
+              <div class="priceValue">£99</div>
+              <div class="priceNote">1 sealed PDF snapshot</div>
+            </div>
+            <ul class="priceList">
+              <li>Immutable PDF artefact</li>
+              <li>Permanent share link</li>
+              <li>Public verification page</li>
+              <li>Scope + limitations included</li>
+            </ul>
+            <div class="priceCTA">
+              <a class="btnLike btnLikePrimary" href="#scan">Run preview → checkout</a>
+            </div>
+          </div>
+
+          <div class="priceCard isBest">
+            <div class="bestPill">Best value</div>
+            <div class="priceTop">
+              <div class="priceName">3-pack</div>
+              <div class="priceValue">£199</div>
+              <div class="priceNote">3 sealed PDF snapshots</div>
+            </div>
+            <ul class="priceList">
+              <li>Everything in single report</li>
+              <li>Perfect for retainers</li>
+              <li>Run previews first</li>
+              <li>Use across clients/projects</li>
+            </ul>
+            <div class="priceCTA">
+              <a class="btnLike btnLikeGhost" href="#scan">Run preview → buy 3-pack</a>
+            </div>
+          </div>
+
+          <div class="priceCard">
+            <div class="priceTop">
+              <div class="priceName">Add-on (after checkout)</div>
+              <div class="priceValue">£39</div>
+              <div class="priceNote">Client-ready cover details</div>
+            </div>
+            <ul class="priceList">
+              <li>Prepared-for / project fields</li>
+              <li>Cleaner client handover</li>
+              <li>Upsell offered after purchase</li>
+              <li>No subscription</li>
+            </ul>
+            <div class="priceCTA">
+              <a class="btnLike btnLikePrimary" href="/sample-report">See sample output</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="section sectionCentered" id="report">
       <div class="container sectionGrid">
         <div class="sectionHead">
           <h2>What the report contains</h2>
@@ -237,15 +316,15 @@
         <div class="twoCol">
           <div class="panel">
             <div class="panelK">Executive summary</div>
-            <div class="panelV">Risk level with rationale, coverage notes, and clear scope limitations.</div>
+            <div class="panelV">Risk level with rationale, coverage notes, and explicit scope limitations.</div>
           </div>
           <div class="panel">
             <div class="panelK">Signal categories</div>
-            <div class="panelV">Policies, consent signals, tracking scripts, forms/data capture, accessibility notes.</div>
+            <div class="panelV">Policies, consent indicators, tracking scripts, forms/data capture, accessibility notes.</div>
           </div>
           <div class="panel">
             <div class="panelK">Coverage & limitations</div>
-            <div class="panelV">Explicit boundaries so the document remains defensible and professional.</div>
+            <div class="panelV">Clear boundaries so the document remains defensible and professional.</div>
           </div>
           <div class="panel">
             <div class="panelK">Verification</div>
@@ -255,7 +334,8 @@
       </div>
     </section>
 
-    <section class="section sectionCentered" id="verification">
+    <!-- VERIFICATION -->
+    <section class="section sectionPaper sectionCentered" id="verification">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
           <h2>Public cryptographic verification</h2>
@@ -281,29 +361,12 @@
       </div>
     </section>
 
-    <section class="section sectionPaper sectionCentered" id="methodology">
-      <div class="container sectionGrid narrow">
-        <div class="sectionHead">
-          <h2>Methodology</h2>
-          <p>Scope-locked and transparent — so the PDF can be used as evidence.</p>
-        </div>
-
-        <div class="methodBox">
-          <ul>
-            <li>Scope-locked crawl (homepage + standard policy/contact paths)</li>
-            <li>Public, unauthenticated HTML only</li>
-            <li>No behavioural simulation</li>
-            <li>No guarantees of compliance</li>
-            <li>Point-in-time observable signal aggregation</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
+    <!-- FAQ -->
     <section class="section sectionCentered" id="faq">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
           <h2>FAQ</h2>
+          <p>Clear limits. No hype. A defensible deliverable.</p>
         </div>
 
         <details class="qa">
@@ -318,7 +381,7 @@
 
         <details class="qa">
           <summary>Do you monitor websites?</summary>
-          <div class="qaBody">No. This is a one-time snapshot.</div>
+          <div class="qaBody">No. This is a one-time point-in-time snapshot.</div>
         </details>
       </div>
     </section>
@@ -335,58 +398,5 @@
   </main>
 
   <script src="/app.js?v=5" defer></script>
-
-  <!-- UX glue: results buttons ONLY appear after scan -->
-  <script>
-  (function(){
-    const preview = document.getElementById('preview');
-    const resultsEmpty = document.getElementById('resultsEmpty');
-    const resultsActions = document.getElementById('resultsActions');
-
-    const heroPay = document.getElementById('pay-button');
-    const heroThree = document.getElementById('threepack-button');
-
-    const proxyPay = document.getElementById('results-pay-proxy');
-    const proxyThree = document.getElementById('results-threepack-proxy');
-
-    function scanComplete(){
-      return preview && preview.style && preview.style.display !== 'none';
-    }
-
-    function applyVisibility(){
-      const done = scanComplete();
-      if (resultsEmpty) resultsEmpty.style.display = done ? 'none' : '';
-      if (resultsActions) resultsActions.hidden = !done;
-    }
-
-    function syncDisabled(){
-      if (!heroPay || !heroThree || !proxyPay || !proxyThree) return;
-      proxyPay.disabled = heroPay.disabled;
-      proxyThree.disabled = heroThree.disabled;
-    }
-
-    if (proxyPay && heroPay) proxyPay.addEventListener('click', () => heroPay.click());
-    if (proxyThree && heroThree) proxyThree.addEventListener('click', () => heroThree.click());
-
-    applyVisibility();
-    syncDisabled();
-
-    if (preview){
-      const obs = new MutationObserver(applyVisibility);
-      obs.observe(preview, { attributes: true, attributeFilter: ['style','class'] });
-    }
-
-    if (heroPay){
-      const obsBtn = new MutationObserver(syncDisabled);
-      obsBtn.observe(heroPay, { attributes: true, attributeFilter: ['disabled'] });
-    }
-    if (heroThree){
-      const obsBtn2 = new MutationObserver(syncDisabled);
-      obsBtn2.observe(heroThree, { attributes: true, attributeFilter: ['disabled'] });
-    }
-
-    setInterval(() => { applyVisibility(); syncDisabled(); }, 500);
-  })();
-  </script>
 </body>
 </html>

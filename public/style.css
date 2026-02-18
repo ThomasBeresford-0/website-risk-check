@@ -1,27 +1,36 @@
 /* public/style.css */
-/* Global base only — tokens + reset + layout primitives */
+/* Global base only — tokens + reset + layout primitives (NON-PAGE-OPINIONATED)
+   Goal: never fight page CSS (index.css, sample-report.css, etc.)
+*/
 
 :root{
+  /* Surfaces */
   --bg:#f6f7fb;
   --surface:#ffffff;
   --surface2:#fbfcfe;
 
+  /* Text */
   --text:#0f172a;
   --muted:#5b6b82;
 
+  /* Borders */
   --border:#e6eaf2;
   --border2:#dbe3ef;
 
+  /* Ink (used by multiple pages) */
   --ink:#0b1220;
   --ink2:#111a2b;
 
+  /* Shadows */
   --shadow:0 18px 60px rgba(15,23,42,.10);
   --shadowSoft:0 10px 30px rgba(15,23,42,.06);
 
+  /* Radii */
   --r-lg:18px;
   --r-md:12px;
   --r-sm:10px;
 
+  /* Focus ring */
   --ring:0 0 0 4px rgba(15,23,42,.12);
 }
 
@@ -30,24 +39,29 @@
 html,body{
   margin:0;
   padding:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
   color:var(--text);
   background:var(--bg);
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
 
-a{ color:inherit; text-decoration:none; }
-button,input{ font-family:inherit; }
-
-.container{
-  max-width:1160px;
-  margin:0 auto;
-  padding:0 28px;
+/* Keep global font neutral. Page CSS can override (e.g., Inter on homepage). */
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
 }
 
-.narrow{ max-width:860px; }
+a{ color:inherit; text-decoration:none; }
+button,input,textarea,select{ font-family:inherit; }
 
+img{ max-width:100%; height:auto; display:block; }
+
+:focus-visible{
+  outline:none;
+  box-shadow:var(--ring);
+  border-radius:12px;
+}
+
+/* Background FX layer (used site-wide) */
 .bg{
   position:fixed;
   inset:-220px;
@@ -60,11 +74,15 @@ button,input{ font-family:inherit; }
   filter:saturate(105%);
 }
 
-:focus-visible{
-  outline:none;
-  box-shadow:var(--ring);
-  border-radius:12px;
+/* Layout primitives (intentionally minimal)
+   - Don’t set max-width here: page CSS should own layout sizing.
+*/
+.container{
+  margin:0 auto;
+  padding:0 28px;
 }
+
+.narrow{ max-width:860px; margin:0 auto; }
 
 @media (max-width: 460px){
   .container{ padding:0 18px; }

@@ -2,8 +2,9 @@
 // FULL RAMBO — elite audit-style preview renderer + locked conversion flow (single + 3-pack)
 // ✅ Consumes structured /preview-scan payload { ok, meta, coverage, signals, risk }
 // ✅ Backwards-compatible with legacy flat payloads.
-// ✅ No inline styles — relies on style.css classes.
-// ✅ Renders: risk badge, drivers, evidence cards, coverage log, limitations.
+// ✅ No inline styles — relies on index.css classes.
+// ✅ Renders: FREE PREVIEW banner + paywall box + risk badge + drivers + evidence cards + coverage log + limitations.
+// ✅ Findings: highlights only (max 5) + collapsible technical details (no more ugly dump).
 
 function getSid() {
   const key = "wrc_sid";
@@ -89,6 +90,40 @@ function escapeHtml(s = "") {
     .replaceAll("'", "&#039;");
 }
 
+function formatUtc(tsLike) {
+  // Accept ISO string, seconds, or ms. Render: "18 Feb 2026, 20:04 UTC"
+  const raw = safeStr(tsLike).trim();
+  if (!raw) return "—";
+
+  // numeric?
+  const n = Number(raw);
+  let d = null;
+
+  if (Number.isFinite(n) && raw.length >= 9) {
+    // seconds vs ms heuristic
+    const ms = n < 1e12 ? n * 1000 : n;
+    d = new Date(ms);
+  } else {
+    // ISO etc.
+    const dd = new Date(raw);
+    if (!Number.isNaN(dd.getTime())) d = dd;
+  }
+
+  if (!d || Number.isNaN(d.getTime())) return raw; // last resort: show as provided
+
+  try {
+    return (
+      d.toLocaleString("en-GB", {
+        timeZone: "UTC",
+        dateStyle: "medium",
+        timeStyle: "short",
+      }) + " UTC"
+    );
+  } catch {
+    return d.toISOString();
+  }
+}
+
 /* =========================
    INLINE NOTICE (NO ALERTS)
 ========================= */
@@ -99,15 +134,14 @@ function ensureNotice(previewEl) {
 
   el = document.createElement("div");
   el.id = "wrcNotice";
-  el.className = "wrcNotice";
-  el.style.display = "none";
+  el.className = "wrcNotice isHidden";
   previewEl.insertBefore(el, previewEl.firstChild);
   return el;
 }
 
 function showNotice(previewEl, tone, title, msg) {
   const el = ensureNotice(previewEl);
-  el.style.display = "block";
+  el.classList.remove("isHidden");
 
   const t = safeStr(tone || "info").toLowerCase();
   el.classList.remove("isInfo", "isWarn", "isErr", "isOk");
@@ -130,7 +164,7 @@ function showNotice(previewEl, tone, title, msg) {
 function hideNotice(previewEl) {
   const el = previewEl.querySelector("#wrcNotice");
   if (!el) return;
-  el.style.display = "none";
+  el.classList.add("isHidden");
   el.innerHTML = "";
   el.classList.remove("isInfo", "isWarn", "isErr", "isOk");
 }
@@ -152,7 +186,9 @@ function normalizePreviewPayload(data, fallbackUrl) {
     return {
       // meta
       url: safeStr(meta.url) || safeStr(fallbackUrl),
-      hostname: safeStr(meta.hostname) || hostnameOf(safeStr(meta.url) || safeStr(fallbackUrl)),
+      hostname:
+        safeStr(meta.hostname) ||
+        hostnameOf(safeStr(meta.url) || safeStr(fallbackUrl)),
       scannedAt: safeStr(meta.scannedAt),
       scanId: safeStr(meta.scanId),
       https: bool(meta.https),
@@ -160,12 +196,16 @@ function normalizePreviewPayload(data, fallbackUrl) {
       // risk
       riskLevel: safeStr(risk.level) || "Medium",
       riskScore: num(risk.score, 0),
-      riskReasons: safeArr(risk.reasons).map((s) => safeStr(s)).filter(Boolean),
+      riskReasons: safeArr(risk.reasons)
+        .map((s) => safeStr(s))
+        .filter(Boolean),
 
       // coverage
       checkedPages: safeArr(cov.checkedPages),
       failedPages: safeArr(cov.failedPages),
-      scanCoverageNotes: safeArr(cov.notes).map((s) => safeStr(s)).filter(Boolean),
+      scanCoverageNotes: safeArr(cov.notes)
+        .map((s) => safeStr(s))
+        .filter(Boolean),
       fetchOk: safeArr(cov.checkedPages).length > 0,
       fetchStatus: num(cov.fetchStatus, 0),
 
@@ -199,7 +239,8 @@ function normalizePreviewPayload(data, fallbackUrl) {
     hostname: safeStr(data?.hostname) || hostnameOf(url),
     scannedAt: safeStr(data?.scannedAt),
     scanId: safeStr(data?.scanId),
-    https: typeof data?.https === "boolean" ? data.https : url.startsWith("https://"),
+    https:
+      typeof data?.https === "boolean" ? data.https : url.startsWith("https://"),
 
     riskLevel: safeStr(data?.riskLevel) || "Medium",
     riskScore: num(data?.riskScore, 0),
@@ -235,67 +276,136 @@ function normalizePreviewPayload(data, fallbackUrl) {
 }
 
 /* =========================
-   AUDIT FINDINGS LIST (CLIENT-FACING)
+   CLIENT-FACING HIGHLIGHTS (FREE PREVIEW)
 ========================= */
 
-function buildFindingsFromScan(scan) {
-  const findings = [];
+function buildHighlightsFromScan(scan, rawData) {
+  // Keep this tight. 5 items max. Calm, conversion-friendly.
+  const highlights = [];
 
-  findings.push(`HTTPS: ${scan.https ? "Detected" : "Not detected"}`);
+  const level = safeStr(scan.riskLevel || "").toLowerCase();
+  if (level === "high") highlights.push("Overall risk is HIGH based on detectable signals and coverage.");
+  else if (level === "medium") highlights.push("Overall risk is MEDIUM based on detectable signals and coverage.");
+  else if (level === "low") highlights.push("Overall risk is LOW based on detectable signals and coverage.");
 
   const checked = safeArr(scan.checkedPages).length;
   const failed = safeArr(scan.failedPages).length;
-  const covBits = [];
-  if (checked) covBits.push(`${checked} checked`);
-  if (failed) covBits.push(`${failed} failed`);
-  findings.push(`Coverage: ${covBits.join(" • ") || "—"}`);
 
-  findings.push(scan.hasPrivacyPolicy ? "Privacy policy: detected" : "Privacy policy: not detected");
-  findings.push(scan.hasTerms ? "Terms: detected" : "Terms: not detected");
-  findings.push(scan.hasCookiePolicy ? "Cookie policy: detected" : "Cookie policy: not detected");
-
-  findings.push(
-    scan.hasCookieBanner
-      ? "Consent banner indicator: detected (heuristic)"
-      : "Consent banner indicator: not detected (heuristic)"
-  );
-
-  const trackers = safeArr(scan.trackingScriptsDetected);
-  const vendors = safeArr(scan.cookieVendorsDetected);
-
-  findings.push(
-    trackers.length
-      ? `Tracking scripts: detected (${trackers.slice(0, 4).join(", ")}${trackers.length > 4 ? "…" : ""})`
-      : "Tracking scripts: none detected"
-  );
-
-  findings.push(
-    vendors.length
-      ? `Cookie vendor signals: detected (${vendors.slice(0, 4).join(", ")}${vendors.length > 4 ? "…" : ""})`
-      : "Cookie vendor signals: none detected"
-  );
-
-  if (scan.formsDetected > 0) {
-    findings.push(`Forms detected: ${scan.formsDetected}`);
-    findings.push(`Potential personal-data field signals: ${scan.formsPersonalDataSignals} (heuristic)`);
+  if (checked === 0) {
+    highlights.push("We couldn’t retrieve enough public HTML to generate a reliable preview.");
   } else {
-    findings.push("Forms detected: none");
+    highlights.push(`Coverage: ${checked} page${checked === 1 ? "" : "s"} checked${failed ? ` • ${failed} failed` : ""}.`);
   }
 
-  if (scan.totalImages > 0) {
-    findings.push(`Images missing alt text: ${scan.imagesMissingAlt} of ${scan.totalImages}`);
-  } else {
-    findings.push("Images: none detected on scanned pages");
-  }
+  // Policies summary (client language)
+  if (!scan.hasPrivacyPolicy) highlights.push("Privacy policy not detected on scanned surface.");
+  if (!scan.hasTerms) highlights.push("Terms not detected on scanned surface.");
 
-  if (safeArr(scan.accessibilityNotes).length) {
-    findings.push(`Accessibility note: ${truncate(scan.accessibilityNotes[0], 90)}`);
-  }
+  // Consent / tracking as teaser
+  if (scan.hasCookieBanner) highlights.push("Consent banner indicator detected (heuristic).");
+  else highlights.push("No consent banner indicator detected on scanned surface (heuristic).");
 
-  findings.push(scan.contactInfoPresent ? "Contact/identity signals: detected" : "Contact/identity signals: not detected");
+  const trackers = safeArr(scan.trackingScriptsDetected).map((s) => safeStr(s)).filter(Boolean);
+  if (trackers.length) highlights.push(`Tracking scripts detected: ${trackers.slice(0, 2).join(", ")}${trackers.length > 2 ? "…" : ""}.`);
+  else highlights.push("No tracking scripts detected on scanned surface.");
 
-  return findings.slice(0, 12);
+  // If we somehow exceeded, clamp to 5 with priority ordering above.
+  return highlights.slice(0, 5);
 }
+
+function renderFindingsFreePreview(findingsEl, scan, rawData) {
+  // IMPORTANT: findingsEl is a <ul>. Only <li> children are valid.
+  findingsEl.innerHTML = "";
+  findingsEl.classList.add("wrcFindingsTight");
+
+  const highlights = buildHighlightsFromScan(scan, rawData);
+
+  // LI: Header (title + hint)
+  const liHead = document.createElement("li");
+  liHead.style.border = "0";
+  liHead.style.background = "transparent";
+  liHead.style.padding = "0";
+  liHead.style.margin = "0 0 6px 0";
+  liHead.innerHTML = `
+    <div class="wrcFindingsHead">
+      <div class="wrcFindingsTitle">Preview highlights</div>
+      <div class="wrcFindingsHint">Client-safe summary. The sealed PDF contains full register, evidence, and verification.</div>
+    </div>
+  `;
+  findingsEl.appendChild(liHead);
+
+  // LI: Each highlight
+  highlights.forEach((t) => {
+    const li = document.createElement("li");
+    li.textContent = safeStr(t);
+    findingsEl.appendChild(li);
+  });
+
+  // Technical details (collapsed) – inserted AFTER the list as a sibling block
+  // We must NOT put <details> inside <ul> unless wrapped in <li>.
+  const checked = safeArr(scan.checkedPages);
+  const failed = safeArr(scan.failedPages);
+  const notes = safeArr(scan.scanCoverageNotes);
+
+  const checkedPaths = checked.map((p) => pathOf(p?.url)).filter(Boolean).slice(0, 12);
+  const failedPaths = failed
+    .map((p) => {
+      const pth = pathOf(p?.url);
+      const st = num(p?.status, 0);
+      return `${pth} (HTTP ${st || "?"})`;
+    })
+    .filter(Boolean)
+    .slice(0, 12);
+
+  const reasons = safeArr(rawData?.risk?.reasons).map((s) => safeStr(s)).filter(Boolean);
+  const fallbackReasons = safeArr(scan.riskReasons);
+  const driverList = reasons.length ? reasons : fallbackReasons;
+
+  const details = document.createElement("details");
+  details.className = "wrcDetails";
+  details.innerHTML = `
+    <summary class="wrcDetailsSummary">
+      Technical details (coverage + drivers)
+      <span class="wrcDetailsChevron" aria-hidden="true"></span>
+    </summary>
+    <div class="wrcDetailsBody">
+      <div class="wrcDetailsGrid">
+        <div class="wrcDetailsBlock">
+          <div class="wrcDetailsK">Checked</div>
+          <div class="wrcDetailsV mono">${checkedPaths.length ? escapeHtml(checkedPaths.join(", ")) : "—"}</div>
+        </div>
+        <div class="wrcDetailsBlock">
+          <div class="wrcDetailsK">Failed</div>
+          <div class="wrcDetailsV mono">${failedPaths.length ? escapeHtml(failedPaths.join(", ")) : "None"}</div>
+        </div>
+        <div class="wrcDetailsBlock">
+          <div class="wrcDetailsK">Drivers</div>
+          <div class="wrcDetailsV">
+            ${
+              driverList.length
+                ? `<ul class="wrcList">${driverList.slice(0, 8).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
+                : `<div class="wrcEmpty">No explicit drivers returned for this scan.</div>`
+            }
+          </div>
+        </div>
+        <div class="wrcDetailsBlock">
+          <div class="wrcDetailsK">Notes</div>
+          <div class="wrcDetailsV">
+            ${
+              notes.length
+                ? `<ul class="wrcList">${notes.slice(0, 6).map((x) => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`
+                : `<div class="wrcEmpty">No additional coverage notes recorded.</div>`
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Insert the details AFTER the <ul> list
+  findingsEl.insertAdjacentElement("afterend", details);
+}
+
 
 /* =========================
    PREMIUM AUDIT PREVIEW SHELL
@@ -312,15 +422,15 @@ function ensurePreviewShell(previewEl, findingsEl) {
     <section class="wrcPreviewHead" aria-label="Preview summary">
       <div class="wrcPreviewTop">
         <div class="wrcPreviewLeft">
-          <div class="wrcKicker">Snapshot preview</div>
-          <div class="wrcTitle">Detected signals (point-in-time)</div>
+          <div class="wrcKicker">Free preview</div>
+          <div class="wrcTitle">What’s detectable right now (scope-locked)</div>
           <div class="wrcSub">
-            This is a free preview of what’s observable in a scope-locked scan. The paid report includes the full risk register,
-            coverage log, limitations, and a public verification link.
+            This is a limited, client-safe preview. The paid report generates a sealed PDF, a permanent share link, and a public verification page.
           </div>
         </div>
 
         <div class="wrcPreviewRight" aria-label="Preview badges">
+          <div class="wrcBadgePill isPreview">FREE PREVIEW</div>
           <div id="wrcRiskBadge" class="wrcBadgePill">Risk: —</div>
           <div id="wrcScopeBadge" class="wrcBadgePill isSoft">Coverage: —</div>
         </div>
@@ -335,6 +445,16 @@ function ensurePreviewShell(previewEl, findingsEl) {
           <div class="wrcMetaK">Captured (UTC)</div>
           <div id="wrcMetaTime" class="wrcMetaV mono">—</div>
         </div>
+      </div>
+
+      <div class="wrcPaywall" aria-label="Paywall message">
+        <div class="wrcPaywallTitle">Unlock the sealed report (£99)</div>
+        <ul class="wrcPaywallList">
+          <li>Immutable timestamped PDF (client deliverable)</li>
+          <li>Full risk register + scoring rationale</li>
+          <li>Permanent share link <span class="mono">/r/:token</span></li>
+          <li>Public verification <span class="mono">/verify/:hash</span></li>
+        </ul>
       </div>
     </section>
 
@@ -405,7 +525,7 @@ function setMeta(previewEl, scan) {
   const t = previewEl.querySelector("#wrcMetaTarget");
   const time = previewEl.querySelector("#wrcMetaTime");
   if (t) t.textContent = hostnameOf(scan.url || "");
-  if (time) time.textContent = scan.scannedAt ? safeStr(scan.scannedAt) : "—";
+  if (time) time.textContent = formatUtc(scan.scannedAt);
 }
 
 function renderDrivers(previewEl, scan, rawData) {
@@ -413,7 +533,9 @@ function renderDrivers(previewEl, scan, rawData) {
   if (!el) return;
 
   // Prefer structured: data.risk.reasons
-  const structuredReasons = safeArr(rawData?.risk?.reasons).map((s) => safeStr(s)).filter(Boolean);
+  const structuredReasons = safeArr(rawData?.risk?.reasons)
+    .map((s) => safeStr(s))
+    .filter(Boolean);
 
   // Fallback: normalized scan riskReasons
   const reasons = structuredReasons.length ? structuredReasons : safeArr(scan.riskReasons);
@@ -431,7 +553,7 @@ function renderDrivers(previewEl, scan, rawData) {
 
   const ul = document.createElement("ul");
   ul.className = "wrcList";
-  reasons.slice(0, 8).forEach((r) => {
+  reasons.slice(0, 6).forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r;
     ul.appendChild(li);
@@ -449,11 +571,14 @@ function renderGrid(previewEl, scan) {
   const totalImages = num(scan.totalImages, 0);
   const missingAlt = num(scan.imagesMissingAlt, 0);
 
+  const policiesOk = scan.hasPrivacyPolicy && scan.hasTerms;
+  const identityOk = scan.contactInfoPresent && scan.https;
+
   const cells = [
     {
       title: "Policies",
-      status: scan.hasPrivacyPolicy && scan.hasTerms ? "OK" : "Review",
-      tone: scan.hasPrivacyPolicy && scan.hasTerms ? "ok" : "warn",
+      status: policiesOk ? "OK" : "Review",
+      tone: policiesOk ? "ok" : "warn",
       lines: [
         `Privacy: ${scan.hasPrivacyPolicy ? "Detected" : "Not detected"}`,
         `Terms: ${scan.hasTerms ? "Detected" : "Not detected"}`,
@@ -465,8 +590,10 @@ function renderGrid(previewEl, scan) {
       status: scan.hasCookieBanner ? "OK" : "Review",
       tone: scan.hasCookieBanner ? "ok" : "warn",
       lines: [
-        `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"}`,
-        vendors.length ? `Vendors: ${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""}` : "Vendors: none detected",
+        `Banner indicator: ${scan.hasCookieBanner ? "Detected" : "Not detected"} (heuristic)`,
+        vendors.length
+          ? `Vendors: ${vendors.slice(0, 3).join(", ")}${vendors.length > 3 ? "…" : ""}`
+          : "Vendors: none detected",
       ],
     },
     {
@@ -494,14 +621,16 @@ function renderGrid(previewEl, scan) {
       status: missingAlt > 0 ? "Review" : "OK",
       tone: missingAlt > 0 ? "warn" : "ok",
       lines: [
-        `Alt text missing: ${missingAlt} of ${totalImages}`,
-        safeArr(scan.accessibilityNotes).length ? `Note: ${truncate(scan.accessibilityNotes[0], 80)}` : "Notes: none recorded",
+        totalImages > 0 ? `Alt text missing: ${missingAlt} of ${totalImages}` : "Images: none detected on scanned pages",
+        safeArr(scan.accessibilityNotes).length
+          ? `Note: ${truncate(scan.accessibilityNotes[0], 80)}`
+          : "Notes: none recorded",
       ],
     },
     {
       title: "Identity & transport",
-      status: scan.contactInfoPresent && scan.https ? "OK" : "Review",
-      tone: scan.contactInfoPresent && scan.https ? "ok" : "warn",
+      status: identityOk ? "OK" : "Review",
+      tone: identityOk ? "ok" : "warn",
       lines: [
         `Contact signals: ${scan.contactInfoPresent ? "Detected" : "Not detected"}`,
         `HTTPS: ${scan.https ? "Detected" : "Not detected"}`,
@@ -537,11 +666,7 @@ function renderCoverage(previewEl, scan) {
   const failed = safeArr(scan.failedPages);
   const notes = safeArr(scan.scanCoverageNotes);
 
-  const checkedPaths = checked
-    .map((p) => pathOf(p?.url))
-    .filter(Boolean)
-    .slice(0, 10);
-
+  const checkedPaths = checked.map((p) => pathOf(p?.url)).filter(Boolean).slice(0, 10);
   const failedPaths = failed
     .map((p) => {
       const pth = pathOf(p?.url);
@@ -606,15 +731,6 @@ function renderConfidence(previewEl, scan) {
   }
 
   el.textContent = msg;
-}
-
-function renderLegacyFindingsList(findingsEl, findings) {
-  findingsEl.innerHTML = "";
-  safeArr(findings).forEach((text) => {
-    const li = document.createElement("li");
-    li.textContent = safeStr(text);
-    findingsEl.appendChild(li);
-  });
 }
 
 /* =========================
@@ -720,7 +836,7 @@ document.addEventListener("DOMContentLoaded", () => {
           preview,
           "warn",
           "Limited coverage",
-          "We couldn’t retrieve enough HTML to run a full preview. You can still try again, or test a different URL."
+          "We couldn’t retrieve enough public HTML to run a reliable preview. Try again, verify the URL, or test a different page."
         );
       } else {
         hideNotice(preview);
@@ -735,17 +851,14 @@ document.addEventListener("DOMContentLoaded", () => {
       renderCoverage(preview, scan);
       renderConfidence(preview, scan);
 
-      // Findings list:
-      // - If backend provided legacy findings, show them
-      // - Otherwise build them client-side from the normalized model
-      const findings = safeArr(data?.findings).length ? data.findings : buildFindingsFromScan(scan);
-      renderLegacyFindingsList(findingsEl, findings);
+      const oldDetails = preview.querySelector(".wrcDetails");
+      if (oldDetails) oldDetails.remove();
+      renderFindingsFreePreview(findingsEl, scan, data);
 
       preview.style.display = "block";
       setPayButtonsEnabled(true);
 
       track("preview_completed", {
-        findings_count: safeArr(findings).length,
         risk: scan.riskLevel,
         checked_pages: safeArr(scan.checkedPages).length,
         failed_pages: safeArr(scan.failedPages).length,

@@ -17,6 +17,15 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
+  <!-- Canonical -->
+  <link rel="canonical" href="https://websiteriskcheck.com/" />
+
+  <!-- Social -->
+  <meta property="og:title" content="Website Risk Check — sealed, verifiable website snapshots" />
+  <meta property="og:description" content="Run a free structured preview. Purchase a sealed PDF snapshot with permanent share link and public verification." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://websiteriskcheck.com/" />
+
   <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +34,7 @@
     rel="stylesheet"
   >
 
+  <!-- Global site CSS -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <link rel="stylesheet" href="/index.css?v=11" />
 </head>
@@ -113,17 +123,17 @@
               <label class="fieldLabel" for="url-input">Website URL</label>
 
               <div class="fieldRow">
-              <input
-                id="url-input"
-                type="text"
-                inputmode="url"
-                autocomplete="url"
-                autocapitalize="none"
-                spellcheck="false"
-                placeholder="example.com or https://example.com"
-                required
-              />
-                <button id="scanBtn" type="submit" class="btnMain">Generate preview</button>
+                <input
+                  id="url-input"
+                  type="text"
+                  inputmode="url"
+                  autocomplete="url"
+                  autocapitalize="none"
+                  spellcheck="false"
+                  placeholder="example.com or https://example.com"
+                  required
+                />
+                <button id="scanBtn" type="submit" class="btnMain">Run free scan</button>
               </div>
 
               <div class="consentLine">
@@ -135,21 +145,25 @@
               </div>
             </form>
 
-            <div id="preview" class="preview" aria-live="polite">
+            <!-- Preview (shell + highlights injected by app.js) -->
+            <div id="preview" class="preview" aria-live="polite" aria-label="Free preview results" style="display:none;">
               <div class="previewTop">
-                <div class="previewTitle">Preview findings</div>
-                <div class="previewHint">Full report includes breakdown, scoring rationale, and verification page.</div>
+                <div class="previewTitle">Free preview results</div>
+                <div class="previewHint">
+                  This is a limited preview. The paid report generates a sealed PDF, permanent share link, and public verification page.
+                </div>
               </div>
 
-              <ul id="findings" class="findings"></ul>
-
+              <!-- app.js replaces this with “Preview highlights” + collapsible technical details -->
+              <div id="findings" aria-label="Preview highlights"></div>
+              
               <div class="actions">
                 <button id="pay-button" type="button" class="btnMain btnWide">
-                  Issue sealed report
+                  Download full PDF report (£99)
                 </button>
 
                 <button id="threepack-button" type="button" class="btnAlt btnWide">
-                  3 reports
+                  Best value: 3 reports (£199)
                 </button>
 
                 <div class="payNote">
@@ -303,6 +317,6 @@
 
   </main>
 
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=5" defer></script>
 </body>
 </html>

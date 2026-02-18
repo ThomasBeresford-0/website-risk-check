@@ -475,50 +475,54 @@
 }
 
 /* =========================
-   FOOTER
+   FOOTER 
 ========================= */
 
 .siteFooter{
-  margin-top: 54px;
+  margin-top: 64px;
   border-top: 1px solid var(--line);
-  background: rgba(255,255,255,.70);
+  background: rgba(255,255,255,.78);
 }
 
 .footerTop{
-  padding: 28px 0;
-  display:flex;
-  justify-content:space-between;
+  padding: 40px 0 26px;
+  display:grid;
+  grid-template-columns: 1.2fr .8fr;
   gap: 36px;
-  align-items:flex-start;
-  flex-wrap: wrap;
+  align-items:start;
 }
 
-.footerLeft{ max-width: 520px; }
+.footerLeft{
+  max-width: 560px;
+}
 
 .footerBrand{
   font-weight: 950;
   letter-spacing: -.01em;
   color: var(--text);
+  font-size: 15px;
 }
 
 .footerTag{
-  margin-top: 8px;
+  margin-top: 10px;
   color: rgba(11,18,32,.70);
-  line-height: 1.6;
-  font-size: 13.5px;
+  line-height: 1.7;
+  font-size: 14px;
 }
 
 .footerRight{
-  display:flex;
-  gap: 46px;
-  flex-wrap: wrap;
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  justify-items:start;
+  align-items:start;
 }
 
 .footerCol{
   display:flex;
   flex-direction:column;
   gap: 10px;
-  min-width: 140px;
+  min-width: 0; /* prevents weird overflow squish */
 }
 
 .footerHeading{
@@ -527,26 +531,48 @@
   text-transform: uppercase;
   font-weight: 950;
   color: rgba(15,23,42,.70);
+  margin-bottom: 2px;
 }
 
 .footerLink{
   font-size: 14px;
-  color: rgba(11,18,32,.70);
+  color: rgba(11,18,32,.72);
   text-decoration:none;
-  transition: color .12s ease;
+  transition: color .12s ease, transform .12s ease;
+  display:inline-flex;
+  width: fit-content;
 }
 
-.footerLink:hover{ color: var(--text); }
+.footerLink:hover{
+  color: var(--text);
+  transform: translateY(-1px);
+}
 
 .footerBottom{
   border-top: 1px solid rgba(15,23,42,.08);
-  padding: 14px 0;
+  padding: 16px 0 18px;
   text-align:center;
-  color: rgba(11,18,32,.64);
+  color: rgba(11,18,32,.62);
   font-size: 13px;
 }
 
+/* Responsive: stacks cleanly */
+@media (max-width: 900px){
+  .footerTop{
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 34px 0 22px;
+  }
+
+  .footerRight{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
 @media (max-width: 520px){
-  .footerRight{ gap: 22px; }
-  .footerCol{ min-width: 120px; }
+  .footerRight{
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 }

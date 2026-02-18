@@ -28,21 +28,21 @@
   <!-- Global BASE -->
   <link rel="stylesheet" href="/style.css?v=14" />
   <!-- Homepage page-owned styles (BUST CACHE) -->
-  <link rel="stylesheet" href="/index.css?v=7" />
+  <link rel="stylesheet" href="/index.css?v=8" />
 </head>
 
 <body class="pageHome">
   <a class="skipLink" href="#scan">Skip to scan</a>
 
-  <!-- TOP AUDIT BAND -->
-  <header class="topBand" role="banner">
-    <div class="container topBandInner">
+  <!-- TOP BAR -->
+  <header class="topbar" role="banner">
+    <div class="container topbarInner">
       <a class="brand" href="/" aria-label="Website Risk Check Home">
         <img class="brandLogo" src="/favicon.svg?v=1" alt="">
         <span class="brandText">Website Risk Check</span>
       </a>
 
-      <nav class="topNav" aria-label="Primary">
+      <nav class="topnav" aria-label="Primary">
         <a href="/sample-report">Sample report</a>
         <a href="#agencies">For agencies</a>
         <a href="#report">The report</a>
@@ -52,87 +52,131 @@
       </nav>
 
       <div class="topCtas">
-        <a class="ctaGhost" href="/sample-report">View sample</a>
-        <a class="ctaPrimary" href="#scan">Run a scan</a>
+        <a class="btnTop btnTopGhost" href="/sample-report">View sample</a>
+        <a class="btnTop btnTopPrimary" href="#scan">Run a scan</a>
       </div>
     </div>
   </header>
 
   <main>
 
-    <!-- HERO / CONSOLE -->
-    <section class="hero" id="scan" aria-label="Generate a structured preview">
+    <!-- HERO -->
+    <section class="hero" id="scan" aria-label="Run a scan">
       <div class="container heroGrid">
 
-        <!-- LEFT: STATEMENT / POSITIONING -->
+        <!-- LEFT: ARTEFACT + POSITIONING -->
         <div class="heroLeft">
-          <div class="stampRow" aria-hidden="true">
-            <div class="stamp">SEALED SNAPSHOT</div>
-            <div class="stampMeta">Documentation • Not monitoring</div>
+          <div class="eyebrow">
+            <span class="dot" aria-hidden="true"></span>
+            Evidence-grade, point-in-time documentation
           </div>
 
-          <h1 class="headline">
-            A verifiable website risk snapshot your client can file.
+          <h1 class="h1">
+            A sealed website risk snapshot your client can verify.
           </h1>
 
           <p class="lead">
-            Generate a point-in-time record of observable compliance and risk signals, issued as a sealed PDF with a public verification path.
+            Generate a structured record of observable compliance and risk signals — issued as an immutable PDF with a permanent share link and public verification.
           </p>
 
-          <div class="proofGrid" aria-label="What you get">
-            <div class="proofItem">
-              <div class="proofK">Artifact</div>
-              <div class="proofV">Timestamped PDF deliverable</div>
+          <div class="heroRow">
+            <!-- DOCUMENT COVER MOCK -->
+            <div class="docCover" aria-label="Report artefact preview">
+              <div class="docTop">
+                <div class="docSeal">
+                  <div class="sealRing"></div>
+                  <div class="sealText">
+                    <div class="sealA">SEALED</div>
+                    <div class="sealB">SNAPSHOT</div>
+                  </div>
+                </div>
+
+                <div class="docMeta">
+                  <div class="metaK">Deliverable</div>
+                  <div class="metaV">Website Risk Snapshot (PDF)</div>
+                </div>
+              </div>
+
+              <div class="docBody">
+                <div class="docTitle">Compliance & Risk Documentation</div>
+                <div class="docSub">
+                  Observable signals • scope-locked crawl • limitations stated
+                </div>
+
+                <div class="docLines" aria-hidden="true">
+                  <div class="line"></div>
+                  <div class="line w90"></div>
+                  <div class="line w84"></div>
+                  <div class="line w76"></div>
+                  <div class="line w88"></div>
+                </div>
+
+                <div class="docFoot">
+                  <div class="footBlock">
+                    <div class="metaK">Integrity</div>
+                    <div class="metaV mono">SHA-256 hash embedded</div>
+                  </div>
+                  <div class="footBlock">
+                    <div class="metaK">Verification</div>
+                    <div class="metaV mono">/verify/&lt;hash&gt;</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="proofItem">
-              <div class="proofK">Integrity</div>
-              <div class="proofV">SHA-256 hash + public verify URL</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofK">Coverage</div>
-              <div class="proofV">Scope-locked crawl + limitations</div>
-            </div>
-            <div class="proofItem">
-              <div class="proofK">Use case</div>
-              <div class="proofV">Proposals • scope • due diligence</div>
+
+            <!-- VALUE STACK -->
+            <div class="valueStack" aria-label="Key outcomes">
+              <div class="vCard">
+                <div class="vK">Made for client work</div>
+                <div class="vV">Use it to justify scope, document risk, and support proposals.</div>
+              </div>
+              <div class="vCard">
+                <div class="vK">Defensible output</div>
+                <div class="vV">Coverage and limitations are explicit — no vague claims.</div>
+              </div>
+              <div class="vCard">
+                <div class="vK">Independently verifiable</div>
+                <div class="vV">Clients can confirm integrity via the public verification endpoint.</div>
+              </div>
             </div>
           </div>
 
-          <div class="finePrint">
+          <div class="disclaimer">
             Documentation only. Not legal advice, certification, or a guarantee of compliance.
           </div>
         </div>
 
-        <!-- RIGHT: SCAN CONSOLE -->
+        <!-- RIGHT: CONSOLE -->
         <aside class="console" aria-label="Scan console">
           <div class="consoleHeader">
-            <div class="consoleTitle">
-              Scan console
-              <span class="consoleSub">Free structured preview</span>
+            <div>
+              <div class="consoleTitle">Scan console</div>
+              <div class="consoleSub">Free structured preview • typically under a minute</div>
             </div>
 
-            <div class="priceBox" aria-label="Pricing">
-              <div class="priceLabel">Full report</div>
-              <div class="priceValue">£99</div>
+            <div class="price" aria-label="Pricing">
+              <div class="priceK">Full report</div>
+              <div class="priceV">£99</div>
             </div>
           </div>
 
           <div class="consoleBody">
-            <form id="check-form" class="scanForm" autocomplete="off">
-              <label class="fieldLabel" for="url-input">Website URL</label>
-              <div class="fieldRow">
+            <form id="check-form" class="form" autocomplete="off">
+              <label class="label" for="url-input">Website URL</label>
+
+              <div class="row">
                 <input id="url-input" type="url" inputmode="url" placeholder="https://example.com" required />
                 <button id="scanBtn" type="submit" class="btnMain">Generate preview</button>
               </div>
 
-              <div class="consentLine">
+              <div class="fine">
                 You confirm you have permission to assess this website.
               </div>
             </form>
 
-            <div class="coverage" aria-label="Coverage areas">
-              <div class="coverageTitle">Signals captured</div>
-              <div class="coverageList">
+            <div class="signals" aria-label="Coverage areas">
+              <div class="signalsK">Signals captured</div>
+              <div class="signalsList">
                 <span>Policies</span>
                 <span>Consent</span>
                 <span>Trackers</span>
@@ -145,7 +189,7 @@
             <div id="preview" class="preview" aria-live="polite">
               <div class="previewTop">
                 <div class="previewTitle">Preview findings</div>
-                <div class="previewHint">Full report adds breakdown, scoring rationale, and verification page.</div>
+                <div class="previewHint">Full report adds structured breakdown, scoring rationale, and verification section.</div>
               </div>
 
               <ul id="findings" class="findings"></ul>
@@ -164,6 +208,18 @@
                 </div>
               </div>
             </div>
+
+            <div class="consoleFoot">
+              <div class="footItem">
+                <div class="footK">Positioning</div>
+                <div class="footV">Documentation, not monitoring</div>
+              </div>
+              <div class="footItem">
+                <div class="footK">Output</div>
+                <div class="footV">Immutable PDF + share link</div>
+              </div>
+            </div>
+
           </div>
         </aside>
 
@@ -174,21 +230,21 @@
     <section class="section" id="agencies">
       <div class="container sectionGrid">
         <div class="sectionHead">
-          <h2>Built for billable client work</h2>
+          <h2>Designed for billable client work</h2>
           <p>
-            Use the report to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
+            Use this to formalise risk discussions, justify remediation scope, and attach evidence to proposals.
             The output is a sealed artefact with a verification path clients can check independently.
           </p>
         </div>
 
-        <div class="tiles">
+        <div class="tri">
           <article class="tile">
-            <h3>Baseline before work</h3>
-            <p>Capture a timestamped record before changes so scope and outcomes are defensible.</p>
+            <h3>Pre-project baseline</h3>
+            <p>Capture a timestamped record before work begins so scope and outcomes are defensible.</p>
           </article>
           <article class="tile">
-            <h3>Risk & compliance discussion</h3>
-            <p>Document policies, consent indicators, and tracking signals without vague claims.</p>
+            <h3>Compliance discussion</h3>
+            <p>Summarise policies, consent indicators, and tracking signals without hand-wavy claims.</p>
           </article>
           <article class="tile">
             <h3>Due diligence snapshot</h3>
@@ -206,7 +262,7 @@
           <p>Structured, fileable, and written to read like a real deliverable.</p>
         </div>
 
-        <div class="twoCol">
+        <div class="grid2">
           <div class="panel">
             <div class="panelK">Executive summary</div>
             <div class="panelV">Risk level with rationale, coverage notes, and clear scope limitations.</div>
@@ -231,24 +287,24 @@
     <section class="section" id="verification">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
-          <h2>Public cryptographic verification</h2>
+          <h2>Cryptographic verification</h2>
           <p>
             Every report is sealed at generation time. A unique SHA-256 integrity hash is embedded in the PDF and stored server-side.
           </p>
         </div>
 
-        <div class="verifyBox">
-          <div class="verifyRow">
-            <div class="verifyK">Verify endpoint</div>
-            <div class="verifyV"><code>/verify/&lt;hash&gt;</code></div>
+        <div class="verify">
+          <div class="vr">
+            <div class="vk">Verify endpoint</div>
+            <div class="vv"><code>/verify/&lt;hash&gt;</code></div>
           </div>
-          <div class="verifyRow">
-            <div class="verifyK">Tamper detection</div>
-            <div class="verifyV">If the file is altered, verification fails.</div>
+          <div class="vr">
+            <div class="vk">Tamper detection</div>
+            <div class="vv">If the file is altered, verification fails.</div>
           </div>
-          <div class="verifyRow">
-            <div class="verifyK">Audit trail</div>
-            <div class="verifyV">Use the permanent share link + hash for traceable documentation.</div>
+          <div class="vr">
+            <div class="vk">Audit trail</div>
+            <div class="vv">Permanent share link + hash for traceable documentation.</div>
           </div>
         </div>
       </div>
@@ -262,7 +318,7 @@
           <p>Scope-locked and transparent — so the PDF can be used as evidence.</p>
         </div>
 
-        <div class="methodBox">
+        <div class="method">
           <ul>
             <li>Scope-locked crawl (homepage + standard policy/contact paths)</li>
             <li>Public, unauthenticated HTML only</li>

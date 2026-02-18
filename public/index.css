@@ -1,25 +1,21 @@
-/* public/index.css?v=11
-   Alignment + stronger headline.
-   - Hero checkout buttons pushed to bottom (no dead space below)
-   - Center everything from “Designed for billable client work” down
-   - Results buttons hidden until scan completes (HTML controls visibility)
+/* public/index.css?v=12
+   FIXES:
+   ✅ Results buttons truly hidden until scan (hidden attr can’t be overridden)
+   ✅ Hero console no longer stretched to match left column (kills dead space)
+   ✅ Hero buttons sit naturally without weird gaps
+   ✅ Sections from “Designed…” down are centered
 */
 
 :root{
   --ink:#0b1220;
   --ink2:#111a2b;
-
   --band:#0b1220;
   --band2:#0e1730;
-
   --paper:#f6f7fb;
-
   --line: rgba(15,23,42,.12);
   --line2: rgba(15,23,42,.18);
-
   --shadow: 0 22px 70px rgba(15,23,42,.18);
   --shadowSoft: 0 14px 34px rgba(15,23,42,.10);
-
   --r-xl:18px;
   --r-lg:14px;
   --r-md:12px;
@@ -149,7 +145,9 @@ body{
   display:grid;
   grid-template-columns: 1.06fr .94fr;
   gap: 22px;
-  align-items: stretch;
+
+  /* ✅ key: stop forcing equal height columns */
+  align-items: start;
 }
 
 /* LEFT */
@@ -214,7 +212,6 @@ body{
   font-weight: 900;
   font-size: 12.5px;
 }
-
 .finePrint{
   margin-top: 16px;
   font-size: 12.5px;
@@ -232,12 +229,13 @@ body{
   border: 1px solid rgba(15,23,42,.12);
   background: rgba(255,255,255,.92);
   box-shadow: var(--shadow);
-  height: 100%;
-  display: flex;
+
+  /* ✅ key: don’t stretch to left column height */
+  height: auto;
 }
 
 .consoleBody{
-  padding: 18px 18px 18px;
+  padding: 18px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -246,7 +244,6 @@ body{
 .scanForm{
   display: flex;
   flex-direction: column;
-  flex: 1; /* lets us push heroActions downward */
 }
 
 .consoleTop{
@@ -350,20 +347,91 @@ body{
   line-height: 1.55;
 }
 
-/* ✅ HERO ACTIONS: push them down to kill dead space underneath */
+/* Hero checkout buttons */
 .heroActions{
-  margin-top: auto;                 /* 👈 key change */
+  margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(15,23,42,.10);
   display: grid;
   gap: 10px;
 }
-
-.heroActions .payNote{ text-align: center; }
+.heroActions .payNote{ text-align:center; }
 
 .payNote{
   font-size: 12px;
   color: rgba(11,18,32,.56);
+}
+
+/* RESULTS */
+.resultsSection{ padding: 10px 0 64px; }
+
+.resultsHead{
+  margin-top: 6px;
+  margin-bottom: 14px;
+  max-width: 860px;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.resultsKicker{
+  font-size: 12px;
+  font-weight: 950;
+  color: rgba(11,18,32,.62);
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.resultsTitle{
+  margin: 8px 0 8px;
+  font-size: 26px;
+  letter-spacing: -.6px;
+  color: var(--ink);
+}
+
+.resultsSub{
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: rgba(11,18,32,.70);
+  max-width: 78ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.resultsEmpty{
+  border: 1px dashed rgba(15,23,42,.18);
+  background: rgba(255,255,255,.82);
+  border-radius: var(--r-xl);
+  padding: 16px;
+  box-shadow: var(--shadowSoft);
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.previewWide{
+  margin-top: 14px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 920px;
+}
+
+/* THIS is the important part */
+.resultsActions{
+  margin: 14px auto 0;
+  display: grid;
+  gap: 10px;
+  max-width: 520px;
+  justify-items: center;
+  text-align: center;
+}
+.resultsActions .btnWide{ width:100%; height:50px; }
+
+/* ✅ key fix: hidden MUST win */
+.resultsActions[hidden]{
+  display: none !important;
 }
 
 /* SECTIONS */
@@ -425,29 +493,6 @@ body{
   padding: 16px 18px;
   box-shadow: var(--shadowSoft);
 }
-.verifyRow{
-  display:flex;
-  justify-content:space-between;
-  gap: 14px;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(15,23,42,.08);
-}
-.verifyRow:last-child{ border-bottom: 0; padding-bottom: 0; }
-.verifyK{
-  font-size: 12.5px;
-  font-weight: 950;
-  color: rgba(11,18,32,.60);
-  min-width: 160px;
-}
-.verifyV{ color: rgba(11,18,32,.80); line-height: 1.55; }
-.verifyV code{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 12.5px;
-  background: rgba(15,23,42,.05);
-  border: 1px solid rgba(15,23,42,.10);
-  padding: 3px 6px;
-  border-radius: 10px;
-}
 
 .methodBox{
   background: rgba(255,255,255,.90);
@@ -475,7 +520,7 @@ body{
 .qa summary{
   list-style:none;
   cursor:pointer;
-  padding: 14px 14px;
+  padding: 14px;
   font-weight: 950;
   display:flex;
   align-items:center;
@@ -502,140 +547,30 @@ body{
 .footerBrand{ font-weight: 950; letter-spacing: -.2px; color: var(--ink); }
 .footerTag{ font-size: 13px; color: rgba(11,18,32,.64); margin-top: 6px; line-height: 1.55; }
 
-/* =========================
-   RESULTS
-========================= */
-
-.resultsSection{ padding: 10px 0 64px; }
-
-.resultsHead{
-  margin-top: 6px;
-  margin-bottom: 14px;
-  max-width: 860px;
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.resultsKicker{
-  font-size: 12px;
-  font-weight: 950;
-  color: rgba(11,18,32,.62);
-  letter-spacing: .02em;
-  text-transform: uppercase;
-}
-
-.resultsTitle{
-  margin: 8px 0 8px;
-  font-size: 26px;
-  letter-spacing: -.6px;
-  color: var(--ink);
-}
-
-.resultsSub{
-  margin: 0;
-  font-size: 14.5px;
-  line-height: 1.75;
-  color: rgba(11,18,32,.70);
-  max-width: 78ch;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.resultsEmpty{
-  border: 1px dashed rgba(15,23,42,.18);
-  background: rgba(255,255,255,.82);
-  border-radius: var(--r-xl);
-  padding: 16px 16px;
-  box-shadow: var(--shadowSoft);
-  max-width: 920px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-}
-
-.resultsEmptyTitle{ font-weight: 950; color: rgba(11,18,32,.90); }
-
-.resultsEmptyText{
-  margin-top: 6px;
-  font-size: 13.5px;
-  color: rgba(11,18,32,.70);
-  line-height: 1.65;
-}
-
-.previewWide{
-  margin-top: 14px;
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 920px;
-}
-
-.resultsActions{
-  margin: 14px auto 0;
-  display: grid;
-  gap: 10px;
-  max-width: 520px;
-  justify-items: center;
-  text-align: center;
-}
-
-.resultsActions .btnWide{ width: 100%; height: 50px; }
-.resultsActions .payNote{ text-align: center; }
-
-@media (max-width: 560px){
-  .resultsTitle{ font-size: 22px; }
-  .resultsActions{ max-width: none; }
-}
-
-/* =========================
-   CENTER EVERYTHING BELOW AGENCIES
-========================= */
-
+/* Center everything below agencies */
 .sectionCentered .sectionHead{
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+  margin-left:auto;
+  margin-right:auto;
+  text-align:center;
 }
-.sectionCentered .sectionHead p{
-  margin-left: auto;
-  margin-right: auto;
-}
-
+.sectionCentered .sectionHead p{ margin-left:auto; margin-right:auto; }
 .sectionCentered .tiles,
-.sectionCentered .twoCol{
-  justify-items: center;
-}
-
+.sectionCentered .twoCol{ justify-items:center; }
 .sectionCentered .tile,
-.sectionCentered .panel{
-  text-align: center;
-}
-
+.sectionCentered .panel{ text-align:center; }
 .sectionCentered .verifyBox,
 .sectionCentered .methodBox{
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+  margin-left:auto;
+  margin-right:auto;
+  text-align:center;
 }
-
-.sectionCentered .verifyRow{
-  justify-content: center;
-  text-align: center;
-}
-
-.sectionCentered .verifyK{ min-width: 0; }
-.sectionCentered .verifyV{ text-align: center; }
-
 .sectionCentered .methodBox ul{
   list-style-position: inside;
   padding-left: 0;
-  text-align: center;
+  text-align:center;
 }
-
 .sectionCentered .qa summary,
-.sectionCentered .qaBody{
-  text-align: center;
-}
+.sectionCentered .qaBody{ text-align:center; }
 
 /* Responsive */
 @media (max-width: 1060px){
@@ -646,12 +581,9 @@ body{
   .fieldRow{ grid-template-columns: 1fr; }
   .tiles{ grid-template-columns: 1fr; }
   .twoCol{ grid-template-columns: 1fr; }
-  .console{ min-height: 0; }
 }
 @media (max-width: 560px){
   .headline{ font-size: 36px; }
   .topBandInner{ height:auto; padding: 14px 0; }
   .topCtas{ width:100%; justify-content:flex-end; }
-  .verifyRow{ flex-direction:column; }
-  .verifyK{ min-width: 0; }
 }

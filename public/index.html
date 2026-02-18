@@ -16,16 +16,13 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
 
-  <!-- Canonical -->
   <link rel="canonical" href="https://websiteriskcheck.com/" />
 
-  <!-- Social -->
   <meta property="og:title" content="Website Risk Check — sealed, verifiable website snapshots" />
   <meta property="og:description" content="Run a free structured preview. Purchase a sealed PDF snapshot with permanent share link and public verification." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://websiteriskcheck.com/" />
 
-  <!-- Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -33,15 +30,13 @@
     rel="stylesheet"
   >
 
-  <!-- Global site CSS -->
   <link rel="stylesheet" href="/style.css?v=14" />
-  <link rel="stylesheet" href="/index.css?v=11" />
+  <link rel="stylesheet" href="/index.css?v=12" />
 </head>
 
 <body class="pageHome">
   <a class="skipLink" href="#scan">Skip to scan</a>
 
-  <!-- DARK HEADER (KEEP) -->
   <header class="topBand" role="banner">
     <div class="container topBandInner">
       <a class="brand" href="/" aria-label="Website Risk Check Home">
@@ -67,11 +62,9 @@
 
   <main>
 
-    <!-- HERO -->
     <section class="hero" id="scan" aria-label="Run a scan">
       <div class="container heroGrid">
 
-        <!-- LEFT -->
         <div class="heroLeft">
           <div class="eyebrow">
             <span class="eyedot" aria-hidden="true"></span>
@@ -111,7 +104,6 @@
           </div>
         </div>
 
-        <!-- RIGHT (CONSOLE) -->
         <aside class="console heroRight" aria-label="Generate preview and purchase report">
           <div class="consoleBody">
             <div class="consoleTop">
@@ -148,9 +140,7 @@
                 Results will appear below. Checkout unlocks the sealed PDF + verification.
               </div>
 
-              <!-- ✅ HERO ACTIONS (pushed DOWN via CSS, so no dead space under them) -->
               <div id="heroActions" class="heroActions" aria-label="Checkout actions">
-                <!-- IMPORTANT: Only ONE set of these IDs on the page (app.js expects them) -->
                 <button id="pay-button" type="button" class="btnMain btnWide" disabled>
                   Download full PDF report (£99)
                 </button>
@@ -170,7 +160,6 @@
       </div>
     </section>
 
-    <!-- RESULTS (FULL WIDTH) -->
     <section class="resultsSection" id="results" aria-label="Scan results">
       <div class="container">
         <div class="resultsHead">
@@ -181,7 +170,6 @@
           </p>
         </div>
 
-        <!-- Empty state (visible until first scan) -->
         <div id="resultsEmpty" class="resultsEmpty" aria-live="polite">
           <div class="resultsEmptyTitle">No scan yet</div>
           <div class="resultsEmptyText">
@@ -190,12 +178,11 @@
           </div>
         </div>
 
-        <!-- Preview (app.js injects premium shell + highlights) -->
         <div id="preview" class="previewWide" aria-live="polite" aria-label="Free preview results" style="display:none;">
           <div id="findings" aria-label="Preview highlights"></div>
         </div>
 
-        <!-- ✅ RESULTS BUTTONS: DO NOT SHOW until scan completes -->
+        <!-- MUST be invisible until scan completes -->
         <div id="resultsActions" class="resultsActions" aria-label="Checkout actions" hidden>
           <button id="results-pay-proxy" type="button" class="btnMain btnWide" disabled>
             Download full PDF report (£99)
@@ -212,7 +199,6 @@
       </div>
     </section>
 
-    <!-- AGENCIES -->
     <section class="section sectionCentered" id="agencies">
       <div class="container sectionGrid">
         <div class="sectionHead">
@@ -240,7 +226,6 @@
       </div>
     </section>
 
-    <!-- REPORT -->
     <section class="section sectionPaper sectionCentered" id="report">
       <div class="container sectionGrid">
         <div class="sectionHead">
@@ -269,7 +254,6 @@
       </div>
     </section>
 
-    <!-- VERIFICATION -->
     <section class="section sectionCentered" id="verification">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
@@ -296,7 +280,6 @@
       </div>
     </section>
 
-    <!-- METHODOLOGY -->
     <section class="section sectionPaper sectionCentered" id="methodology">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
@@ -316,7 +299,6 @@
       </div>
     </section>
 
-    <!-- FAQ -->
     <section class="section sectionCentered" id="faq">
       <div class="container sectionGrid narrow">
         <div class="sectionHead">
@@ -353,7 +335,7 @@
 
   <script src="/app.js?v=5" defer></script>
 
-  <!-- ✅ UX glue (front-end only): show results CTAs only after scan + proxy clicks + sync disabled state -->
+  <!-- UX glue: results buttons ONLY appear after scan -->
   <script>
   (function(){
     const preview = document.getElementById('preview');
@@ -367,7 +349,6 @@
     const proxyThree = document.getElementById('results-threepack-proxy');
 
     function scanComplete(){
-      // Treat "preview visible" as completion (app.js flips display)
       return preview && preview.style && preview.style.display !== 'none';
     }
 
@@ -383,18 +364,15 @@
       proxyThree.disabled = heroThree.disabled;
     }
 
-    function wireProxyClicks(){
-      if (proxyPay && heroPay) proxyPay.addEventListener('click', () => heroPay.click());
-      if (proxyThree && heroThree) proxyThree.addEventListener('click', () => heroThree.click());
-    }
+    if (proxyPay && heroPay) proxyPay.addEventListener('click', () => heroPay.click());
+    if (proxyThree && heroThree) proxyThree.addEventListener('click', () => heroThree.click());
 
-    wireProxyClicks();
     applyVisibility();
     syncDisabled();
 
     if (preview){
-      const obs = new MutationObserver(() => applyVisibility());
-      obs.observe(preview, { attributes: true, attributeFilter: ['style', 'class'] });
+      const obs = new MutationObserver(applyVisibility);
+      obs.observe(preview, { attributes: true, attributeFilter: ['style','class'] });
     }
 
     if (heroPay){
@@ -406,7 +384,6 @@
       obsBtn2.observe(heroThree, { attributes: true, attributeFilter: ['disabled'] });
     }
 
-    // Fallback tick
     setInterval(() => { applyVisibility(); syncDisabled(); }, 500);
   })();
   </script>

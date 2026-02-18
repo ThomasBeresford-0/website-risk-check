@@ -939,6 +939,8 @@ body{
   display:grid;
   gap: 10px;
   max-width: 520px;
+  justify-items: center;
+  text-align: center;
 }
 
 .resultsActions .btnWide{
